@@ -1,0 +1,1 @@
+<input name="<? echo $prefix.$field_name.$suffix; ?>" type="hidden" value="<? echo $value; ?>" />

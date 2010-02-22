@@ -1,0 +1,1 @@
+<h2><? echo $error404_message; ?></h2>

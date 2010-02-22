@@ -1,0 +1,29 @@
+li
+{
+    margin: 0.2ex 0;
+}
+
+li > span.name > a
+{
+    color: black;
+}
+
+li.abstract > span.name
+{
+    background-color: #ffffff;
+}
+
+li.correct > span.name
+{
+    background-color: #55ff77;
+}
+
+li.missing > span.name
+{
+    background-color: #ffff00;
+}
+
+li.incorrect > span.name
+{
+    background-color: #ff0000;
+}

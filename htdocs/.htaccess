@@ -1,0 +1,14 @@
+RewriteEngine on
+
+# don't go anywhere.
+RewriteRule ^hg/ - [L]
+# to avoid unnecessary file existence checks
+RewriteRule ^(js|css|gfx)/ - [L]
+RewriteRule ^[a-z]+.php - [L]
+
+RewriteCond %{IS_SUBREQ} false
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ hg/$1
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^hg/(.*)$ index.php/$1 [L]
+

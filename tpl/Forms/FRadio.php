@@ -1,0 +1,91 @@
+<?php
+/**
+ * <select> <option></option> </select>
+ * @author m.augustynowicz
+ *
+ * (params passed as local variables) 
+ * @param string $id uniqe id
+ * @param array $values REQUIRED!
+ * @param string $empty_value_label if given, adds extra, empty value at the beginning
+ * @param array $attrs
+ * @param boolean $disabled
+ * @param string $class
+ * @param boolean $err_handling add div.field error, bind events (if $ajax)
+ */
+if (!$____local_variables['values'])
+{
+    g()->debug->addInfo(null, 'No values passed to FSelect (%s, %s::%s)', $this->path(), $ident, $input);
+}
+extract(array_merge(
+        array(
+            'id'          => null,
+            'values'      => array(),
+            'empty_value_label' => null,
+            'attrs'       => array(),
+            'disabled'    => false,
+            'class'       => '', // overrides attrs[class] !
+            'err_handling'=> true,
+        ),
+        (array) $____local_variables
+    ));
+if ($disabled)
+    $attrs['disabled'] = 'disabled';
+@$attrs['class'] .= ' hg '.$class;
+
+$attrs['id'] = $id;
+//$attrs['name'] = $ident.'['.$input.']';
+
+$attrs_html = '';
+foreach ($attrs as $name=>$value)
+    $attrs_html .= sprintf(' %s="%s"', $name, htmlentities($value));
+
+if (isset($select_array))
+{
+    g()->debug->addInfo('deprecated select_array', '$select_array variable has been assigned, but FSelect now accepts only local variable $values');
+}
+?>
+
+<fieldset <?=$attrs_html?>>
+    <?php if (null !== $empty_value_label) : ?>
+    <label>
+        <?php
+        $input_vars = array_merge($____local_variables, array(
+            'data' => '',
+            'err_handling' => false,
+        ));
+        $input_vars['attrs'] = array_merge((array)@$input_vars['attrs'], array(
+            'type' => 'radio',
+            'class' => 'radio empty',
+        ));
+        if (!isset($data) || ''===$data || false===$data) // '0' is different value
+            $input_vars['attrs']['checked'] = 'checked';
+        $t->inc('Forms/input', $input_vars);
+        echo $empty_value_label;
+        ?>
+    </label>
+    <?php endif; ?>
+    <?php foreach($values as $value => $name) { ?>
+    <label>
+        <?php
+        $input_vars = array_merge($____local_variables, array(
+            'data' => $value,
+            'err_handling' => false,
+        ));
+        $input_vars['attrs'] = array_merge((array)@$input_vars['attrs'], array(
+            'type' => 'radio',
+            'class' => 'radio',
+        ));
+        if (isset($data) && (string)$value === (string)$data)
+            $input_vars['attrs']['checked'] = 'checked';
+        $t->inc('Forms/input', $input_vars);
+        echo $name;
+        ?>
+    </label>
+    <?php } ?>
+</fieldset>
+
+<?php
+$t->inc('Forms/errors', compact('id', 'ajax', 'err_handling'));
+
+return $attrs;
+

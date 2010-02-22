@@ -1,0 +1,50 @@
+#infos
+{
+    margin:             0 1em;
+}
+
+#infos > ol > li
+{
+    list-style:         decimal outside;
+    margin:             1ex 0 1ex 2em;
+}
+
+#infos > ol
+{
+    border:             transparent solid .3ex;
+    padding:            0 1ex;
+    margin:             1ex 0;
+}
+/* pretty colours */
+#infos > ol.error
+{
+    background-color:   #ebc6c6;
+    border-color:       #eb4242;
+}
+#infos > ol.info
+{
+    background-color:   #a8dfba;
+    border-color:       #42df76;
+}
+#infos > ol.notice
+{
+    background-color:   #b3d6ea;
+    border-color:       #5bb6ea;
+}
+#infos > ol.debug
+{
+    background-color:   #f3d8b2;
+    border-color:       #f39000;
+    /*
+    overflow:           auto;
+    */
+}
+/*
+#infos > ol.debug,
+#infos > ol.debug *
+{
+    font-family:        mono;
+    white-space:        pre;
+}
+    */
+
