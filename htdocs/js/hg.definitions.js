@@ -13,7 +13,7 @@ hg['gmapsGetMarkersCenter'] = {js:'../hg/js/hg.gmaps.js'};
 
 
 // editor (xinha)
-hg['editor_init'] = {js:'hg.editor.js'};
+hg['editor_init'] = {js:'../hg/js/hg.editor.js'};
 
 //forms
 hg['input_validate'] = {js:'../hg/js/hg.formsvalidate.js'};
@@ -31,6 +31,6 @@ hg['ajaxDOMReady'] = {js:'../hg/js/hg.ajax.js'};
 hg['nyroModalInit'] = {js:'../hg/js/hg.nyroModal.js'};
 
 // flash visibility toggler
-hg['hideFlashes']   = {js:'hg.flashtoggler.js'};
-hg['unhideFlashes'] = {js:'hg.flashtoggler.js'};
+hg['hideFlashes']   = {js:'../hg/js/hg.flashtoggler.js'};
+hg['unhideFlashes'] = {js:'../hg/js/hg.flashtoggler.js'};
 
