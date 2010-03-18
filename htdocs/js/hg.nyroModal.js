@@ -7,8 +7,11 @@
  * @author m.augustynowicz
  */
 hg['nyroModalInit'].ajax_i = null;
-hg['nyroModalInit'].f = function()
+hg['nyroModalInit'].f = function(called_on_load)
 {
+    if (typeof $.nyroModalSettings == 'undefined')
+        return false;
+
     // these will be shown by nyroModal
     $('.modaled').hide();
 
