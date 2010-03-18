@@ -338,7 +338,7 @@ jQuery(function($) {
 			return;
 		debug('processModal');
 		modal.started = true;
-		callingSettings = $.extend(true, settings);
+		$.extend(true, callingSettings, settings);
 		setDefaultCurrentSettings(settings);
 		if (!modal.full)
 			modal.blockerVars = modal.blocker = null;
