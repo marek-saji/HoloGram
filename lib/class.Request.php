@@ -574,7 +574,8 @@ class Request extends HgBase
      */
     public function encodeVal($val)
     {
-        $val = urlencode($val);
+        // triple encod is a must, apache tends to freak out otherwise
+        $val = @urlencode(urlencode(urlencode($val)));
         if ($this->_link_split_encoded)
             $val = str_replace(g()->conf['link_split'],
                                $this->_link_split_encoded, $val);
@@ -588,7 +589,7 @@ class Request extends HgBase
      */
     public function decodeVal($val)
     {
-        $val = urldecode($val);
+        $val = urldecode(urldecode(urldecode($val)));
         if ($this->_link_split_encoded)
             $val = str_replace($this->_link_split_encoded,
                                g()->conf['link_split'], $val);
@@ -746,6 +747,7 @@ class Request extends HgBase
         {
             $this->_rtree = & $this->_rtree['children'][$k];
         }
+        $this->_seekTo($this->_current);
     }
 
 

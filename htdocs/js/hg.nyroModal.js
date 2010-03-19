@@ -5,9 +5,11 @@
  * Also, hides everything matching '.modal'.
  * Should be called after DOM has been loaded, with nyroModal present
  * @author m.augustynowicz
+ *
+ * @return true on success
  */
 hg['nyroModalInit'].ajax_i = null;
-hg['nyroModalInit'].f = function(called_on_load)
+hg['nyroModalInit'].f = function()
 {
     if (typeof $.nyroModalSettings == 'undefined')
         return false;
@@ -18,6 +20,8 @@ hg['nyroModalInit'].f = function(called_on_load)
     var prevSettings = $.fn.nyroModal.settings;
     var prev_openSelector = $.fn.nyroModal.settings.openSelector;
     var prev_closeSelector = $.fn.nyroModal.settings.closeSelector;
+
+    var prev_title = document.title;
 
     var open_selector = '.modal, a.thickbox, a[rel^="lightbox"]';
     if (prev_openSelector)
@@ -54,6 +58,7 @@ hg['nyroModalInit'].f = function(called_on_load)
         endRemove: function(){
             if (hg['unhideFlashes'])
                 hg('unhideFlashes')();
+            document.title = prev_title;
         },
         // ajax related things
         ajax: {

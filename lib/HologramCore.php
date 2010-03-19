@@ -1044,7 +1044,7 @@ class Kernel
                 }
             }
 
-            $this->get('Functions')->arrayMergeRecursive($this->conf, $confAll);
+            $this->get('Functions')->arrayMergeRecursive($this->conf, $confAll, false);
         }
     }    
 
@@ -1165,10 +1165,31 @@ class HgBase
             }
             break;
         }
-        if (!isset($msg))
-            $msg = $text;
 
-        return vsprintf($msg, $argv);
+        if (!isset($msg))
+        {
+            $ret = vsprintf($text, $argv);
+            $trans = array(); // "no trans"
+        }
+        else
+        {
+            $ret = vsprintf($msg, $argv);
+            $trans = & $ret;
+        }
+
+        $debug_all = g()->debug->on('trans');
+        $debug_missing = g()->debug->on('trans','missing');
+
+        if ($debug_all || (array() === $trans && $debug_missing))
+        {
+            $ret = sprintf('((%s ~ %s))',
+                    vsprintf($text, $argv),
+                    array() === $trans ? 'NO TRANS!' : $trans
+                );
+        }
+
+        return $ret;
+
     }
 }
 
@@ -1889,9 +1910,10 @@ abstract class Controller extends HgBase implements IController
      *        use null for $this and '' for default controller (main page)
      * @param string $act action name, use '' for default one
      * @param array $params action's parameters
+     * @param boolean $with_host should produced URL contain host name?
      * @return string URL
      */
-    public function url2c($ctrl, $act='', $params=array())
+    public function url2c($ctrl, $act='', $params=array(),$with_host=false)
     {
         if (!is_array($ctrl))
             // one controller given
@@ -1936,7 +1958,7 @@ abstract class Controller extends HgBase implements IController
         }
         $url = join(';',$url);
         g()->req->enhanceURL($url);
-        return g()->req->getBaseUri().$url;
+        return g()->req->getBaseUri($with_host).$url;
     }
     
     /**

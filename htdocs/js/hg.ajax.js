@@ -4,11 +4,19 @@
  *
  * USAGE:
  * <code>
- * $.post(url, data, function(response, textStatus){
- *     var ajax_id = hg('ajaxHandleResponse')(response);
- *     // do some stuff
- *     hg('ajaxDOMReady')(ajax_id);
- * }, 'json');
+ * // use to handle HG ajax requests. response's data is expected
+ * // be JSON of certain structure
+ * hg('ajax'({
+ *     'url' : 'specify if you want to use different than current',
+ *     'node' : 'if specified, data.html from response will be placed in that \
+ *               node. can be either jQuery or selector or DOM node or id',
+ *     'dataPrefix' : 'when passing any POST data, specify something like \
+ *                     foo[bar][xx] to change all keys in data from \
+ *                     "key" to "foo[bar][xx][key]"',
+ *     // rest of the params got passed to $.ajax(), but some of them got
+ *     // overriden: dataType is always json, type is always post;
+ *     // error and success got injected with tome special HG-lovin'
+ * });
  * </code>
  */
 
@@ -138,6 +146,22 @@ hg['ajaxHandleResponse'].f = function(data)
 
     if (!data.html)
         data.html = '';
+    else if (hg.debug)
+    {
+        /**
+         * WARNING: this does not work as it should be.
+         * sometimes jQuery's html() fails miserably. /:
+         */
+        var tmp_node = $('<div />', {css: {display: 'none'}});
+        tmp_node
+            .appendTo('body')
+            .html(data.html);
+        tmp_node.children('#pre-display_stuff.ajax')
+            .detach()
+            .appendTo('body');
+        data.html = tmp_node.html();
+        tmp_node.remove();
+    }
 
     return i;
 }
@@ -178,7 +202,7 @@ hg['ajaxDOMReady'].f = function(i)
 
     if (hg.ajax.data[i].title)
     {
-        $('head > title').text(hg.ajax.data[i].title);
+        document.title = hg.ajax.data[i].title;
     }
 }
 

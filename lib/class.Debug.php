@@ -389,13 +389,15 @@ JS;
             if (@$call['context'])
             {
                 echo '<tr><td '.$cell_style.' colspan="2">';
-                if (defined('ENVIRONMENT') && ENVIRONMENT == LOCAL_ENV)
+                if (! (defined('ENVIRONMENT') && ENVIRONMENT == LOCAL_ENV))
+                    print '(if you\'d be working in local environment, you could view context here)';
+                else if ((!g()->req) || g()->req->isAjax())
+                    print '(if it was not an AJAX call, you could view context here)';
+                else
                 {
                     echo '<a href="javascript:void(0)" onclick="css=this.nextSibling.style; css.display=css.display==\'none\'?\'block\':\'none\'">toggle context visibility</a><pre style="display:none">';
                     print_r($call['context']);
                 }
-                else
-                    print '(if you\'d be working in local environment, you could view context here)';
                 echo '</pre></td></tr>';
             }
 

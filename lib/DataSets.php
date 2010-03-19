@@ -522,34 +522,33 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 $suff = $field[1];
                 $field = $field[0];
             }
-            if (is_string($field))
-            {
-                $fields = $this->getFields();
-                if (!isset($fields[$field]))
-                {
-                    $return = true;
-                    foreach ($this->_whitelist as $f=>$c)
-                    {
-                        if($f == $field)
-                        {
-                            
-                            $field = $c;
-                            $return = false;
-                            break;
-                        }
-                    }
-                    if($return)
-                        return false;
-                }
-                else
-                    $field = $fields[$field];
-            }
             if ($field == ORDER_RANDOM)
             {
                 $key = $field = 'RANDOM()';
             }
             else
             {
+                if (is_string($field))
+                {
+                    $fields = $this->getFields();
+                    if (!isset($fields[$field]))
+                    {
+                        $return = true;
+                        foreach ($this->__whitelist as $f=>$c)
+                        {
+                            if ($f == $field)
+                            {
+                                $field = $c;
+                                $return = false;
+                                break;
+                            }
+                        }
+                        if ($return)
+                            return false;
+                    }
+                    else
+                        $field = $fields[$field];
+                }
                 // "generate" key
                 $key = $field->generator();
                 if($suff)

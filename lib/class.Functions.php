@@ -244,9 +244,11 @@ class Functions extends HgBase
      *
      * @param array $a referencja do pierwszej tablicy
      * @param array $b referencja do tablicy, ktora dolaczamy
+     * @param bool $ignore_empty_strings if set, will ignore keys that have
+     *             empty strings as values (NULL values will always be ignored)
      * @return void
      */
-    function arrayMergeRecursive(&$a,$b)
+    function arrayMergeRecursive(&$a,$b, $ignore_empty_strings=true)
     {
         if (!is_array($a) || !is_array($b))
         {
@@ -257,17 +259,18 @@ class Functions extends HgBase
         {
             if(array_key_exists($k,$b))
             {
-                if($b[$k]!=='' && $b[$k]!==NULL)
-                    $this->arrayMergeRecursive($a[$k],$b[$k]);
+                if(((!$ignore_empty_strings) || $b[$k]!=='') && $b[$k]!==NULL)
+                    $this->arrayMergeRecursive($a[$k],$b[$k], $ignore_empty_strings);
                 else
                     unset($a[$k]);
             }
         }
         foreach ($b as $k=>$v)
         {
-            if (!array_key_exists($k,$a) && $v!=='' && $v!==NULL)
+            if (!array_key_exists($k,$a) && $v!==NULL)
             {
-                $a[$k]=$v;
+                if ((!$ignore_empty_strings) || ($v!==''))
+                    $a[$k]=$v;
             }
         }
 

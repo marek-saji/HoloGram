@@ -40,5 +40,5 @@ elseif (is_array($cancel_link))
         $cancel_link = $t->url2c($cancel_link[0], $cancel_link[1], $cancel_link[2]);
 }
 if ($cancel_link && $cancel_label)
-    printf('<a href="%s" class="modalClose">%s</a>', $cancel_link, $t->trans($cancel_label));
+    printf('<a href="%s" class="modalClose cancel_label">%s</a>', $cancel_link, $t->trans($cancel_label));
 

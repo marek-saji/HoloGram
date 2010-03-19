@@ -1,7 +1,15 @@
 <?php
 if (!@$data)
-    $data = g()->req->getReferer();
+{
+    if (isset($this->__params['backto']))
+        $data = $this->__params['backto'];
+    else
+        $data = g()->req->getReferer();
+}
 
-printf('<input type="hidden" name="%s[%s]" value="%s" />',
-       $ident, $input, $data );
+echo $f->tag('input', array(
+        'type' => 'hidden',
+        'name' => "${ident}[$input]",
+        'value' => $data
+    ));
 

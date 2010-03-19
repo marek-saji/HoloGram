@@ -7,7 +7,7 @@ class AjaxView extends View
 
     /**
      * Prezentuje strone. Wysyla do przegladarki wszystkie informacje potrzebne do wyswietlenia
-     * albo zaktualizwoania strony.
+     * albo zaktualizowania strony.
      */
     public function present()
     {
