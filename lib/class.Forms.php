@@ -170,8 +170,10 @@ class Forms extends HgBase
      */
     public function end()
     {
-        $this->input('_backlink');
-        return $this->__ctrl->inc('Forms/form_end', array('ident'=>$this->__ident));
+        return $this->__ctrl->inc('Forms/form_end', array(
+            'ident' => $this->__ident,
+            'form'  => $this,
+        ));
     }
     
     /**
