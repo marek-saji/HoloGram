@@ -37,5 +37,5 @@ printf('<span class="field_error" id="%s" style="%s">%s</span>',
 if($ajax)
     $v->addOnLoad('$(\'#'.$id.'\').'.$js_event.'(function(){return hg("input_validate")(this);})');
 
-return array('err_id' = $err_id);
+return array('err_id' => $err_id);
 
