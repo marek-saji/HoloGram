@@ -123,6 +123,8 @@ class Forms extends HgBase
      */
     public function create($action='', array $additional_params=array())
     {
+        $f = g('Functions');
+
         g()->view->addCss($this->__ctrl->file('forms','css'));
 
         $has_files = @$this->__form['upload'];
@@ -152,7 +154,8 @@ class Forms extends HgBase
          */
     
         $params = array_merge(array(
-            'ident'=>$this->__ident,
+            'id' => $f->uniqueId($this->__ident),
+            'ident'=>$f->ASCIIfyText($this->__ident),
             'ajax'=>isset($this->__form['ajax'])?$this->__form['ajax']:USE_AJAX_BY_DEFAULT,
             'errors' => $this->getErrors(),
             'action'=>$action,
@@ -200,7 +203,8 @@ class Forms extends HgBase
         $data = @ $this->__ctrl->data[$this->__short_ident][$input];
         $errors = $this->_getErrors($input);
 
-        $id0 = $id = g('Functions')->ASCIIfyText($this->__ident.'_'.$input);
+        /*
+        $id0 = $id = g('Functions')->ASCIIfyText();
         $suffix = '';
         do
         {
@@ -211,6 +215,8 @@ class Forms extends HgBase
         }
         while(true);
         self::$_used_ids[$id] = true;
+         */
+        $id = g('Functions')->uniqueId($this->__ident.'_'.$input);
             
         $sys_params = array('ident'=>$this->__ident,
                             'input'=>$input,

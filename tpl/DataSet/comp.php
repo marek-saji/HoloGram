@@ -1,4 +1,4 @@
-<form method="post" action="<?=$this->url2a('Comp',array($this->__ds->getName(),'execute'));?>">
+<form method="post" action="<?=$this->url2a('Comp',array($this->_ds->getName(),'execute'));?>">
 <pre>
 <? if (isset($sql))
    {

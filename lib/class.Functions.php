@@ -21,6 +21,16 @@ define('DATE_SHOW_ALL', 3);
 class Functions extends HgBase
 {
     /**
+     * Numeric suffix used to generate unique IDs for use in HTML
+     * @author m.augustynowicz
+     * @see uniqueId()
+     * @var integer
+     */
+    static protected $_unique_id_offset = 0;
+
+
+
+    /**
      * Find links in given text and create anchors for them.
      *
      * Warning: find only links that start with www or http.
@@ -1244,5 +1254,27 @@ class Functions extends HgBase
 
         return sprintf($fmt, $name, $this->xmlAttr($attr), $value);
     }
+
+
+    /**
+     * Generates unique id (for use in html)
+     * @author m.augustynowicz
+     *
+     * @param string $id id prefix
+     * @param null|integer $set_offset if given, sets starting offset for this
+     *        and future ids (in general: do not use!)
+     * @return string
+     */
+    public function uniqueId($id, $set_offset=null)
+    {
+        if (null !== $set_offset)
+            self::$_unique_id_offset = $set_offset;
+        if (!$id)
+            $id = 'hgid';
+        $id = sprintf('%s__%s', $this->ASCIIfyText($id),
+                                ++self::$_unique_id_offset );
+        return $id;
+    }
+
 }
 
