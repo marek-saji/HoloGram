@@ -105,40 +105,20 @@ hg['gmapsSetup'].f = function(id, map_params)
     else
         map.disableScrollWheelZoom();
 
+    // cast all coordinates to floats
+    params.lat = parseFloat(params.lat || 0);
+    params.lon = parseFloat(params.lon || 0);
+    $.each(params.markers, function(){
+        this.lat = parseFloat(this.lat || 0);
+        this.lng = parseFloat(this.lng || 0);
+    });
+
     map.__hg.permanentMarkers = params.markers;
+
     // when no lat and lon given, determine it from markers
-    if (params.markers && !(~~params.lat && ~~params.lon))
+    if (params.markers && !(params.lat && params.lon))
     {
-        var bounds = {N:null, E:null, W:null, S:null};
-        $.each(params.markers, function(){
-            if (null===bounds.N || this.lat > bounds.N)
-                bounds.N = this.lat;
-            if (null===bounds.S || this.lat < bounds.S)
-                bounds.S = this.lat;
-            if (null===bounds.W || this.lng > bounds.W)
-                bounds.W = this.lng;
-            if (null===bounds.E || this.lng < bounds.E)
-                bounds.E = this.lng;
-        });
-        if (bounds.N == bounds.S || bounds.W == bounds.E) // all in the same place
-        {
-            params.lat = bounds.N;
-            params.lon = bounds.W;
-            if (!params.zoom)
-                params.zoom = 10;
-        }
-        else // in different locations
-        {
-            params.lat = (bounds.N-3*bounds.S)/2;
-            params.lon = (bounds.W-3*bounds.E)/2;
-            // same thing with zoom level
-            if (!params.zoom)
-            {
-                bounds = new GLatLngBounds(new GLatLng(bounds.N,bounds.E),
-                                           new GLatLng(bounds.S,bounds.W) );
-                params.zoom = map.getBoundsZoomLevel(bounds);
-            }
-        }
+        $.extend(params, hg('gmapsGetMarkersCenter')(markers));
     }
 
     map.setCenter(new GLatLng(params.lat, params.lon),
@@ -210,6 +190,19 @@ hg['gmapsSetup'].f = function(id, map_params)
     }
 
     map.__hg.fetch = params.fetch;
+
+    if (map.__hg.mapEvents.setup)
+    {
+        var callback = map.__hg.mapEvents.setup;
+        if (typeof callback != 'function')
+        {
+            var hg_name = callback;
+            callback = function(){
+                return hg(hg_name).apply(this, arguments);
+            };
+        }
+        callback.apply(map);
+    }
 
     if (map.__hg.permanentMarkers)
     {
@@ -363,7 +356,8 @@ hg['gmapsUpdate'].f = function(map, event_type, force)
         },
         success: function(data, textStatus)
         {
-            console.groupCollapsed('placing markers on the map (',params,')');
+            if (console.groupCollapsed)
+                console.groupCollapsed('placing markers on the map (',params,')');
             map.__hg.msg.set(data.msg || '');
 
             hg('gmapsClearGroup')(map, '_markers');
@@ -379,7 +373,8 @@ hg['gmapsUpdate'].f = function(map, event_type, force)
             {
                 hg(params.mapEvents.afterchange)(map, event_type, data);
             }
-            console.groupEnd();
+            if (console.groupEnd)
+                console.groupEnd();
             console.info('.. placed', count, 'markers');
         }
     };
@@ -391,7 +386,7 @@ hg['gmapsUpdate'].f = function(map, event_type, force)
     {
         if (!ajax_params.url && params.form.attr('action'))
             ajax_params.url = params.form.attr('action');
-        map.__hg.form.find('.hg:input').each(function(){
+        map.__hg.form.find('.hg:input:not(:disabled)').each(function(){
             var me = $(this);
             if (!me.attr('name'))
             {
@@ -522,7 +517,7 @@ hg['gmapsPlaceMarker'].f = function(map, group, marker, events)
 
     var gmarker = new GMarker(point, markerOptions);
     gmarker.__hg = marker;
-    if (events)
+    if (events && !$.isArray(events)) // it may be empty array []
     {
         var events = $.isPlainObject(events) ? events : {click:events};
         console.debug('binding events:',events);
@@ -757,5 +752,49 @@ hg['gmapsGetDirections'].f = function(map)
         window.open(e.data.url.replace('saddr=','saddr='+saddr));
         map.__hg.msg.set();
     });
+}
+
+
+/**
+ * Get bunch of markers and compute the center.
+ * Also get zoom level for those.
+ * @param Object params {markers, zoom} when no zoom is given, it will
+ *        be calculated
+ * @return Object {markers, zoom}
+ */
+hg['gmapsGetMarkersCenter'].f = function(params)
+{
+    var bounds = {N:null, E:null, W:null, S:null};
+    $.each(params.markers, function(){
+        if (null===bounds.N || this.lat > bounds.N)
+            bounds.N = this.lat;
+        if (null===bounds.S || this.lat < bounds.S)
+            bounds.S = this.lat;
+        if (null===bounds.W || this.lng > bounds.W)
+            bounds.W = this.lng;
+        if (null===bounds.E || this.lng < bounds.E)
+            bounds.E = this.lng;
+    });
+    if (bounds.N == bounds.S || bounds.W == bounds.E) // all in the same place
+    {
+        params.lat = bounds.N;
+        params.lon = bounds.W;
+        if (!params.zoom)
+            params.zoom = 10;
+    }
+    else // in different locations
+    {
+        params.lat = (bounds.N+bounds.S)/2;
+        params.lon = (bounds.W+bounds.E)/2;
+        // same thing with zoom level
+        if (!params.zoom)
+        {
+            bounds = new GLatLngBounds(new GLatLng(bounds.N,bounds.E),
+                                       new GLatLng(bounds.S,bounds.W) );
+            params.zoom = map.getBoundsZoomLevel(bounds);
+        }
+    }
+
+    return params;
 }
 

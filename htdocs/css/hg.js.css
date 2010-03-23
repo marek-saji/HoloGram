@@ -1,4 +1,12 @@
 /**
+ * Hide non-javascript-only content
+ */
+body.js .nojs
+{
+    display:                none;
+}
+
+/**
  * hg.tooltip
  */
 
@@ -21,13 +29,13 @@
 .map .map_messages
 {
     min-height:             18px; /* space for loader gif */
-    background-color: black;
-    border-radius: .75em;
-    -moz-border-radius: .75em;
-    -khtml-border-radius: .75em;
-    -webkit-border-radius: .75em;
-    -ie-border-radius: expression(DD_roundies('.map-panel.map .map_messages', '16px'));
-    opacity: .7;
+    background-color:       black;
+    border-radius:          .75em;
+    -moz-border-radius:     .75em;
+    -khtml-border-radius:   .75em;
+    -webkit-border-radius:  .75em;
+    -ie-border-radius:      expression(DD_roundies('.map-panel.map .map_messages', '16px'));
+    opacity:                .7;
 }
 
 .gmap_messages .ajax_loading, /* legacy */

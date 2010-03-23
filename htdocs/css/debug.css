@@ -144,8 +144,12 @@
 #debug_toolbar #debug_toolbox > h4
 {
     height: 1.3em;
+    display: inline;
+    position: static;
+    padding: 0;
+    border: none;
 }
-#debug_toolbar #debug_toolbox > ul
+#debug_toolbar #debug_toolbox > *
 {
     display: none;
     background-color: #cca;
@@ -156,7 +160,7 @@
     top: -.1em; /* to be safe */
     z-index: 999;
 }
-#debug_toolbar #debug_toolbox:hover > ul
+#debug_toolbar #debug_toolbox:hover > *
 {
     display: block;
 }

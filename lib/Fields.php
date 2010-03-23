@@ -715,7 +715,7 @@ class FString extends Field
     {
         if(NULL !== ($av = $this->autoValue()))
             return ($av);
-        return "'" . pg_escape_string($value) . "'";
+        return "'" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
     }
 
     public function dbType()
@@ -845,7 +845,7 @@ class FURL extends FString
             else if (!isset($this->_allowed_protocols[$matches[1]]))
                 $err['unsupported protocol'] = true;
 
-            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z]+)+)(?:\/|$)!', $value, $matches))
+            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9]+)+)(?:\/|$)!', $value, $matches))
                 $err['syntax error'] = true;
 
             if (!function_exists('checkdnsrr'))

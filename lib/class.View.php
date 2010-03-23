@@ -72,6 +72,12 @@ DOC_END;
         foreach ($this->_metas as &$l)
             echo $this->_tag('meta',$l,$NULL,'  ');
 
+        # literal html code
+        foreach ($this->_head_code as &$l)
+        {
+            echo $l."\n";
+        }
+
         # <link ..
         foreach ($this->_links as &$l)
         {
@@ -127,11 +133,6 @@ DOC_END;
             echo "\n";
         }
         
-        foreach ($this->_head_code as &$l)
-        {
-            echo $l."\n";
-        }
-
         $page = g()->first_controller->displayingCtrl();
         printf("</head>\n<body class=\"%s %1\$s__%s\">\n",
                 $page->getName(), $page->getLaunchedAction() );
@@ -169,7 +170,7 @@ DOC_END;
                     print '</pre></div>';
                 }
             }
-            print '</div>';
+            print '</pre> <!-- #debug_superglobals -->';
             // debug stats
             g()->debug->printStats();
             // templates inclusion tree
@@ -190,7 +191,7 @@ DOC_END;
                 }
                 print '</pre>';
             }
-            echo '</pre>';
+            echo '</div> <!-- .foot_debug -->';
         }
 
         echo "</body>\n</html>";
@@ -247,7 +248,7 @@ DOC_END;
     
     /**
     * Dodaje css wbudowany w html. 
-    * @param array( $key => $definition), gdzie $key jest selectorem CSS.
+    * @param array($key => $definition), gdzie $key jest selectorem CSS.
     */
     public function addInlineCss($css_code)
     {
@@ -415,31 +416,25 @@ DOC_END;
      * @param integer|string $tab line prefix, if string;
      *        or indent length, if integer
      */
-    private function _tag($name, &$attrs, &$content='', $tab='')
+    private function _tag($name, &$attrs=array(), &$content='', $tab='')
     {
-        if (g('Functions')->isInt($tab))
+        $f = g('Functions');
+        if ($f->isInt($tab))
             while ($tab--) echo ' ';
         else
             echo $tab;
-        echo "<$name";
-        if (is_array($attrs))
-            foreach($attrs as $arg_name => $value)
-            {
-                $value = htmlspecialchars($value);
-                echo " $arg_name=\"$value\"";
-            }
+
+        // <script /> _have to_ be rendered witch closing tag
         if (!empty($content) || $name == 'script')
-            echo ">$content</$name>\n";
-        else 
-            echo " />\n";
+            echo $f->tag($name, $attrs, $content);
+        else
+            echo $f->tag($name, $attrs);
     }
 
     /**
      * Very sophisticated method to prevent css and js files being cached.
      * @author m.augustynowicz
-     * @todo in production environment we could suffix files with their
-     *       subversion revisioun numbers
-     *
+    *
      * @param string $url reference to the url
      * @return void given url is modified by reference
      */

@@ -72,7 +72,7 @@ else // generate id and create div
     $id = 'map_'.$f->generateSimpleKey(4);
     if (g()->debug->on('js'))
         $v->addOnLoad("console.info('Generated map id: $id')");
-    printf('<div class="%1$s_wrapper"><div id="%1$s"></div></div></div>', $id);
+    printf('<div class="%1$s_wrapper"><div id="%1$s"></div></div>', $id);
 }
 
 /* lat and lon */
@@ -122,8 +122,8 @@ foreach ($markers as &$m)
     {
         list($m['lat'],$m['lng']) = explode(',',trim($m['latlon'],'()'));
         unset($m['latlon']);
-        $m['lat'] = (float) $m['lat'];
-        $m['lng'] = (float) $m['lng'];
+        $m['lat'] = $f->floatVal($m['lat'], true);
+        $m['lng'] = $f->floatVal($m['lng'], true);
     }
 }
 unset($m);
