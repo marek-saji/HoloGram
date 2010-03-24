@@ -426,9 +426,9 @@ DOC_END;
 
         // <script /> _have to_ be rendered witch closing tag
         if (!empty($content) || $name == 'script')
-            echo $f->tag($name, $attrs, $content);
+            echo $f->tag($name, (array) $attrs, $content);
         else
-            echo $f->tag($name, $attrs);
+            echo $f->tag($name, (array) $attrs);
     }
 
     /**
