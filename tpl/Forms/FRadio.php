@@ -4,7 +4,7 @@
  * @author m.augustynowicz
  *
  * (params passed as local variables) 
- * @param string $id uniqe id
+ * @param string $id unique id
  * @param array $values REQUIRED!
  * @param string $empty_value_label if given, adds extra, empty value at the beginning
  * @param array $attrs
