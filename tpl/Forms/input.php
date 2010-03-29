@@ -35,6 +35,12 @@ if ($disabled)
 if (false !== $id)
     $attrs['id'] = $id;
 $attrs['name'] = $ident.'['.$input.']';
+
+if(isset($cloneable_id))
+    $attrs['name'] .= '['.$cloneable_id.']';
+if(isset($cloneable))
+    $attrs['name'] .= '[]';
+
 $attrs['value'] = $data;
 if (false === $autocomplete)
     $attrs['autocomplete'] = 'off';
