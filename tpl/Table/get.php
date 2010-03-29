@@ -13,7 +13,7 @@
         foreach($row as $val) {
             ?><td><?=$val;?></td><?
         }?><td><? 
-        foreach($this->__actions as &$act){
+        foreach($this->_actions as &$act){
             ?><a href="<?=$act['url'].$this->_actionParams($row,$pkeys,$act['params'])?>"><?=$act['contents']?></a> <?
         } ?></td></tr>
 <?  }?>

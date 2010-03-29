@@ -1,6 +1,6 @@
 <!--<div style="float:left; min-width:300px;">-->
 <ul>
-<?foreach($this->__datasets as &$ds) {?>
+<?foreach($this->_datasets as &$ds) {?>
     <li class="<?=$ds['class']?>"><span class="name"><?=$this->l2a($ds[0],'Show',array($ds[0]))?></span>&nbsp;&nbsp;&nbsp;<?=$this->l2a('[+]','Add',array($ds[0]), array('title'=>'insert row'));?></li>
 <?}?>
     <li>
