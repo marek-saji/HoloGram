@@ -82,7 +82,7 @@ if (isset($select_array))
             echo $name;
             ?>
         </label>
-    <?php endif; /* foreach $values */ ?>
+    <?php endforeach; /* foreach $values */ ?>
 
 </fieldset>
 
