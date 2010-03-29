@@ -1130,8 +1130,11 @@ class FDate extends Field
         $err = array();
         if(NULL != $value)
         {
-            if(false === strtotime($value))
-                $err['invalid'] = true;
+            if (!is_int($value)) // we allow to pass timestamp
+            {
+                if(false === strtotime($value))
+                    $err['invalid'] = true;
+            }
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
