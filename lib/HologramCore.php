@@ -1619,7 +1619,7 @@ abstract class Controller extends HgBase implements IController
         else if (method_exists($this,"onAction")
                  && false === $this->onAction($action,$params) )
         {
-            echo '<p><strong>not launching -- onAction() retunred false</strong></p>';
+            echo '<p><strong>not launching -- onAction() returned false</strong></p>';
             $ret = 1;
         }
         else
@@ -1692,7 +1692,7 @@ abstract class Controller extends HgBase implements IController
         else if (method_exists($this,"onAction")
                  && false === $this->onAction($action,$params) )
         {
-            echo '<p>not launching -- onAction() retunred false</p>';
+            echo '<p>not launching -- onAction() returned false</p>';
             $ret = 1;
         }
         else
