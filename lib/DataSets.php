@@ -1321,8 +1321,7 @@ class Model extends DataSet implements IModel
             else
                 $sql .= $tmp;
         }
-        
-        //var_dump($error);
+
         if(!empty($error))
             return $error;
         else if (!$execute)

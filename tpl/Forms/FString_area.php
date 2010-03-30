@@ -4,7 +4,7 @@
  * @author m.augustynowicz
  *
  * (params passed as local variables) 
- * @param string $id uniqe id
+ * @param string $id unique id
  * @param array $attrs
  * @param boolean $disabled
  * @param string $class
