@@ -125,8 +125,6 @@ class Forms extends HgBase
     {
         $f = g('Functions');
 
-        g()->view->addCss($this->__ctrl->file('forms','css'));
-
         $has_files = @$this->__form['upload'];
 
         /*

@@ -5,14 +5,15 @@
  *
  * (params passed as local variables) 
  * @param string $id form element id REQUIRED
+ * @param array $errors with error messages as values
  * @param boolean $err_handling add div.field error, bind events (if $ajax)
  * @param boolean $ajax use ajax validation
  * @param string $js_event javascript event to launch validation on
  */
-
 extract(array_merge(
         array(
             'id'        => null,
+            'errors'    => array(),
             'err_handling' => true,
             'ajax'      => true,
             'js_event'  => 'blur'

@@ -13,6 +13,7 @@
  * @param array $attrs
  * @param boolean $disabled
  * @param string $class
+ * @param array $errors with error messages as values
  * @param boolean $err_handling add div.field error, bind events (if $ajax)
  * @param string $validate_js_event js event to bind js validation to
  */
@@ -23,6 +24,7 @@ extract(array_merge(
             'disabled'    => false,
             'class'       => '',
             'autocomplete'=> true,
+            'errors'      => array(),
             'err_handling'=> true,
             'validate_js_event' => 'blur',
         ),
@@ -48,7 +50,7 @@ if (false === $autocomplete)
 echo $f->tag('input', $attrs);
 
 $js_event = $validate_js_event;
-$err_attrs = $t->inc('Forms/errors', compact('id', 'ajax', 'err_handling', 'js_event'));
+$err_attrs = $t->inc('Forms/errors', compact('id', 'ajax', 'err_handling', 'js_event', 'errors'));
 if (is_array($err_attrs))
     $attrs = array_merge($err_attrs, $attrs);
 
