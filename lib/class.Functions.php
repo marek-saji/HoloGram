@@ -1260,10 +1260,10 @@ class Functions extends HgBase
 
 
     /**
-     * Generates unique id (for use in html)
+     * Generates and gets unique id (for use in html)
      * @author m.augustynowicz
      *
-     * @param string $id id prefix
+     * @param null|string $id id prefix pass null to get current numeric offset
      * @param null|integer $set_offset if given, sets starting offset for this
      *        and future ids (in general: do not use!)
      * @return string
@@ -1272,6 +1272,10 @@ class Functions extends HgBase
     {
         if (null !== $set_offset)
             self::$_unique_id_offset = $set_offset;
+
+        if (null === $id)
+            return self::$_unique_id_offset;
+        
         if (!$id)
             $id = 'hgid';
         $id = sprintf('%s__%s', $this->ASCIIfyText($id),

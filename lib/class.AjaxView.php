@@ -4,6 +4,13 @@ g()->load('View');
 
 class AjaxView extends View
 {
+    public function __construct()
+    {
+        $id_offset = (int) $_POST['hg+id_offset'];
+        g('Functions')->uniqueId(null, $id_offset);
+
+        parent::__construct();
+    }
 
     /**
      * Prezentuje strone. Wysyla do przegladarki wszystkie informacje potrzebne do wyswietlenia
