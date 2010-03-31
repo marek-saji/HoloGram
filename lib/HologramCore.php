@@ -1617,6 +1617,8 @@ abstract class Controller extends HgBase implements IController
                    $this->path(), $action );
         }
 
+        $this->_launched_action = $action;
+
         if (!method_exists($this, $method))
         {
             echo '<p><strong>method does not exist</strong></p>';
@@ -1631,7 +1633,6 @@ abstract class Controller extends HgBase implements IController
         else
         {
             $this->_setTemplate($action);
-            $this->_launched_action = $action;
             $this->$method($params);
         }
 
