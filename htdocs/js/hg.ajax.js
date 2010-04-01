@@ -6,7 +6,7 @@
  * <code>
  * // use to handle HG ajax requests. response's data is expected
  * // be JSON of certain structure
- * hg('ajax'({
+ * hg('ajax')({
  *     'url' : 'specify if you want to use different than current',
  *     'node' : 'if specified, data.html from response will be placed in that \
  *               node. can be either jQuery or selector or DOM node or id',
@@ -83,14 +83,16 @@ hg['ajax'].f = function(given_params)
         }
     });
     
-    if (params.data && params.dataPrefix)
+    if (!params.data)
+        params.data = {};
+    else if (params.dataPrefix)
     {
         params.data = {};
         $.each(given_params.data, function(name){
             params.data[params.dataPrefix + name.replace(/^([^[]+)/, '[$1]')] = this.toString();
         });
-        hg.foo = params.data;
     }
+    params.data['hg+id_offset'] = window.hg_id_offset;
 
     $.ajax(params);
 }

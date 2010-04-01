@@ -278,6 +278,17 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     }
 
     /**
+     * Generates UPDATE part of query
+     * @uses generator()
+     * @author m.augustynowicz
+     * @return string
+     */
+    protected function _queryUpdate()
+    {
+        return "UPDATE\n" . $this->_ident($this->generator());
+    }
+
+    /**
      * Generates WHERE part of query
      * @uses generator()
      * @author m.augustynowicz moved from query()
@@ -299,6 +310,17 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         if (!$this->_filter)
             return '';
         return "\nWHERE\n".$this->_ident($this->_filter->generator());
+    }
+
+    /**
+     * Generates SET part of query
+     * @author m.augustynowicz
+     * @param IBoolean $values
+     * @return string
+     */
+    protected function _querySet($values)
+    {
+        return "\nSET\n" . $this->_ident($values->generator());
     }
 
     /**
@@ -1219,26 +1241,37 @@ class Model extends DataSet implements IModel
     
     /**
     * Updates recodrs matched by the current filter with the given values.
-    * @param $values array of $name=>$field, where $name contain names of the fields to be 
-    *     updated, and $fields IFields with new values.
+    * @param $values array of $field_name=>$value, where $field_name contain
+    * names of the fields to be updated, and $value -- value.
     * @param $execute set true to automatically execute prepared query
     * @return When $execute is false (default) the generated query is returned. 
     */
     public function update(array $values, $execute=false)
     {
-        $sql = '';
+        $set = array();
+        $error = array();
         foreach ($values as $name => $val)
         {
-            $sql .= "    ".$this[$name]->getName()." = ". $val->generator() .",\n";
+            if ($err = $this[$name]->invalid($val))
+                $error[$name] = $err;
+            else
+                $set[] = $this[$name]->generator() . "=" . $this[$name]->dbString($val);
         }
-        if (!empty($values))
-            $sql[strlen($sql)-2]=' ';
-        if ($sql)
-            $sql = $this->_ident($sql);
-        $sql = " UPDATE {$this->_table_name} SET\n".$sql;
-        if ($this->_filter) 
-            $sql .= "\nWHERE\n".$this->_ident($this->_filter->generator());
-        return $execute?g()->db->execute($sql):$sql;        
+
+        if(!empty($error))
+            return $error;
+
+        $set = join(",\n", $set);
+        $this->__iBoolean($set);
+
+        $sql  = $this->_queryUpdate();
+        $sql .= $this->_querySet($set);
+        $sql .= $this->_queryWhere();
+
+        if (!$execute)
+            return $sql;
+        else
+            return g()->db->execute($sql) && !g()->db->lastErrorMsg();
     }
     
     
