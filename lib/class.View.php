@@ -32,7 +32,14 @@ class View extends HgBase implements IView
     public function __construct()
     {
         $this->_renderer = g()->first_controller;
+        $this->_addDefaults();
+    }
 
+    /**
+     * Set up default includes, links, meta, css etc.
+     */
+    protected function _addDefaults()
+    {
         // hg.core settings
 
         $app_ver = @ g()->conf['version'];
@@ -108,8 +115,6 @@ class View extends HgBase implements IView
                 $this->_tag('script', $attrs)
             ));
         }
-
-
     }
 
     /**

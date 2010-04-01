@@ -1,7 +1,9 @@
 <?php
-
 g()->load('View');
 
+/**
+ * @author m.augustynowicz
+ */
 class AjaxView extends View
 {
     public function __construct()
@@ -10,6 +12,16 @@ class AjaxView extends View
         g('Functions')->uniqueId(null, $id_offset);
 
         parent::__construct();
+    }
+
+    /**
+     * Set up default includes, links, meta, css etc.
+     *
+     * Everything should be already on page, so not much to do here
+     */
+    protected function _addDefaults()
+    {
+        $this->_inl_jses['hg_id_offset'] = ''; // will be set in _renderHeadJSCode
     }
 
     /**
@@ -43,6 +55,8 @@ class AjaxView extends View
             );
 
         $ret['html'] = ob_get_clean();
+
+        $this->_inl_jses['hg_id_offset'] = "window.hg_id_offset += 100+".g('Functions')->uniqueId(null);
 
         if ($this->_inl_jses)
             $ret['js'] = $this->_inl_jses;
