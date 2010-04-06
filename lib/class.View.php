@@ -31,7 +31,7 @@ class View extends HgBase implements IView
 
     public function __construct()
     {
-        $this->_renderer = g()->first_controller;
+        $this->_renderer = g()->first_controller->displayingCtrl();
         $this->_addDefaults();
     }
 
