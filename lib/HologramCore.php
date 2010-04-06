@@ -2055,7 +2055,7 @@ abstract class Controller extends HgBase implements IController
         
         g('Functions')->arrayMergeRecursive($current_tree,$new_tree);
 
-        $url = g()->req->getFullTreeBasedUrl($current_tree,false,true);
+        $url = g()->req->getTreeBasedUrl($current_tree);
         g()->req->enhanceURL($url);
         return g()->req->getBaseUri().$url;
     }

@@ -700,20 +700,6 @@ class Request extends HgBase
         }
         return $temp_url;
     }
-    
-    /**
-     * Build a URL based on the given tree.
-     * @author m.wierzba
-     *
-     * @param array $tree Parsed tree of components, actions, etc. 
-     * This param must have $this->_tree structure !!!
-     *
-     * @return string URL
-     */
-    public function getFullTreeBasedUrl(array $tree,$with_host=false,$with_controllers=false)
-    {
-        return $this->getBaseUri($with_host, $with_controllers).$this->getTreeBasedUrl($tree);
-    }
 
     /**
      * Seeks to given key in given array.
