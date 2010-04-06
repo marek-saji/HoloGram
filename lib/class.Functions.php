@@ -398,12 +398,14 @@ class Functions extends HgBase
      * @param integer $length max length after truncating
      * @param string $suffix optional suffix to add to truncated string
      */
-    function truncateHTML($string, $length=null, $suffix='&hellip;')
+    function truncateHTML($string, $length, $suffix='&hellip;')
     {
         if (!class_exists('tidy',false))
             return $this->truncateHTMLUgly($string, $length, $suffix);
 
         // any need to truncate?
+        if (!$length)
+            return $string;
         if ($length && strlen($string) <= $length)
             return $string;
 
