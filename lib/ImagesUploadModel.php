@@ -89,7 +89,7 @@ class ImagesUploadModel extends Model
                 if(!empty($data['model']) && !empty($data['id']))
                 {
                     $path = $this->__uploadDir . $data['model'] . '/' . $data['id'];
-                    g('Functions')->rmrf($path);
+                    g('Functions')->rmrf($path); // will echo "deleting $path"
                     $this->filter(array('id' => $data['id']));
                 }
             break;
@@ -213,7 +213,10 @@ class ImagesUploadModel extends Model
                     $im = $func($this->_file['tmp_name']);
                     $f($im, $this->_file['tmp_name']);
                     imagedestroy($im);
-                    move_uploaded_file($this->_file['tmp_name'], $this->__uploadDir . $data['model'] . '/' . $hash . '/' . 'original' . '.' . $data['extension']);
+                    $path = $this->__uploadDir . $data['model'] . '/' . $hash . '/' . 'original' . '.' . $data['extension'];
+                    if (g()->debug->allowed())
+                        printf('<p class="debug">creating <code>%s</code>', $path);
+                    move_uploaded_file($this->_file['tmp_name'], $path);
                 }
                 elseif(is_uploaded_file($this->_file['tmp_name']))
                     unlink($this->_file['tmp_name']);
@@ -251,7 +254,7 @@ class ImagesUploadModel extends Model
                 if(!empty($data['model']) && !empty($data['id']))
                 {
                     $path = $this->__uploadDir . $data['model'] . '/' . $data['id'];
-                    g('Functions')->rmrf($path);
+                    g('Functions')->rmrf($path); // will echo "deleting $path"
                 }
             }
         }
@@ -317,7 +320,10 @@ class ImagesUploadModel extends Model
         //upload file
         if(is_file($this->__uploadDir . 'tmp' . $hash))
         {
-            if(!copy($this->__uploadDir . 'tmp' . $hash, $folder . $width . 'x' . $height . '.' . $extension))
+            $path = $folder . $width . 'x' . $height . '.' . $extension;
+            if (g()->debug->allowed())
+                printf('<p class="debug">creating <code>%s</code>', $path);
+            if(!copy($this->__uploadDir . 'tmp' . $hash, $path))
             {
                 g()->addInfo(null, 'error', $this->trans('File has not been sent.'));
                 return false;
