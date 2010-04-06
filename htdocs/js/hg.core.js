@@ -182,9 +182,39 @@ hg['exception'] = {f:function(e) {
 }};
 
 // some helper functions
-hg.isset = function(a) { return typeof(a)!='undefined' && a!=null; };
 
-hg.j = function(a) { b = $(a); return (b.length || (typeof a).toLowerCase() != 'string') ? b : $('#'+a); };
+/**
+ * test whether variable is set
+ * (it does not work, right?..)
+ */
+hg.isset = function(a)
+{
+    console.warn('using hg.isset is considered charmful!');
+    return typeof(a)!='undefined' && a!=null;
+}
+
+/**
+ * jQuerify
+ * accepts as argument:
+ * - jQuery objects
+ * - jQuery selectors
+ * - DOM elements
+ * - ids
+ */
+hg.j = function(a)
+{
+    b = $(a);
+    return (b.length || (typeof a).toLowerCase() != 'string') ? b : $('#'+a);
+};
+
+/**
+ * Quote string before ebedding it into regural expression
+ */
+hg.escapeRegExp = function(str)
+{
+    // .*+?|()[]{}\
+    return str.replace(new RegExp("[.*+?|()\\[\\]{}\\\\]", "g"), "\\$&");
+}
 
 /**
  * Check if given funcion is present
@@ -200,21 +230,58 @@ hg.present = function(name) {
 }
 
 
+//
+// extending prototypes
+//
+
+
 /**
- * I spy with my little eye.. that some(IE) browsers tend to suck.
- * Oh, but can we do anything about it? YES, WE CAN!
+ * Array.indexOf is part of ECMA-262 Edition 5, so can be unavailable in IE.
+ * @url https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Objects/Array/indexOf#section_5
  */
-if (!Array.indexOf)
-Array.prototype.indexOf = function(foo)
+if (!Array.prototype.indexOf)
+Array.prototype.indexOf = function(elt /*, from*/)
 {
-    for (var i in this)
-        if (this[i] == foo) return i;
-    return -1; // not found
+  var len = this.length >>> 0;
+
+  var from = Number(arguments[1]) || 0;
+  from = (from < 0)
+    ? Math.ceil(from)
+    : Math.floor(from);
+  if (from < 0)
+    from += len;
+
+  for (; from < len; from++)
+  {
+    if (from in this &&
+	this[from] === elt)
+      return from;
+  }
+  return -1;
+};
+
+
+/**
+ * String trimming
+ * @url http://blog.stevenlevithan.com/archives/faster-trim-javascript
+ */
+if (!String.prototype.trim)
+String.prototype.trim = function()
+{
+    return this.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
 }
 
-if (!String.escapeRegExp)
-String.escapeRegExp = function()
+/**
+ * String trimming, optimized for long strings
+ * @url http://blog.stevenlevithan.com/archives/faster-trim-javascript
+ */
+if (!String.prototype.trimLong)
+String.prototype.trimLong = function()
 {
-    var specials = new RegExp("[.*+?|()\\[\\]{}\\\\]", "g"); // .*+?|()[]{}\
-    return this.replace(specials, "\\$&");
+    this = this.replace(/^\s\s*/, '');
+    var ws = /\s/,
+        i = str.length;
+    while (ws.test(this.charAt(--i)));
+    return this.slice(0, i+1);
 }
+
