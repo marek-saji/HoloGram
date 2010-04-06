@@ -124,7 +124,7 @@ class View extends HgBase implements IView
     public function present()
     {
         ob_start(NULL);
-        echo $this->_renderer->render();
+        echo g()->first_controller->render();
         $contents = ob_get_clean();
         
         if (!isset($this->_metas['generator']))
