@@ -278,10 +278,10 @@ String.prototype.trim = function()
 if (!String.prototype.trimLong)
 String.prototype.trimLong = function()
 {
-    this = this.replace(/^\s\s*/, '');
-    var ws = /\s/,
+    var str = this.replace(/^\s\s*/, ''),
+        ws = /\s/,
         i = str.length;
-    while (ws.test(this.charAt(--i)));
-    return this.slice(0, i+1);
+    while (ws.test(str.charAt(--i)));
+    return str.slice(0, i+1);
 }
 
