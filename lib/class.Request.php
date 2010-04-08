@@ -434,7 +434,7 @@ class Request extends HgBase
      * Gets first element's key in current node.
      * Returns false if there're no elements.
      *
-     * @return false|string
+     * @return false|string first node's key
      */
     public function first()
     {
@@ -442,6 +442,18 @@ class Request extends HgBase
             return false;
         reset($this->_rtree['children']);
         return key($this->_rtree['children']);
+    }
+
+
+    /**
+     * Resets positions to the first element in current node.
+     *
+     * @return void
+     */
+    public function reset()
+    {
+        $this->first();
+        $this->_current = null;
     }
     
 

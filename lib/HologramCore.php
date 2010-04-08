@@ -1721,10 +1721,20 @@ abstract class Controller extends HgBase implements IController
         return $this->_launched_action;
     }
 
-    protected function __routeAction($current, $req)
+    /**
+     * @param string $current
+     * @param string Request $req
+     * @param boolean $really_route or maybe just check whether it would route?
+     *
+     * @return boolean
+     */
+    protected function __routeAction($current, Request $req, $really_route=true)
     {
         if (NULL === ($child = $this->getChild($current)))
             return(false);
+
+        if (!$really_route)
+            return true;
         
         if (method_exists($this,$callback = "onActionRouted2$current"))
             if (false === $this->$callback())
