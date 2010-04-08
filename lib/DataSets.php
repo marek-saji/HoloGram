@@ -1438,7 +1438,7 @@ class Model extends DataSet implements IModel
                 if(!isset($data[$pk]) || !$data[$pk])
                 {
                     $action = 'insert';
-                    trigger_error(E_USER_WARNING, 'Tried to update-sync, but no PK given, falling back to insert!');
+                    trigger_error('Tried to update-sync, but no PK given, falling back to insert!', E_USER_WARNING);
                     break;
                 }
         }
