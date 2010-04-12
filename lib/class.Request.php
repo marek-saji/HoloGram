@@ -208,7 +208,8 @@ class Request extends HgBase
         }
 
         $this->_given_url = $text_url;
-        $this->_base_uri = rtrim($base_uri, '/\/').'/';
+        $base_uri = rtrim($base_uri, '/');
+        $this->_base_uri = $base_uri.'/';
 
         if (g()->conf['link_split'] == urlencode(g()->conf['link_split']))
             $this->_link_split_encoded =
@@ -222,10 +223,13 @@ class Request extends HgBase
         $this->_query = @$url['query']; // w sumie to jest w $_GET
 
         $this->_url_path = '/'.trim($url['path'], '/');
-        if ($this->_base_uri)
+        if ($base_uri)
         {
-            $this->_url_path = preg_replace('/^'.preg_quote($this->_base_uri,'/').'/',
-                                     '', $this->_url_path);
+            $this->_url_path = '/' . trim(preg_replace(
+                    '/^'.preg_quote($base_uri,'/').'/',
+                    '',
+                    $this->_url_path
+                ), '/');
         }
 
         $this->_diminishURL($this->_url_path);
