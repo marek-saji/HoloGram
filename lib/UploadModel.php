@@ -9,16 +9,18 @@ g()->load('DataSets', null);
 class UploadModel extends Model
 {
     private $__upload_dir;
+    private $__max_size = 10; //(in megabytes)
 
     public function __construct()
     {
+        $this->_table_name = 'upload';
         $this->__upload_dir = UPLOAD_DIR . 'files/';
         parent::__construct();
 
         $this->__addField(new FString('id', true, null, 32, 32));
         $this->__addField(new FInt('id_in_model', 4, true));
         $this->__addField(new FString('model', true, null, 0, 128));
-        $this->__addField(new FString('mime', false, null, 0, 16));
+        $this->__addField(new FString('mime', false, null, 0, 128));
         $this->__addField(new FString('original_name', false, null, 0, 256));
         $this->__addField(new FString('title', false, null, 0, 64));
         $this->__addField(new FString('description', false, null, 0, 512));
@@ -74,6 +76,7 @@ class UploadModel extends Model
             case 'update':
             case 'insert':
                 $this->_file = $data['file'];
+                unset($data['file']);
 
                 if(!($hash = $data['id']))
                     do
@@ -139,6 +142,12 @@ class UploadModel extends Model
         $file = $this->_file;
         $folder = $this->__upload_dir . $model . '/';
 
+        if($file['size'] > $this->__max_size * 1024 * 1024)
+        {
+            g()->addInfo(null, 'error', $this->trans('Filesize is too big.'));
+            return false;
+        }
+
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
         elseif(mkdir($folder))
@@ -197,12 +206,12 @@ class UploadModel extends Model
             $mime = $file['type'];
 
         //upload file
-        if(is_file($this->__upload_dir . 'tmp' . $hash))
+        if(is_file($file['tmp_name']))
         {
             $path = $folder . $hash;
-            if (g()->debug->allowed())
+            if(g()->debug->allowed())
                 printf('<p class="debug">creating <code>%s</code>', $path);
-            if(!copy($this->__upload_dir . 'tmp' . $hash, $path))
+            if(!move_uploaded_file($file['tmp_name'], $path))
             {
                 g()->addInfo(null, 'error', $this->trans('File has not been sent.'));
                 return false;
