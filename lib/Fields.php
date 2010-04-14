@@ -1493,7 +1493,7 @@ class FForeignId extends FInt
     }
 }
 
-class FImageFile extends FString
+class FFile extends FString
 {
     protected $_foreign_model = '';
 
