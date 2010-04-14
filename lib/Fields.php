@@ -1039,6 +1039,16 @@ class FInt extends Field
             break;
         }
     }
+
+    public function dbString($value)
+    {
+        if(NULL !== ($av = $this->autoValue()))
+            return ($av);
+        if($value === null || $value === '')
+            return "NULL";
+        else
+            return (pg_escape_string($value));
+    }
 }
 
 /**
