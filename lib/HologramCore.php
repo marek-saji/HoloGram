@@ -1573,14 +1573,23 @@ abstract class Controller extends HgBase implements IController
     /**
      * Sets template that will be used to render the component
      * @author m.augustynowicz
-     * @param string $tpl template name
+     * @param null|string $tpl template name
      * @return boolean false when template does not exist
      *         (it is set nevertheless, so we can display
      *         "template %s lost in action")
      */
     protected function _setTemplate($tpl)
     {
-        $tpl = strtolower($tpl);
+        if (null === $tpl)
+        {
+            $this->_template = $tpl;
+            return true;
+        }
+        $tpl = explode('/', $tpl);
+        end($tpl);
+        $last = key($tpl);
+        $tpl[$last] = strtolower($tpl[$last]);
+        $tpl = implode('/', $tpl);
         $this->_template = $tpl;
         $this->_action = $tpl; // legacy
         return false !== $this->file($tpl,'tpl');
@@ -1657,7 +1666,7 @@ abstract class Controller extends HgBase implements IController
     {
         $real_action = & $this->_launched_action;
         unset($this->_launched_action);
-        $this->_template = null;
+        $this->_template = '';
         $ret = $this->launchAction($action, $params);
         $this->_launched_action = & $real_action;
         return $ret;
@@ -2620,6 +2629,9 @@ abstract class Component extends Controller
             $that = $this;
             $template = $this->_template;
         }
+
+        if (null === $template)
+            return;
 
         if(!$template)
         {
