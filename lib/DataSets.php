@@ -1232,9 +1232,9 @@ class Model extends DataSet implements IModel
     
     public function delete($execute=false)
     {
-        $sql = "DELETE FROM {$this->_table_name} ";
-        if ($this->_filter) 
-            $sql .= "\nWHERE\n  ".$this->_filter->generator();
+        $sql = 'DELETE';
+        $sql .= $this->_queryFrom();
+        $sql .= $this->_queryWhere();
         return $execute?g()->db->execute($sql):$sql;
     }
     
