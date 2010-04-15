@@ -77,10 +77,17 @@ class View extends HgBase implements IView
         $this->addJs($this->_renderer->file('hg.core','js'));
         // nasty way to add hg.definitions from each alias
         global $DIRS;
+        $base_uri = g()->req->getBaseUri();
+        $base_uri_regex = preg_quote($base_uri, '!');
         foreach ($DIRS as &$dir)
         {
-            $this->addJs(preg_replace('!^/!', '/'.$dir,
-                    $this->_renderer->file('hg.definitions', 'js')));
+            $uri = $this->_renderer->file('hg.definitions', 'js');
+            if ($dir)
+            {
+                $uri = preg_replace('!^'.$base_uri_regex.'!', $base_uri.$dir,
+                                    $uri );
+            }
+            $this->addJs($uri);
         }
 
         if ($js_debug)
