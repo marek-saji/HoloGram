@@ -343,6 +343,11 @@ class Functions extends HgBase
                 );
         }
 
+        if (!isset($config['input-encoding']))
+            $config['input-encoding'] = 'utf-8';
+        if (!isset($config['output-encoding']))
+            $config['output-encoding'] = 'utf-8';
+
         if (null === $tidy)
             $tidy = new tidy();
 
