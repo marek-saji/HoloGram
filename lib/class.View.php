@@ -286,10 +286,18 @@ class View extends HgBase implements IView
         return @$this->_metas[$name];
     }
     
-    public function setMeta($name,$value)
+    /**
+     * Sets <meta> tag to be rendered in <head></head> section
+     *
+     * tag will be looking something like this
+     * <meta $meta_name="$name" content="$value">
+     *
+     * on 22.04.2010 $meta_name added
+     */
+    public function setMeta($name,$value,$meta_name = 'name')
     {
         $this->_metas[$name] = array(
-                'name'          => $name,
+                $meta_name      => $name,
                 'content'       => $value,
             );
     }
