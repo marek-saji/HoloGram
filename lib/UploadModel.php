@@ -2,47 +2,26 @@
 g()->load('DataSets', null);
 
 /**
- * Model for uploaded files.
+ * Model for uploaded files (except images, see: ImagesUploadModel)
  * @author m.jutkiewicz
- * 
- * WARNING: if you are using transaction's rollback, you have to
- * delete files from a hard drive by yourself.
- * 
- * To use this model with its destiny it is necessary to
- * define in source model's constructor a property called 'image_files' e.g.:
- * $this->image_files = array(
- *     'sizes' => array('XXxYY', 'AAxBB', ...),
- *     'store_original' => false,
- *     'stripes' => '00A8FF',
- *     'format' => 'png',
- * );
- * where XX, YY, AA, BB are dimensions in pixels (connected with resizing image),
- * 'store_original' - it is clear - true or false,
- * 'stripes' - a color of stripes, false if transparent stripes, null if no stripes,
- * 'format' - target format, allowed values: 'png', 'gif', 'jpg'.
- * 
- * All above-mentioned properties are mandatory and must be declared, even if they are empty. 
+ *
  */
-class ImagesUploadModel extends Model
+class UploadModel extends Model
 {
     private $__upload_dir;
-    private $__allowed_extensions = array(
-    	'jpg',
-    	'png',
-    	'gif',
-    );
+    private $__max_size = 10; //(in megabytes)
 
     public function __construct()
     {
-        $this->__upload_dir = UPLOAD_DIR . 'images/';
+        $this->_table_name = 'upload';
+        $this->__upload_dir = UPLOAD_DIR . 'files/';
         parent::__construct();
 
         $this->__addField(new FString('id', true, null, 32, 32));
         $this->__addField(new FInt('id_in_model', 4, true));
         $this->__addField(new FString('model', true, null, 0, 128));
-        $this->__addField(new FString('extension', false, null, 0, 4));
+        $this->__addField(new FString('mime', false, null, 0, 128));
         $this->__addField(new FString('original_name', false, null, 0, 256));
-        $this->__addField(new FString('original_mime', false, null, 0, 16));
         $this->__addField(new FString('title', false, null, 0, 64));
         $this->__addField(new FString('description', false, null, 0, 512));
 
@@ -96,29 +75,8 @@ class ImagesUploadModel extends Model
 
             case 'update':
             case 'insert':
-                $image_files = g($data['model'], 'model')->image_files;
-
-                if(empty($image_files) || !array_key_exists('sizes', $image_files) || !array_key_exists('store_original', $image_files) || !array_key_exists('stripes', $image_files) || !array_key_exists('format', $image_files))
-                    throw new HgException($this->trans('$image_sizes defined incorrectly.'));
-
-				if(!in_array($image_files['format'], $this->__allowed_extensions))
-                    throw new HgException($this->trans('Destination format defined incorrectly: %s.', $image_files['format']));
-
-                $rgb = array();
-                if($image_files['stripes'])
-                {
-                    $rgb['r'] = hexdec(substr($image_files['stripes'], 0, 2));
-                    $rgb['g'] = hexdec(substr($image_files['stripes'], 2, 2));
-                    $rgb['b'] = hexdec(substr($image_files['stripes'], 4, 2));
-                }
-                else
-                {
-                    $rgb['r'] = 0xFF;
-                    $rgb['g'] = 0xFF;
-                    $rgb['b'] = 0xFF;
-                }
-
                 $this->_file = $data['file'];
+                unset($data['file']);
 
                 if(!($hash = $data['id']))
                     do
@@ -129,96 +87,13 @@ class ImagesUploadModel extends Model
                     while($this->fileExists($full_name));
 
                 $data['id'] = $hash;
-                $data['extension'] = $image_files['format'];
+                $data['mime'] = $this->_file['type'];
                 $data['original_name'] = $this->_file['name'];
-                $data['original_mime'] = $this->_file['type'];
 
-                switch($this->_file['type'])
-                {
-                    case 'image/jpeg':
-                    case 'image/pjpeg':
-                        $func = 'imagecreatefromjpeg';
-                    break;
-                    case 'image/gif':
-                        $func = 'imagecreatefromgif';
-                    break;
-                    case 'image/png':
-                    case 'image/x-png':
-                        $func = 'imagecreatefrompng';
-                    break;
-                    default:
-                        $func = false;
-                    break;
-                }
+                if(!$this->__addFile($data['model'], $hash))
+                    return false;
 
-                switch($data['extension'])
-                {
-                    case 'jpg':
-                        $f = 'imagejpeg';
-                    break;
-                    case 'gif':
-                        $f = 'imagegif';
-                    break;
-                    case 'png':
-                        $f = 'imagepng';
-                    break;
-                    default:
-                        $f = 'imagepng';
-                    break;
-                }
-
-                foreach($image_files['sizes'] as $s)
-                {
-                    if($func)
-                    {
-                        list($w, $h) = sscanf($s, "%dx%d");
-                        //photo uploaded by user is resizing and converting to PNG format
-                        $size = $this->_calculateNewDimensions($w, $h);
-
-                        if($image_files['stripes'] === null)
-                        {
-                            $new_w = $size['width'];
-                            $new_h = $size['height'];
-                        }
-                        else
-                        {
-                            $new_w = $w;
-                            $new_h = $h;
-                        }
-
-                        $im = $func($this->_file['tmp_name']);
-                        $resized = @imagecreatetruecolor($new_w, $new_h);
-                        $color = imagecolorallocate($resized, $rgb['r'], $rgb['g'], $rgb['b']);
-
-                        if($image_files['stripes'] === false)
-                        	imagecolortransparent($resized, $color);
-
-                        imagefill($resized, 0, 0, $color);
-                        imagecopyresampled($resized, $im, ($new_w - $size['width'])/2, ($new_h - $size['height'])/2, 0, 0, $size['width'], $size['height'], $size['orig_width'], $size['orig_height']);
-
-                        //unlink($this->_file['tmp_name']);
-                        $f($resized, $this->__upload_dir . 'tmp' . $hash);
-                        imagedestroy($im);
-                        imagedestroy($resized);
-                    }
-
-                    if(!$this->__addFile($data['model'], $hash, $data['extension'], $w, $h))
-                        return false;
-
-                    unlink($this->__upload_dir . 'tmp' . $hash);
-                }
-
-                if($image_files['store_original'] && is_uploaded_file($this->_file['tmp_name']))
-                {
-                    $im = $func($this->_file['tmp_name']);
-                    $f($im, $this->_file['tmp_name']);
-                    imagedestroy($im);
-                    $path = $this->__upload_dir . $data['model'] . '/' . $hash . '/' . 'original' . '.' . $data['extension'];
-                    if (g()->debug->allowed())
-                        printf('<p class="debug">creating <code>%s</code>', $path);
-                    move_uploaded_file($this->_file['tmp_name'], $path);
-                }
-                elseif(is_uploaded_file($this->_file['tmp_name']))
+                if(is_uploaded_file($this->_file['tmp_name']))
                     unlink($this->_file['tmp_name']);
 
                 if($action == 'update')
@@ -262,10 +137,16 @@ class ImagesUploadModel extends Model
         return parent::delete($execute);
     }
 
-    protected function __addFile($model, $hash, $extension, $width = null, $height = null)
+    protected function __addFile($model, $hash)
     {
         $file = $this->_file;
-        $folder = $this->__upload_dir . $model . '/' . $hash . '/';
+        $folder = $this->__upload_dir . $model . '/';
+
+        if($file['size'] > $this->__max_size * 1024 * 1024)
+        {
+            g()->addInfo(null, 'error', $this->trans('Filesize is too big.'));
+            return false;
+        }
 
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
@@ -291,13 +172,15 @@ class ImagesUploadModel extends Model
                     $info = 'Błąd - %s - Brak pliku.';
                     break;
             }
+
             g()->addInfo(null, 'error', $this->trans($info, $file['name']));
             return false;
         }
 
         //file's extension
         $ext = explode('.', $file['name']);
-        $ext = $ext[count($ext) - 1];
+        $ext = @$ext[count($ext) - 1];
+
         //getting mime
         if($file['type'] === null)
         {
@@ -312,18 +195,23 @@ class ImagesUploadModel extends Model
             if(!g()->conf['get_mime_type_by_suffix'])
                 $mime = $this->getMIMETypeByFile($file_name, $dir);
             else
-                $mime = $this->getMIMETypeBySuffix($ext);
+            {
+                if($ext)
+                    $mime = $this->getMIMETypeBySuffix($ext);
+                else
+                    throw new HgException('This file cannot be uploaded without system `file` command.');
+            }
         }
         else
             $mime = $file['type'];
 
         //upload file
-        if(is_file($this->__upload_dir . 'tmp' . $hash))
+        if(is_file($file['tmp_name']))
         {
-            $path = $folder . $width . 'x' . $height . '.' . $extension;
-            if (g()->debug->allowed())
+            $path = $folder . $hash;
+            if(g()->debug->allowed())
                 printf('<p class="debug">creating <code>%s</code>', $path);
-            if(!copy($this->__upload_dir . 'tmp' . $hash, $path))
+            if(!move_uploaded_file($file['tmp_name'], $path))
             {
                 g()->addInfo(null, 'error', $this->trans('File has not been sent.'));
                 return false;
@@ -492,47 +380,5 @@ class ImagesUploadModel extends Model
             default:
                 return false;
         }
-    }
-
-    /**
-     * Calculates the new dimensions of an image with keeping the scale.
-     * @author m.jutkiewicz
-     * 
-     * @return array The array of new and old dimensions.
-     */
-    private function _calculateNewDimensions($w, $h)
-    {
-        $size = getimagesize($this->_file['tmp_name']);
-        $width = $size[0];
-        $height = $size[1];
-    
-    	if($w > $width && $h > $height)
-    	{
-    		$new_w = $width;
-    		$new_h = $height;
-    	}
-    	else
-    	{
-    		$fct = $width / $w;
-    
-    		if($height / $fct > $h)
-    		{
-    			$fct = $height / $h;
-    			$new_w = round($width / $fct);
-    			$new_h = $h;
-    		}
-    		else
-    		{
-    			$new_w = $w;
-    			$new_h = round($height / $fct);
-    		}
-    	}
-
-        return array(
-        	'orig_width' => $width,
-            'orig_height' => $height,
-        	'width' => $new_w,
-            'height' => $new_h,
-        );
     }
 }

@@ -19,13 +19,22 @@ class PagesController extends Component
             $this->launchDefaultAction();
             return;
         }
+
+        while ($current = $req->next())
+        {
+            if ($this->__routeAction($current, $req))
+                continue;
+        }
+
+        $req->reset();
+
         while ($current = $req->next())
         {
             /** @todo shouldn't part of this code be shared
              *        with Controller::__handle()?
              */
 
-            if ($this->__routeAction($current, $req))
+            if ($this->__routeAction($current, $req, false))
                 continue;
             //var_dump("did not route with $current");
             $action = ('default'===$current)?'defaultAction':

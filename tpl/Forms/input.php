@@ -34,6 +34,8 @@ if ($disabled)
     $attrs['disabled'] = 'disabled';
 @$attrs['class'] .= ' hg '.$class;
 
+@$attrs['class'] .= ' '.$attrs['type'];
+
 if (false !== $id)
     $attrs['id'] = $id;
 $attrs['name'] = $ident.'['.$input.']';

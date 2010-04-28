@@ -59,7 +59,7 @@ class View extends HgBase implements IView
 
         $js_debug = g()->debug->on('js');
         // jQuery itself
-        $jquery_version = '1.4.1';
+        $jquery_version = '1.4.2';
         $min = $js_debug ? '.min' : '';
         if (g()->debug->on('disable','externalcdn'))
             $this->addJs($this->_renderer->file('jquery','js'));
@@ -77,10 +77,17 @@ class View extends HgBase implements IView
         $this->addJs($this->_renderer->file('hg.core','js'));
         // nasty way to add hg.definitions from each alias
         global $DIRS;
+        $base_uri = g()->req->getBaseUri();
+        $base_uri_regex = preg_quote($base_uri, '!');
         foreach ($DIRS as &$dir)
         {
-            $this->addJs(preg_replace('!^/!', '/'.$dir,
-                    $this->_renderer->file('hg.definitions', 'js')));
+            $uri = $this->_renderer->file('hg.definitions', 'js');
+            if ($dir)
+            {
+                $uri = preg_replace('!^'.$base_uri_regex.'!', $base_uri.$dir,
+                                    $uri );
+            }
+            $this->addJs($uri);
         }
 
         if ($js_debug)
@@ -279,10 +286,18 @@ class View extends HgBase implements IView
         return @$this->_metas[$name];
     }
     
-    public function setMeta($name,$value)
+    /**
+     * Sets <meta> tag to be rendered in <head></head> section
+     *
+     * tag will be looking something like this
+     * <meta $meta_name="$name" content="$value">
+     *
+     * on 22.04.2010 $meta_name added
+     */
+    public function setMeta($name,$value,$meta_name = 'name')
     {
         $this->_metas[$name] = array(
-                'name'          => $name,
+                $meta_name      => $name,
                 'content'       => $value,
             );
     }

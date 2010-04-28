@@ -666,7 +666,7 @@ JS;
             g()->debug->dump($result);
             print "</pre>";
             print '<div style="display:none">';
-            g()->debug->trace(1);
+            g()->debug->trace(1, null, false);
             print "</div>";
             print "</div>";
             if ($msg = $this->lastErrorMsg())
@@ -1575,14 +1575,23 @@ abstract class Controller extends HgBase implements IController
     /**
      * Sets template that will be used to render the component
      * @author m.augustynowicz
-     * @param string $tpl template name
+     * @param null|string $tpl template name
      * @return boolean false when template does not exist
      *         (it is set nevertheless, so we can display
      *         "template %s lost in action")
      */
     protected function _setTemplate($tpl)
     {
-        $tpl = strtolower($tpl);
+        if (null === $tpl)
+        {
+            $this->_template = $tpl;
+            return true;
+        }
+        $tpl = explode('/', $tpl);
+        end($tpl);
+        $last = key($tpl);
+        $tpl[$last] = strtolower($tpl[$last]);
+        $tpl = implode('/', $tpl);
         $this->_template = $tpl;
         $this->_action = $tpl; // legacy
         return false !== $this->file($tpl,'tpl');
@@ -1659,7 +1668,7 @@ abstract class Controller extends HgBase implements IController
     {
         $real_action = & $this->_launched_action;
         unset($this->_launched_action);
-        $this->_template = null;
+        $this->_template = '';
         $ret = $this->launchAction($action, $params);
         $this->_launched_action = & $real_action;
         return $ret;
@@ -1723,10 +1732,20 @@ abstract class Controller extends HgBase implements IController
         return $this->_launched_action;
     }
 
-    protected function __routeAction($current, $req)
+    /**
+     * @param string $current
+     * @param string Request $req
+     * @param boolean $really_route or maybe just check whether it would route?
+     *
+     * @return boolean
+     */
+    protected function __routeAction($current, Request $req, $really_route=true)
     {
         if (NULL === ($child = $this->getChild($current)))
             return(false);
+
+        if (!$really_route)
+            return true;
         
         if (method_exists($this,$callback = "onActionRouted2$current"))
             if (false === $this->$callback())
@@ -2612,6 +2631,9 @@ abstract class Component extends Controller
             $that = $this;
             $template = $this->_template;
         }
+
+        if (null === $template)
+            return;
 
         if(!$template)
         {

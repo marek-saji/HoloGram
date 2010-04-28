@@ -1,8 +1,8 @@
 <?php
 if (!@$data)
 {
-    if (isset($this->__params['backto']))
-        $data = $this->__params['backto'];
+    if (isset($this->_params['backto']))
+        $data = $this->_params['backto'];
     else
         $data = g()->req->getReferer();
 }

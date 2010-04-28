@@ -208,8 +208,11 @@ class Request extends HgBase
         }
 
         $this->_given_url = $text_url;
-        $this->_base_uri = rtrim($base_uri, '/\/').'/';
-
+		if (strpos($_SERVER['SERVER_SOFTWARE'], '(Win32)'))
+			$base_uri = str_replace('\\', '/', $base_uri);
+        $base_uri = rtrim($base_uri, '/');
+        $this->_base_uri = $base_uri.'/';
+		
         if (g()->conf['link_split'] == urlencode(g()->conf['link_split']))
             $this->_link_split_encoded =
                             '%'.strtoupper(dechex(ord(g()->conf['link_split'])));
@@ -222,12 +225,15 @@ class Request extends HgBase
         $this->_query = @$url['query']; // w sumie to jest w $_GET
 
         $this->_url_path = '/'.trim($url['path'], '/');
-        if ($this->_base_uri)
+        if ($base_uri)
         {
-            $this->_url_path = preg_replace('/^'.preg_quote($this->_base_uri,'/').'/',
-                                     '', $this->_url_path);
+            $this->_url_path = '/' . trim(preg_replace(
+                    '/^'.preg_quote($base_uri,'/').'/',
+                    '',
+                    $this->_url_path
+                ), '/');
         }
-
+		
         $this->_diminishURL($this->_url_path);
         $this->__buildTree($this->_url_path);
     }
@@ -434,7 +440,7 @@ class Request extends HgBase
      * Gets first element's key in current node.
      * Returns false if there're no elements.
      *
-     * @return false|string
+     * @return false|string first node's key
      */
     public function first()
     {
@@ -442,6 +448,18 @@ class Request extends HgBase
             return false;
         reset($this->_rtree['children']);
         return key($this->_rtree['children']);
+    }
+
+
+    /**
+     * Resets positions to the first element in current node.
+     *
+     * @return void
+     */
+    public function reset()
+    {
+        $this->first();
+        $this->_current = null;
     }
     
 

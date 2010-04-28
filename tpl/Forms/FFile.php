@@ -5,5 +5,6 @@ if (!isset($____local_variables['attrs']['type']))
 if (!isset($____local_variables['validate_js_event']))
     $____local_variables['validate_js_event'] = 'change';
 
-return $t->inc('Forms/input', $____local_variables);
+$____local_variables['data'] = null;
 
+return $t->inc('Forms/input', $____local_variables);

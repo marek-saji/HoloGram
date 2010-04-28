@@ -7,7 +7,7 @@ class LibraryController extends TrunkController
 
     /**
     * Szuka w bibliotece kontroler o nazwie wynikajacej z biezacego elementu, laduje go 
-    * i powieza mu dalsze wykonanie akcji. Jezeli odpowiedni kontroler nie isnieje - blad 404.
+    * i powierza mu dalsze wykonanie akcji. Jezeli odpowiedni kontroler nie istnieje - blad 404.
     */
     public function process(Request $req)
     {

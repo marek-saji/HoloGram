@@ -21,7 +21,6 @@
 extract(array_merge(
         array(
             'cancel_label'  => 'cancel',
-            //'cancel_link'   => array('', '', array())
             'cancel_link'   => true, // use referer
         ),
         (array) $____local_variables

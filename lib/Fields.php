@@ -1039,6 +1039,16 @@ class FInt extends Field
             break;
         }
     }
+
+    public function dbString($value)
+    {
+        if(NULL !== ($av = $this->autoValue()))
+            return ($av);
+        if($value === null || $value === '')
+            return "NULL";
+        else
+            return (pg_escape_string($value));
+    }
 }
 
 /**
@@ -1105,6 +1115,46 @@ class FFloat extends Field
                 return ('DOUBLE PRECISION');
             break;
         }
+    }
+}
+
+/**
+ * Floting point type with secified number of digits after decimal separator.
+ * Signed or unsigned
+ * @author b.matuszewski
+ */
+class FFormatableFloat extends FFloat
+{
+
+    /**
+     * Constructor.
+     * @param $name field name
+     * @param $precision byte-length of the field. Either 2, or 4, or 8. Any other value is treated as 4.
+     * @param $notnull a not null property
+     * @param $def_val A default value of the field.
+     * @param int $decimal_places - number of digits after decimal separator (. or ,)
+     * @param boolean $signed - determins if +/- signs are acceptable before a number
+     */
+    public function __construct($name, $precision = 4, $notnull = false, $def_val = null, $decimal_places = 2, $signed = false)
+    {
+        parent::__construct($name, $notnull, $def_val);
+        if($precision != 4 && $precision != 8)
+            $precison = 4;
+        $this->_rules['precision'] = $precision;
+        $this->_rules['decimal_places'] = $decimal_places;
+        $this->_rules['signed'] = $signed;
+    }
+
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(!$this->checkAutoValue($value) && NULL === $value)
+            $err['notnull'] = true;
+        $value = preg_replace('!,!','.',$value);
+        $reg_expression = sprintf('/^%s[0-9]*[[\.]?[0-9]{0,%s}]?$/', $this->_rules['signed'] === true ? '[\+\-]?' : '', $this->_rules['decimal_places'] > 0 ? $this->_rules['decimal_places'] : 1);
+        if(!preg_match($reg_expression, $value))
+            $err['invalid'] = true;
+        return ($this->__errors($err, $value));
     }
 }
 
@@ -1443,7 +1493,7 @@ class FForeignId extends FInt
     }
 }
 
-class FImageFile extends FString
+class FFile extends FString
 {
     protected $_foreign_model = '';
 
