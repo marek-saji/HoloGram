@@ -746,8 +746,6 @@ class Kernel
         $this->infos = &$this->_session['infos'];
 
         $this->db = $this->get('NonConnectedDb', array($this->conf['db']));
-
-        $this->lang = $this->get('Lang', array('conf' => $this->conf['locale']));
     }
 
     /**
@@ -763,6 +761,7 @@ class Kernel
     {
         try 
         {
+            $this->lang = $this->get('Lang', array('conf' => $this->conf['locale']));
             $this->debug = $this->get('Debug');
             $this->req = $this->get('Request');
             $this->auth = $this->get('Auth');

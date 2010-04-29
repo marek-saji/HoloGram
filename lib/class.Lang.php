@@ -30,11 +30,13 @@ if (!defined('FALLBACK_LOCALE'))
 class Lang extends HgBase implements ILang
 {
     private $__avaliable = null;
+    protected $_session = null;
     protected $_current = FALLBACK_LANG;
     protected $_locale = null;
 
     public function __construct(array $params)
     {
+        $this->_session = & g()->session['lang'];
         if (isset($params['conf']))
             $conf = $params['conf'];
         else
@@ -45,8 +47,10 @@ class Lang extends HgBase implements ILang
             else
                 throw new HgException('Lang called without `conf\' parameter before creation of global $kernel!');
         }
+        
+        $this->_current = & $this->_session['lang'];
 
-        if (isset($conf['fallback']))
+        if ((!$this->_current) && isset($conf['fallback']))
             $this->_current = $conf['fallback'];
 
         $this->_setLocale();
