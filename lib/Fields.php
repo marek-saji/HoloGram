@@ -1059,17 +1059,36 @@ class FFloat extends Field
 
     /**
      * Constructor.
-     * @param $name field name
-     * @param $precision byte-length of the field. Either 2, or 4, or 8. Any other value is treated as 4.
-     * @param $notnull a not null property
-     * @param $def_val A default value of the field.
+     *
+     * @author ?
+     * @author m.augustynowicz added {max,min} value and max decimals
+     *
+     * @param string $name field name
+     * @param int $precision byte-length of the field.
+     *        Either 2, or 4, or 8. Any other value is treated as 4.
+     * @param boolean $notnull a not null property
+     * @param null|float $def_val A default value of the field.
+     * @param null|float $min_val minimal value
+     * @param null|float $max_val maximal value
+     * @param null|int $max_decimals maximum number of decimals after the point
      */
-    public function __construct($name, $precision = 4, $notnull = false, $def_val = null)
+    public function __construct($name, $precision = 4, $notnull = false, $def_val = null, $min_val=null, $max_val=null, $max_decimals = null)
     {
         parent::__construct($name, $notnull, $def_val);
-        if($precision != 4 && $precision != 8)
+
+        if ($precision != 4 && $precision != 8)
             $precison = 4;
         $this->_rules['precision'] = $precision;
+
+        $this->_rules['min_val'] = $min_val;
+        $this->_rules['max_val'] = $max_val;
+        $this->_rules['max_decimals'] = $max_decimals;
+
+        $this->mess(array('invalid' => 'Invalid floating point value'));
+        $this->mess(array('min_val_excided' => 'Number is to small'));
+        $this->mess(array('max_val_excided' => 'Number is to big'));
+        $this->mess(array('max_decimals_excided'
+                => 'Too many digits after decimal point') );
     }
 
     public function checkType($def)
@@ -1086,14 +1105,32 @@ class FFloat extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if(NULL !== $value)
+        if (NULL !== $value)
         {
             $value = g('Functions')->floatVal($value);
-            if(false === $value)
+            if (false === $value)
                 $err['invalid'] = true;
+            if (null !== $this->_rules['min_val'])
+            {
+                if ($value < $this->_rules['min_val'])
+                    $err['min_val_excided'] = true;
+            }
+            if (null !== $this->_rules['max_val'])
+            {
+                if ($value > $this->_rules['max_val'])
+                    $err['max_val_excided'] = true;
+            }
+            if (null !== $this->_rules['max_decimals'])
+            {
+                $decimals = $value - (int)$value;
+                $decimals_no = strlen((string) $decimals_no) - 2;
+                if ($decimals_no > $this->_rules['max_decimals'])
+                    $err['max_decimals_excided'] = true;
+            }
         }
-        elseif(!$this->checkAutoValue($value))
+        elseif (!$this->checkAutoValue($value))
             $err['notnull'] = true;
+
         return ($this->__errors($err, $value));
     }
 
