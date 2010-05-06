@@ -78,7 +78,7 @@ class UploadModel extends Model
                 $this->_file = $data['file'];
                 unset($data['file']);
 
-                if(!($hash = $data['id']))
+                if(!($hash = @$data['id']))
                     do
                     {
                         $hash = g('Functions')->generateKey();
