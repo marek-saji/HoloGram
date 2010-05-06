@@ -1290,5 +1290,52 @@ class Functions extends HgBase
         return $id;
     }
 
+
+    /**
+     * Unified way for execucmdting UNIX commands
+     * @author m.augustynowicz
+     *
+     * @uses conf[unix]
+     *
+     * @param string $cmd see PHPs exec() for reference,
+     *        can also be key in conf[unix], then cmd path may be modified
+     * @param string $args list of argument
+     * @param string $output see PHPs exec() for reference
+     * @param string $return_code see PHPs exec() for reference
+     *
+     * @return false|string last line of the output;
+     *         false on any error
+     */
+    public function exec($cmd, $args, & $output, & $return_code)
+    {
+        $conf = & g()->conf['unix'];
+        $hg_args = '';
+        if (array_key_exists($cmd, $conf))
+        {
+            if (false === $conf[$cmd])
+                return false;
+            if (isset($conf[$cmd]['path']))
+                $cmd = $conf[$cmd]['path'];
+            if (isset($conf[$cmd]['args']))
+                $hg_args = $conf[$cmd]['args'];
+        }
+
+        $cmd = sprintf('%s %s %s', $cmd, $hg_args, $args);
+
+        if (g()->debug->allowed())
+        {
+            echo '<pre class="shell">';
+            printf("<span class=\"cmd\"><span class=\"PS1\">%s $</span> %s</span>\n", getcwd(), $cmd);
+        }
+        $last_line = exec($cmd, $output, $return_code);
+        if (g()->debug->allowed())
+        {
+            printf("<span class=\"output\">%s</span>\n", join("\n", $output));
+            printf('<small class="return_code">(returned %s)</small>', $return_code);
+            echo '</pre>';
+        }
+        return $last_line;
+    }
+
 }
 
