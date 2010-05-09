@@ -109,6 +109,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     protected $_alias = '';
 	protected $_count = NULL;
     protected $_order = NULL;
+    protected $_nulls_first = array();
 
     public function __construct()
     {
@@ -339,7 +340,9 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     /**
      * Generates ORDER BY part of query
      * @uses $_order
+     * @uses $_nulls_first
      * @author m.augustynowicz moved from query()
+     * @author bartuś maintainig nulls first/last clouse
      * @return string
      */
     protected function _queryOrderBy()
@@ -353,7 +356,11 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 $field = $def['field']->generator();
             else
                 $field = $def['field'];
-            $sql[] = "$field {$def['dir']}";
+
+            if(isset($this->_nulls_first[$name]))
+                $sql[] = "$field {$def['dir']}" . ($this->_nulls_first[$name] ? " NULLS FIRST\n" : " NULLS LAST");
+            else
+                $sql[] = "$field {$def['dir']}";
         }
         unset($def);
         $sql = "\nORDER BY\n".$this->_ident(join(",\n", $sql));
@@ -597,6 +604,42 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 return $key;
             }
         }
+    }
+    
+    /**
+     * Sets NULLS FIRST or NULLS LAST clouse
+     * @author bartuś
+     *
+     * @param array $fields - $field_name => $nulls_first
+     *    $nulls_first === true     => NULLS FIRST
+     *    $nulls_first === false    => NULLS LAST
+     *    $nulls_first === null     => no NULLS * clause
+     *
+     * @usage
+     * $ds->order('foo');
+     * $ds->nullsFirst(array('foo' => true)); //will give
+     *    ORDER BY foo ASC NULLS FIRST
+     * $ds->order('foo');
+     * $ds->order('bar');
+     * $ds->nullsFirst(array('foo' => true, 'bar' => false)); //will give
+     *    ORDER BY foo ASC NULLS FIRST, bar ASC NULLS LAST
+     * $ds->order('foo');
+     * $ds->order('bar');
+     * $ds->nullsFirst(array('foo' => true, 'bar' => null)); //will give
+     *    ORDER BY foo ASC NULLS FIRST, bar ASC
+     *
+     * WARNING you have to provide $field_name as "dsJ$x"."actual_name" if working with joins
+     */
+    public function nullsFirst($fields)
+    {
+        foreach($fields as $name => $val)
+        {
+            if($val === null)
+                unset($this->_nulls_first[$name]);
+            else
+                $this->_nulls_first[$name] = $val;
+        }
+        return $this;
     }
     
     

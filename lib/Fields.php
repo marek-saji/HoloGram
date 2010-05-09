@@ -1143,6 +1143,7 @@ class FFormatableFloat extends FFloat
         $this->_rules['precision'] = $precision;
         $this->_rules['decimal_places'] = $decimal_places;
         $this->_rules['signed'] = $signed;
+        $this->mess(array('invalid' => 'Invalid floating point value'));
     }
 
     public function invalid(&$value)
@@ -1154,6 +1155,55 @@ class FFormatableFloat extends FFloat
         $reg_expression = sprintf('/^%s[0-9]*[[\.]?[0-9]{0,%s}]?$/', $this->_rules['signed'] === true ? '[\+\-]?' : '', $this->_rules['decimal_places'] > 0 ? $this->_rules['decimal_places'] : 1);
         if(!preg_match($reg_expression, $value))
             $err['invalid'] = true;
+        return ($this->__errors($err, $value));
+    }
+}
+
+/**
+ * Floting point type with secified number of digits after decimal separator.
+ * min and max value can be defined
+ * @author b.matuszewski
+ */
+class FDouble extends FFloat
+{
+
+    /**
+     * Constructor.
+     * @param $name field name
+     * @param $precision byte-length of the field. Either 2, or 4, or 8. Any other value is treated as 8.
+     * @param $notnull a not null property
+     * @param $def_val A default value of the field.
+     * @param int $decimal_places - number of digits after decimal separator (. or ,)
+     * @param float $min_val - minimum value of a field
+     * @param float $max_val - maximum value of a field
+     */
+    public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = 2, $min_val = null, $max_val = null)
+    {
+        parent::__construct($name, $notnull, $def_val);
+        if($precision != 4 && $precision != 8)
+            $precison = 8;
+        $this->_rules['precision'] = $precision;
+        $this->_rules['decimal_places'] = $decimal_places;
+        $this->_rules['min_val'] = $min_val;
+        $this->_rules['max_val'] = $max_val;
+        $this->mess(array('invalid' => 'Invalid floating point value'));
+        $this->mess(array('min_val_excided' => 'Number is to small'));
+        $this->mess(array('max_val_excided' => 'Number is to big'));
+    }
+
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(!$this->checkAutoValue($value) && NULL === $value)
+            $err['notnull'] = true;
+        $value = preg_replace('!,!','.',$value);
+        $reg_expression = sprintf('/^[\+\-]?[0-9]*[[\.]?[0-9]{0,%s}]?$/', $this->_rules['decimal_places'] > 0 ? $this->_rules['decimal_places'] : 1);
+        if(!preg_match($reg_expression, $value))
+            $err['invalid'] = true;
+        elseif($this->_rules['min_val'] !== null && $value < $this->_rules['min_val'])
+            $err['min_val_excided'] = true;
+        elseif($this->_rules['max_val'] !== null && $value > $this->_rules['max_val'])
+            $err['max_val_excided'] = true;
         return ($this->__errors($err, $value));
     }
 }

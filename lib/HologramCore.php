@@ -2240,13 +2240,16 @@ abstract class Component extends Controller
      *
      * @param string $action name
      * @param array $params what will be passed to the action
+     * @param boolean $just_checking pass false if you inteded to launch
+     *        that action (it may cause displaying some "error denied"
+     *        user messages and such)
      * @return boolean/int does logged-in user has access to this action?
      *         true when access granted by callback,
      *         1 when from config,
      *         false when access denied by callback
      *         0 when from config
      */
-    public function hasAccess($action, array &$params = array())
+    public function hasAccess($action, array &$params = array(), $just_checking=true)
     {
         static $cache = array();
 
@@ -2266,7 +2269,7 @@ abstract class Component extends Controller
 
             if (!method_exists($this, $callback))
                 $ret = 0;
-            else if (!$this->$callback($params))
+            else if (!$this->$callback($params, $just_checking))
                 $ret = false;
             else
                 $ret = true;
