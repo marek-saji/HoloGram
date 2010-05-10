@@ -1580,35 +1580,80 @@ class FForeignId extends FInt
     }
 }
 
+/**
+ * Very special {@see FForeignId} for {@see UploadModel}
+ *
+ * @todo invalid() -- check type
+ *
+ * @author m.jutkiewicz
+ * @author m.augustynowicz making it UserModel specific
+ */
 class FFile extends FString
 {
-    protected $_foreign_model = '';
+    protected $_foreign_model = 'Upload';
 
-    public function __construct($name, $notnull = false, $foreign_model = '')
+    protected $_conf = array(
+            'subdirectory' => true,       // use model's default
+            'allowed mime types' => true, // all
+            'max size' => true,           // (in MB) use model's default
+        );
+
+    /**
+     *
+     * @param string $name
+     * @param boolean $notnull add "NOT NULL"?
+     * @param array $conf
+     */
+    public function __construct($name, $notnull = false, array $conf=array())
     {
+        $this->_conf = array_merge($this->_conf, $conf);
+
         parent::__construct($name, $notnull, null, 0, 32);
-
-        if(!is_string($foreign_model))
-            throw new HgException("Foreign model parameter has to be a string.");
-
-        $this->foreignModel($foreign_model);
     }
 
     /**
-     * Gets or sets the foreign model.
+     * Gets the foreign model.
      */
-    public function foreignModel($foreign_model = '')
+    public function getModel()
     {
-        if(empty($foreign_model))
-            return ($this->_foreign_model);
-        else
+        if (is_string($this->_foreign_model))
         {
-            if(!is_string($foreign_model))
-                throw new HgException("Foreign model parameter has to be a string.");
-            else
-                $this->_foreign_model = $foreign_model;
+            $this->_foreign_model = g($this->_foreign_model, 'Model', array('xx'));
         }
+        return $this->_foreign_model;
     }
+
+    /**
+     * Settings getter
+     *
+     * @param string $property
+     * @param mixed $value if specified, will check whether $value
+     *        is present in requested config $property.
+     *        NOTE: when $propety is true, it always return TRUE
+     *
+     * @return mixed when no $value specified, returns $value,
+     *         boolean otherwise
+     */
+    public function getConf($property, $value)
+    {
+        if (func_num_args() == 1)
+            return @ $this->_conf[$property];
+        else if (!isset($this->_conf[$property]))
+            return null;
+        if (true === $this->_conf[$property])
+            return true;
+        else
+            return isset($this->_conf[$property][$value]);
+    }
+}
+
+/**
+ * Very special FForeignId for ImagesUploadModel
+ * @author m.augustynowicz
+ */
+class FImageFile extends FFile
+{
+    protected $_foreign_model = 'ImagesUpload';
 }
 
 /**

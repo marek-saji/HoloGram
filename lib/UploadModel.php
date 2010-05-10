@@ -5,8 +5,9 @@ g()->load('DataSets', null);
  * General model for uploaded files
  *
  * @todo pimp up FFile
- *       validate!
- *          accepted mime types
+ *            validate!
+ *               accepted mime types
+ *       see other todo tags
  *
  * @see FFile this field should be used to relate with this model
  *
@@ -33,11 +34,32 @@ g()->load('DataSets', null);
 class UploadModel extends Model
 {
     protected $_upload_dir;
-    protected $_subdirectory = 'files';
-    protected $_max_size_mb = 10; // (in megabytes)
 
-    public function __construct()
+    protected $_field = null;
+
+    protected $_subdirectory = 'files';
+    protected $_max_size_mb = 10; // (in megabytes) `false` for ini settings
+
+    public function __construct(array $conf = array())
     {
+        if (!isset($conf['field']))
+        {
+            trigger_error('You are using UploadModel without any master '
+                    .'field specified! It is hightly discouraged to do so.',
+                    E_USER_WARNING
+                );
+        }
+        else
+        {
+            $this->_field = $conf['field'];
+            if (true !== $val = $this->_field->getConf('subdirectory'))
+                $this->_subdirectory = $val;
+            if (true !== $val = $this->_field->getConf('allowed mime types'))
+                $this->_allowed_mime_types = $val;
+            if (true !== $val = $this->_field->getConf('max size'))
+                $this->_max_size_mb = $val;
+        }
+
         $this->_table_name = 'upload'; // all upload models may share
         $this->_upload_dir = UPLOAD_DIR . $this->_subdirectory
                              . DIRECTORY_SEPARATOR;
@@ -52,7 +74,7 @@ class UploadModel extends Model
         $this->__addField(new FInt('id_in_model', 4, true));
 
         // original uploaded file data
-        $this->__addField(new FString('mime', false, null, 0, 128));
+        $this->__addField(new FString('original_mime', false, null, 0, 128));
         $this->__addField(new FString('original_name', false, null, 0, 256));
 
         // additional meta data
@@ -210,9 +232,12 @@ class UploadModel extends Model
      */
     protected function _storeUploadedFile($path, array $file_data)
     {
-        if ($file_data['size'] > $this->_max_size_mb * 1024 * 1024)
+        if (false !== $this->_max_size_mb)
         {
-            $file_data['error'] = 'UPLOAD_ERR_MODEL_SIZE';
+            if ($file_data['size'] > $this->_max_size_mb * 1024 * 1024)
+            {
+                $file_data['error'] = 'UPLOAD_ERR_MODEL_SIZE';
+            }
         }
 
         switch ($file_data['error'])
