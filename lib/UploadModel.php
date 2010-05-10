@@ -174,7 +174,7 @@ class UploadModel extends Model
                 }
 
                 $data['original_name'] = $file_data['name'];
-                $data['mime'] = $this->_getUploadedFileMIMEType($file_data);
+                $data['original_mime'] = $this->_getUploadedFileMIMEType($file_data);
 
                 if (!$this->_storeUploadedFile($path, $file_data))
                 {

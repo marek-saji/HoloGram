@@ -2,7 +2,7 @@
 g()->load('DataSets', null);
 
 /**
- * Model for uploaded files.
+ * Model for uploaded images.
  * @author m.jutkiewicz
  * 
  * WARNING: if you are using transaction's rollback, you have to
