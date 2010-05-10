@@ -44,9 +44,9 @@ abstract class DeveloperController extends PagesController
         preg_match_all('/[\t ]*\/\*\*((?:\n[\t ]*\*[^\n]*)*)\n[\t ]*\*\/\s*(?:public )function\s+action([[:alpha:]]*)[^[:alpha:]].*[\r\n]/sUmi', $source1, $matches1);
         preg_match_all('/[\t ]*\/\*\*((?:\n[\t ]*\*[^\n]*)*)\n[\t ]*\*\/\s*(?:public )function\s+action([[:alpha:]]*)[^[:alpha:]].*[\r\n]/sUmi', $source2, $matches2);
         $actions = array_merge(
-                array_combine($matches1[2], $matches1[1]),
-                array_combine($matches2[2], $matches2[1])
-            );
+            (array)array_combine($matches1[2], $matches1[1]),
+            (array)array_combine($matches2[2], $matches2[1])
+        );
         $this->assign(compact('actions'));
     }
 
