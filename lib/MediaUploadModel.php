@@ -80,20 +80,23 @@ class MediaUploadModel extends UploadModel
     {
         parent::__construct($conf);
 
-        if (null !== $val = $this->_field->getConf('audio bitrate'))
-            $this->_audio_br = $val;
-        if (null !== $val = $this->_field->getConf('video bitrate'))
-            $this->_video_br = $val;
-        if (null !== $val = $this->_field->getConf('video audio bitrate'))
-            $this->_video_audio_br = $val;
-        if (null !== $val = $this->_field->getConf('video width'))
-            $this->_video_w = $val;
-        if (null !== $val = $this->_field->getConf('video height'))
-            $this->_video_h = $val;
-        if (null !== $val = $this->_field->getConf('video thumb position'))
-            $this->_video_thumb_pos = $val;
-        if (null !== $val = $this->_field->getConf('video thumbnails'))
-            $this->_video_thumbs = $val;
+        if ($this->_field)
+        {
+            if (null !== $val = $this->_field->getConf('audio bitrate'))
+                $this->_audio_br = $val;
+            if (null !== $val = $this->_field->getConf('video bitrate'))
+                $this->_video_br = $val;
+            if (null !== $val = $this->_field->getConf('video audio bitrate'))
+                $this->_video_audio_br = $val;
+            if (null !== $val = $this->_field->getConf('video width'))
+                $this->_video_w = $val;
+            if (null !== $val = $this->_field->getConf('video height'))
+                $this->_video_h = $val;
+            if (null !== $val = $this->_field->getConf('video thumb position'))
+                $this->_video_thumb_pos = $val;
+            if (null !== $val = $this->_field->getConf('video thumbnails'))
+                $this->_video_thumbs = $val;
+        }
     }
 
 
