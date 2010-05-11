@@ -1,4 +1,13 @@
 <?php
+// for FMediaFile
+
+// greatest dimensions smaller or equal to original (will keep aspect ratio)
+define('IMAGE_RESIZE_FIT', 0);
+// similar to IMAGE_RESIZE_FIT, but adds transparent stripes
+define('IMAGE_RESIZE_PAD', 1);
+// will strech the image, does not keep aspect ratio
+define('IMAGE_RESIZE_STRECH', 2);
+
 
 /**
  *  @todo: fix default and automatic values

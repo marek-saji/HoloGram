@@ -1,11 +1,4 @@
 <?php
-// greatest dimensions smaller or equal to original (will keep aspect ratio)
-define('IMAGE_RESIZE_FIT', 0);
-// similar to IMAGE_RESIZE_FIT, but adds transparent stripes
-define('IMAGE_RESIZE_PAD', 1);
-// will strech the image, does not keep aspect ratio
-define('IMAGE_RESIZE_STRECH', 2);
-
 g()->load('Upload', 'model');
 
 /**
@@ -75,6 +68,7 @@ class MediaUploadModel extends UploadModel
     /**
      * @val array video thumbnails, values are keys with values:
      *      width, height, mode (IMAGE_RESIZE_{FIT,PAD,STRECH})
+     *      IMAGE_RESIZE_* defined near FMediaFile
      *      e.g. array(array(160,160,IMAGE_RESIZE_FIT))
      *      field config "video thumbnails"
      */
