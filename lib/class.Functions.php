@@ -1306,21 +1306,25 @@ class Functions extends HgBase
      * @return false|string last line of the output;
      *         false on any error
      */
-    public function exec($cmd, $args, & $output, & $return_code)
+    public function exec($cmd, $args, & $output=null, & $return_code=null)
     {
-        $conf = & g()->conf['unix'];
+        $all_conf = & g()->conf['unix'];
         $hg_args = '';
-        if (array_key_exists($cmd, $conf))
+        if (array_key_exists($cmd, $all_conf))
         {
-            if (false === $conf[$cmd])
+            $conf = & $all_conf[$cmd];
+            if (false === $conf)
                 return false;
-            if (isset($conf[$cmd]['path']))
-                $cmd = $conf[$cmd]['path'];
-            if (isset($conf[$cmd]['args']))
-                $hg_args = $conf[$cmd]['args'];
+            if (isset($conf['path']))
+                $cmd = $conf['path'];
+            if (isset($conf['args']))
+                $hg_args = $conf['args'];
+            if (isset($conf['args_args']))
+                $args = vsprintf($args, $conf['args_args']);
         }
 
-        $cmd = sprintf('%s %s %s', $cmd, $hg_args, $args);
+
+        $cmd = sprintf('%s %s %s 2>&1', $cmd, $hg_args, $args);
 
         if (g()->debug->allowed())
         {
