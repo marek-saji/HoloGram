@@ -2,7 +2,7 @@
 g()->load('DataSets', null);
 
 /**
- * Model for uploaded files.
+ * Model for uploaded images.
  * @author m.jutkiewicz
  * 
  * WARNING: if you are using transaction's rollback, you have to
@@ -285,7 +285,7 @@ class ImagesUploadModel extends Model
                     $info = 'Błąd - %s - Zbyt duży plik';
                     break;
                 case 3:
-                    $info = 'Błąd - %s - Nie udana próba wysłania pliku. Prosze spróbować jeszcze raz.';
+                    $info = 'Błąd - %s - Nieudana próba wysłania pliku. Prosze spróbować jeszcze raz.';
                     break;
                 case 4:
                     $info = 'Błąd - %s - Brak pliku.';
