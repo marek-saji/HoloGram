@@ -1592,17 +1592,16 @@ class FFile extends FString
 {
     protected $_foreign_model = 'Upload';
 
-    protected $_conf = array(
-            'subdirectory' => true,       // use model's default
-            'allowed mime types' => true, // all
-            'max size' => true,           // (in MB) use model's default
-        );
+    /**
+     * @val array for supported values refer to UploadModel
+     */
+    protected $_conf = array();
 
     /**
      *
      * @param string $name
      * @param boolean $notnull add "NOT NULL"?
-     * @param array $conf
+     * @param array $conf for supported values refert to UploadModel
      */
     public function __construct($name, $notnull = false, array $conf=array())
     {
@@ -1618,7 +1617,9 @@ class FFile extends FString
     {
         if (is_string($this->_foreign_model))
         {
-            $this->_foreign_model = g($this->_foreign_model, 'Model', array('xx'));
+            $this->_foreign_model = g($this->_foreign_model, 'Model',
+                    array('field'=>$this)
+                );
         }
         return $this->_foreign_model;
     }
@@ -1634,16 +1635,19 @@ class FFile extends FString
      * @return mixed when no $value specified, returns $value,
      *         boolean otherwise
      */
-    public function getConf($property, $value)
+    public function getConf($property, $value=null)
     {
         if (func_num_args() == 1)
             return @ $this->_conf[$property];
-        else if (!isset($this->_conf[$property]))
-            return null;
-        if (true === $this->_conf[$property])
-            return true;
         else
-            return isset($this->_conf[$property][$value]);
+        {
+            if (!isset($this->_conf[$property]))
+                return null;
+            else if (true === $this->_conf[$property])
+                return true;
+            else
+                return isset($this->_conf[$property][$value]);
+        }
     }
 }
 
@@ -1654,6 +1658,21 @@ class FFile extends FString
 class FImageFile extends FFile
 {
     protected $_foreign_model = 'ImagesUpload';
+}
+
+/**
+ * Very special FForeignId for MediaUploadModel
+ * @author m.augustynowicz
+ */
+class FMediaFile extends FFile
+{
+    protected $_foreign_model = 'MediaUpload';
+
+    /**
+     * @val array for supported values refer to MediaUploadModel (and up)
+     */
+    protected $_conf = array();
+
 }
 
 /**

@@ -4,18 +4,18 @@ g()->load('DataSets', null);
 /**
  * General model for uploaded files
  *
- * @todo pimp up FFile
- *            validate!
- *               accepted mime types
- *       see other todo tags
+ * @todo handle [accepted mime types] (validate in FFile)
+ * @todo handle errors better
  *
  * @see FFile this field should be used to relate with this model
  *
  * THIS MODEL HAS NO SUPPORT FOR TRANSACTIONS!
  * You have been warned.
  *
- * It is designed to be extendable. File structure in UPLOAD_DIR should
- * look like this:
+ * NOTES for extending this model:
+ *
+ * 1.
+ * File structure in UPLOAD_DIR should look like this:
  * for models keeping only original uploaded files:
  * UPLOAD_DIR/files/{model}/{id}
  * for models keeping more than one file, per uploaded file, e.g.:
@@ -24,22 +24,49 @@ g()->load('DataSets', null);
  * UPLOAD_DIR/files/{model}/{id}/file.mp4
  * or
  * UPLOAD_DIR/files/{model}/{id}/file
- * UPLOAD_DIR/files/{model}/{id}/100x100.png
- * UPLOAD_DIR/files/{model}/{id}/200x200.png
+ * UPLOAD_DIR/files/{model}/{id}/file.100x100.png
+ * UPLOAD_DIR/files/{model}/{id}/file.200x200.png
  * or similar
+ *
+ * 2.
+ * Don't override the file, first delete it, then create new with the same name
  *
  * @author m.jutkiewicz
  * @author m.augustynowicz made it a little more extendable, reorganizing
  */
 class UploadModel extends Model
 {
+    /**
+     * @var string path to base upload dir for this model
+     */
     protected $_upload_dir;
 
+    /**
+     * @var FFile field that refers to tis model
+     *      can hold custom settings (see below)
+     */
     protected $_field = null;
 
-    protected $_subdirectory = 'files';
-    protected $_max_size_mb = 10; // (in megabytes) `false` for ini settings
 
+    // these can be overridden by field's config
+
+    /**
+     * @val string subdirectory of UPLOAD_DIR to keep files in
+     *      field config "subdirectory"
+     */
+    protected $_subdirectory = 'files';
+    /**
+     * @val int maximul file size to upload [MB] (false for ini settings)
+     *      field config "max size"
+     */
+    protected $_max_size = 10;
+
+
+
+    /**
+     *
+     * @param conf $conf should contain [field] key
+     */
     public function __construct(array $conf = array())
     {
         if (!isset($conf['field']))
@@ -52,15 +79,16 @@ class UploadModel extends Model
         else
         {
             $this->_field = $conf['field'];
-            if (true !== $val = $this->_field->getConf('subdirectory'))
+            if (null !== $val = $this->_field->getConf('subdirectory'))
                 $this->_subdirectory = $val;
-            if (true !== $val = $this->_field->getConf('allowed mime types'))
+            if (null !== $val = $this->_field->getConf('allowed mime types'))
                 $this->_allowed_mime_types = $val;
-            if (true !== $val = $this->_field->getConf('max size'))
-                $this->_max_size_mb = $val;
+            if (null !== $val = $this->_field->getConf('max size'))
+                $this->_max_size = $val;
         }
 
         $this->_table_name = 'upload'; // all upload models may share
+        self::_getPath(null, null); // make sure the path exists
         $this->_upload_dir = UPLOAD_DIR . $this->_subdirectory
                              . DIRECTORY_SEPARATOR;
 
@@ -122,17 +150,19 @@ class UploadModel extends Model
         $f = g('Functions');
 
         // determining the action (copypasta from Model!)
-        if(isset($data['_action']))
+        if (isset($data['_action']))
             $action = $data['_action'];
-        if($action == 'update')
+        if ($action == 'update')
         {
-            foreach($this->_primary_keys as $pk)
+            foreach ($this->_primary_keys as $pk)
+            {
                 if(!isset($data[$pk]) || !$data[$pk])
                 {
                     $action = 'insert';
                     trigger_error('Tried to update-sync, but no PK given, falling back to insert!', E_USER_WARNING);
                     break;
                 }
+            }
         }
 
         // do things on the filesystem
@@ -147,7 +177,11 @@ class UploadModel extends Model
                 else
                 {
                     $path = $this->_getPath($data['model'], $data['id']);
+                    if (!$this->_beforeDeleting($path))
+                        return false;
                     $f->rmrf($path); // will echo "deleting $path"
+                    if (!$this->_afterDeleting($path))
+                        return false;
                     $this->filter(array('id' => $data['id']));
                 }
                 break;
@@ -174,12 +208,16 @@ class UploadModel extends Model
                 }
 
                 $data['original_name'] = $file_data['name'];
-                $data['mime'] = $this->_getUploadedFileMIMEType($file_data);
+                $data['original_mime'] = $this->getUploadedFileMIMEType($file_data);
+
+                if (!$this->_beforeStoring($path, $data, $action))
+                    return false;
 
                 if (!$this->_storeUploadedFile($path, $file_data))
-                {
                     return false;
-                }
+
+                if (!$this->_afterStoring($path, $data, $action))
+                    return false;
 
                 if ('update' == $action && !empty($data['id']))
                 {
@@ -207,12 +245,18 @@ class UploadModel extends Model
         {
             $this->exec();
 
+            $f = g('Functions');
+
             foreach ($this->_array as & $data)
             {
                 if (!empty($data['model']) && !empty($data['id']))
                 {
                     $path = $this->_getPath($data['model'], $data['id']);
-                    g('Functions')->rmrf($path); // will echo "deleting $path"
+                    if (!$this->_beforeDeleting($path))
+                        return false;
+                    $f->rmrf($path); // will echo "deleting $path"
+                    if (!$this->_afterDeleting($path))
+                        return false;
                 }
             }
         }
@@ -232,9 +276,9 @@ class UploadModel extends Model
      */
     protected function _storeUploadedFile($path, array $file_data)
     {
-        if (false !== $this->_max_size_mb)
+        if (false !== $this->_max_size)
         {
-            if ($file_data['size'] > $this->_max_size_mb * 1024 * 1024)
+            if ($file_data['size'] > $this->_max_size * 1024 * 1024)
             {
                 $file_data['error'] = 'UPLOAD_ERR_MODEL_SIZE';
             }
@@ -265,7 +309,7 @@ class UploadModel extends Model
 
         if ($error)
         {
-            g()->addInfo(null, 'error', $this->trans($info, $file_data['name']));
+            g()->addInfo(null, 'error', $this->trans($error, $file_data['name']));
             return false;
         }
 
@@ -274,12 +318,12 @@ class UploadModel extends Model
         {
             if (g()->debug->allowed())
                 printf('<p class="debug">creating <code>%s</code>', $path);
-            if (file_exists($path) &&!unlink($path))
+            if (file_exists($path) && !unlink($path))
             {
                 /** @todo error */
                 return false;
             }
-            if(!move_uploaded_file($file_data['tmp_name'], $path))
+            if (!move_uploaded_file($file_data['tmp_name'], $path))
             {
                 g()->addInfo(null, 'error', $this->trans('File has not been sent.'));
                 unlink($file_data['tmp_name']);
@@ -353,29 +397,104 @@ class UploadModel extends Model
         return $file;
     }
 
+
+    /**
+     * Callback launched before deleting file from UPLOAD_DIR
+     *
+     * feel free to override
+     * @author m.augustynowicz
+     *
+     * @param string $path file location (generated by _getPath())
+     *
+     * @return boolean returning false will stop everything
+     */
+    protected function _beforeDeleting($path)
+    {
+        return true;
+    }
+
+
+    /**
+     * Callback launched after deleting file from UPLOAD_DIR
+     *
+     * feel free to override
+     * @author m.augustynowicz
+     *
+     * @param string $path file location (generated by _getPath())
+     *
+     * @return boolean returning false will stop everything
+     */
+    protected function _afterDeleting($path)
+    {
+        return true;
+    }
+
+
+    /**
+     * Callback launched before storing file in UPLOAD_DIR
+     *
+     * feel free to override
+     * @author m.augustynowicz
+     * 
+     * @param string $path file location (generated by _getPath())
+     * @param array $data part of database row (will contain [original_mime]
+     *        and [original_name])
+     * @param string $action update|insert
+     *
+     * @return boolean returning false will stop everything
+     */
+    protected function _beforeStoring($path, array $data, $action)
+    {
+        return true;
+    }
+
+
+    /**
+     * Callback launched after storing file in UPLOAD_DIR
+     *
+     * feel free to override
+     * @author m.augustynowicz
+     * 
+     * @param string $path file location (generated by _getPath())
+     * @param array $data part of database row (will contain [original_mime]
+     *        and [original_name])
+     * @param string $action update|insert
+     *
+     * @return boolean returning false will stop everything
+     */
+    protected function _afterStoring($path, array $data, $action)
+    {
+        return true;
+    }
+
+
     /**
      * Determines uploaded file's MIME type
      *
      * @author m.augustynowicz
      *
-     * @param array $file_data part of $_FILES
+     * @param array|string $file_data
+     *        array -- part of $_FILES,
+     *        string -- file name
      *
      * @return false on any error
      */
-    public function _getUploadedFileMIMEType(array $file_data)
+    public function getUploadedFileMIMEType($file_data)
     {
         if (false && null !== @$file_data['type'])
         {
             return $file_data['type'];
         }
-        else if (array_key_exists('file', g()->conf['unix'])
+        else if (is_array($file_data)
+                && array_key_exists('file', g()->conf['unix'])
                 && g()->conf['unix']['file'] )
         {
             return $this->_getMIMETypeByFile($file_data['tmp_name']);
         }
         else
         {
-            $extension = phpinfo($file_data['name'], PATHINFO_EXTENSION);
+            $file_name = is_array($file_data) ? $file_data['name'] : $file_data;
+            $extension = pathinfo($file_name, PATHINFO_EXTENSION);
             return $this->_getMIMETypeBySuffix($extension);
         }
     }
@@ -398,6 +517,9 @@ class UploadModel extends Model
      */
     protected function _getMIMETypeByFile($path)
     {
+        if (empty($path))
+            return false;
+
         $oldpwd = getcwd();
         chdir($this->_upload_dir);
 
@@ -405,7 +527,7 @@ class UploadModel extends Model
                 'file', '-bi '.escapeshellarg($path), $out, $ret);
 
         if ($ret)
-            throw new HgException("Cannot describe MIME type: <tt>{$cmd}</tt> returned {$ret} printing <pre>\n" . join("\n", $out) . "</pre>");
+            throw new HgException("Cannot describe MIME type: <tt>file(1)</tt> returned {$ret} printing <pre>\n" . join("\n", $out) . "</pre>");
 
         // file may have added charset after the semicolon
         list($mime) = explode(';', trim($last_line));
