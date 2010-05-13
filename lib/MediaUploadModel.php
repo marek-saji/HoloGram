@@ -27,6 +27,15 @@ class MediaUploadModel extends UploadModel
      */
     protected $_subdirectory = 'media';
     /**
+     * @val array|boolean list of allowed mime types, when true, allows all,
+     *      array contains list of _regular expressions_
+     *      field config "allowed mime types"
+     */
+    protected $_allowed_mime_types = array(
+        'audio/.*',
+        'video/.*',
+    );
+    /**
      * @val int maximul file size to upload [MB] (false for ini settings)
      *      field config "max size"
      */

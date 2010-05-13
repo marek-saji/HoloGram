@@ -1610,7 +1610,7 @@ class FFile extends FString
      *
      * @param string $name
      * @param boolean $notnull add "NOT NULL"?
-     * @param array $conf for supported values refert to UploadModel
+     * @param array $conf for supported values refer to UploadModel
      */
     public function __construct($name, $notnull = false, array $conf=array())
     {
