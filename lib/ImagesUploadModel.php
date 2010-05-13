@@ -213,9 +213,13 @@ class ImagesUploadModel extends Model
                     $im = $func($this->_file['tmp_name']);
                     $f($im, $this->_file['tmp_name']);
                     imagedestroy($im);
-                    $path = $this->__upload_dir . $data['model'] . '/' . $hash . '/' . 'original' . '.' . $data['extension'];
-                    if (g()->debug->allowed())
+                    $path = $this->__upload_dir . $data['model'] . '/' . $hash . '/original' . '.' . $data['extension'];
+
+                    if(g()->debug->allowed())
                         printf('<p class="debug">creating <code>%s</code>', $path);
+
+                    mkdir($this->__upload_dir . $data['model'] . '/' . $hash);
+                    copy($this->_file['tmp_name'], $path);
                     move_uploaded_file($this->_file['tmp_name'], $path);
                 }
                 elseif(is_uploaded_file($this->_file['tmp_name']))
@@ -321,8 +325,10 @@ class ImagesUploadModel extends Model
         if(is_file($this->__upload_dir . 'tmp' . $hash))
         {
             $path = $folder . $width . 'x' . $height . '.' . $extension;
-            if (g()->debug->allowed())
+
+            if(g()->debug->allowed())
                 printf('<p class="debug">creating <code>%s</code>', $path);
+
             if(!copy($this->__upload_dir . 'tmp' . $hash, $path))
             {
                 g()->addInfo(null, 'error', $this->trans('File has not been sent.'));
