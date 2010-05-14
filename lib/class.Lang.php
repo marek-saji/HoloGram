@@ -96,7 +96,9 @@ class Lang extends HgBase implements ILang
         static $cache = array();
         if (null === $this->__avaliable)
         {
-            $this->__avaliable = (array) g('Lang','model')->exec();
+            $lang_model = g('Lang','model');
+            $lang_model->order('id');
+            $this->__avaliable = (array) $lang_model->exec();
             g('Functions')->changeKeys($this->__avaliable, 'code');
         }
 
