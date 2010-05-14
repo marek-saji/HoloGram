@@ -291,7 +291,7 @@ class UploadModel extends Model
      */
     protected function _storeUploadedFile($path, array $file_data)
     {
-        if (!$this->_beforeStoring($path, (array)$data, $action))
+        if (!$this->_beforeStoring($path, $file_data, $action))
             return false;
 
         if (false !== $this->_max_size)
@@ -354,7 +354,7 @@ class UploadModel extends Model
             return false;
         }
 
-        if (!$this->_afterStoring($path, (array)$data, $action))
+        if (!$this->_afterStoring($path, $file_data, $action))
             return false;
 
         return true;
