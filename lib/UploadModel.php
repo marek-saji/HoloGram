@@ -193,23 +193,6 @@ class UploadModel extends Model
             case 'insert':
                 $file_data = & $data['file'];
                 unset($data['file']);
-                $mime = $this->getUploadedFileMIMEType($file_data);
-
-                if (@$data['id'])
-                {
-                    $path = $this->_getPath($data['model'], $data['id']);
-                }
-                else
-                {
-                    // generate unique path
-                    do
-                    {
-                        $hash = $f->generateKey();
-                        $path = $this->_getPath($data['model'], $hash);
-                    }
-                    while (file_exists($path));
-                    $data['id'] = $hash;
-                }
 
                 $mime = $this->getUploadedFileMIMEType($file_data);
 
@@ -230,6 +213,22 @@ class UploadModel extends Model
                         /** @todo ERROR */
                         return false;
                     }
+                }
+
+                if (@$data['id'])
+                {
+                    $path = $this->_getPath($data['model'], $data['id']);
+                }
+                else
+                {
+                    // generate unique path
+                    do
+                    {
+                        $hash = $f->generateKey();
+                        $path = $this->_getPath($data['model'], $hash);
+                    }
+                    while (file_exists($path));
+                    $data['id'] = $hash;
                 }
 
                 $data['original_name'] = $file_data['name'];
@@ -316,7 +315,7 @@ class UploadModel extends Model
                 $error = 'Błąd - %s - Zbyt duży plik';
                 break;
             case UPLOAD_ERR_PARTIAL :
-                $error = 'Błąd - %s - Nie udana próba wysłania pliku. Prosze spróbować jeszcze raz.';
+                $error = 'Błąd - %s - Nieudana próba wysłania pliku. Prosze spróbować jeszcze raz.';
                 break;
             case UPLOAD_ERR_NO_FILE :
                 $error = 'Błąd - %s - Brak pliku.';
