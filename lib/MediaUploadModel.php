@@ -161,20 +161,20 @@ class MediaUploadModel extends UploadModel
 
         $f = g('Functions');
 
-        list($type) = explode('/', $data['original_mime']);
+        list($type) = explode('/', $data['type']);
 
-        switch ($type)
+        switch($type)
         {
             case 'audio' :
                 return $this->_createAudio($path, $data);
-                break;
+            break;
             case 'video' :
                 return $this->_createVideo($path, $data);
-                break;
+            break;
             default :
                 // nothing to do, we happy.
                 return true;
-                break;
+            break;
         }
     }
 
@@ -239,9 +239,8 @@ class MediaUploadModel extends UploadModel
     {
         $f = g('Functions');
 
-        $path_mp3 = escapeshellarg($path . '.mp4');
-        $path_mp4 = escapeshellarg($path . '.jpeg');
-        $path_jpeg = escapeshellarg($path . '.frame.jpeg');
+        $path_mp4 = escapeshellarg($path . '.mp4');
+        $path_jpeg = escapeshellarg($path . '.frame.jpg');
         $path_thumb = escapeshellarg($path . '.%dx%d.png');
         $path = escapeshellarg($path);
 
@@ -260,7 +259,7 @@ class MediaUploadModel extends UploadModel
                     . ' -ab '.$ab
                     . ' -b '.$vb
                     . ' -s '.$vs
-                    . ' '.$path_mp3,
+                    . ' '.$path_mp4,
                 $output, $return_value
             );
         if (0 != $return_value)

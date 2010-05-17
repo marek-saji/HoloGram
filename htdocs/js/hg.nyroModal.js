@@ -84,7 +84,7 @@ hg['nyroModalInit'].f = function()
     // it's alive, aLIVE!
     $('.modal').live('click', function(e){
         e.preventDefault();
-        $.nyroModalManual($.extend($.fn.nyroModal.settings, {from: this}));
+        $.nyroModalManual($.extend({}, $.fn.nyroModal.settings, {from: this}));
     });
 
     return true;

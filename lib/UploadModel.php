@@ -133,6 +133,7 @@ class UploadModel extends Model
         if (false === $file
             || !(isset($file['model']) && isset($file['id'])) )
             return false;
+
         return $this->_getPath($file['model'], $file['id']);
     }
 
@@ -170,7 +171,6 @@ class UploadModel extends Model
                 }
             }
         }
-
         // do things on the filesystem
         switch ($action)
         {
@@ -193,6 +193,7 @@ class UploadModel extends Model
             case 'insert':
                 $file_data = & $data['file'];
                 unset($data['file']);
+                $mime = $this->getUploadedFileMIMEType($file_data);
 
                 if (@$data['id'])
                 {
@@ -239,7 +240,9 @@ class UploadModel extends Model
 
                 if ('update' == $action && !empty($data['id']))
                 {
-                    $this->filter(array('id' => $data['id']));
+                    $this->filter(array(
+                        'id' => $data['id']
+                    ));
                 }
                 break;
 
@@ -291,7 +294,7 @@ class UploadModel extends Model
      */
     protected function _storeUploadedFile($path, array $file_data)
     {
-        if (!$this->_beforeStoring($path, $data, $action))
+        if(!$this->_beforeStoring($path, $file_data, $action))
             return false;
 
         if (false !== $this->_max_size)
@@ -354,7 +357,7 @@ class UploadModel extends Model
             return false;
         }
 
-        if (!$this->_afterStoring($path, $data, $action))
+        if(!$this->_afterStoring($path, $file_data, $action))
             return false;
 
         return true;
@@ -374,14 +377,12 @@ class UploadModel extends Model
         if (!$this->_beforeDeleting($path))
             return false;
 
-        $f->rmrf($path); // will echo "deleting $path"
+        g('Functions')->rmrf($path); // will echo "deleting $path"
 
         if (!$this->_afterDeleting($path))
             return false;
-
         return true;
     }
-
 
     /**
      * Returns the full path of given filename in the upload directory.
@@ -427,15 +428,18 @@ class UploadModel extends Model
             else
                 $file = 0;
         }
+
         if (is_int($file))
         {
             if (isset($this->_array[$file]))
                 $file = & $this->_array[$file];
         }
+
         if (!is_array($file))
         {
             return false;
         }
+
         return $file;
     }
 
