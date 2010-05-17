@@ -523,11 +523,14 @@ class UploadModel extends Model
      */
     public function getUploadedFileMIMEType($file_data)
     {
-        if (false && null !== @$file_data['type'])
+        /* trusting mime type sent by user is not a very good idea..
+        if (null !== @$file_data['type'])
         {
             return $file_data['type'];
         }
-        else if (is_array($file_data)
+        else
+        */
+        if (is_array($file_data)
                 && array_key_exists('file', g()->conf['unix'])
                 && g()->conf['unix']['file'] )
         {
@@ -568,7 +571,8 @@ class UploadModel extends Model
         $last_line = g('Functions')->exec(
                 'file', '-bi '.escapeshellarg($path), $out, $ret);
 
-        throw new HgException("Cannot describe MIME type");
+        if (0 != $ret)
+            throw new HgException("Cannot describe MIME type");
 
         // file may have added charset after the semicolon
         list($mime) = explode(';', trim($last_line));
