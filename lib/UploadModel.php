@@ -234,7 +234,7 @@ class UploadModel extends Model
                 $data['original_name'] = $file_data['name'];
                 $data['original_mime'] = $mime;
 
-                if (!$this->_storeUploadedFile($path, $file_data, $data))
+                if (!$this->_storeUploadedFile($path, $file_data, $data, $action))
                     return false;
 
                 if ('update' == $action && !empty($data['id']))
@@ -292,7 +292,7 @@ class UploadModel extends Model
      *
      * @return boolean success
      */
-    protected function _storeUploadedFile($path, array $file_data, array & $data)
+    protected function _storeUploadedFile($path, array $file_data, array & $data, $action)
     {
         if(!$this->_beforeStoring($path, $file_data, $data, $action))
             return false;
