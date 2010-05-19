@@ -31,7 +31,7 @@ $conf['unix']['ffmpeg-mp4'] = array(
     'path' => 'ffmpeg',
     'args' => '-y',
     'args_args' => array(
-        '-f mp4 -acodec libmp3lame -vcodec mpeg4'
+        '-f mp4 -acodec libfaac -vcodec mpeg4'
     )
 );
 // video/* to jpeg (one frame)
