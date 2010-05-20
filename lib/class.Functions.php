@@ -406,7 +406,18 @@ class Functions extends HgBase
     function truncateHTML($string, $length, $suffix='&hellip;')
     {
         if (!class_exists('tidy',false))
+        {
+            static $error_displayed = false;
+            if (!$error_displayed)
+            {
+                $error_displayed = true;
+                trigger_error('Tidy class is not present! We are very unpappy'
+                        . ' about that, as we have to use less efficient method'
+                        . ' method (this warning appears only once).',
+                        E_USER_WARNING );
+            }
             return $this->truncateHTMLUgly($string, $length, $suffix);
+        }
 
         // any need to truncate?
         if (!$length)
@@ -559,7 +570,7 @@ class Functions extends HgBase
             // only add string if text was cut
             if ( strlen($string) > $length )
             {
-                return( $ret.$addstring );
+                return preg_replace('!((?:<[^>]+>\s*)*)$!', "$addstring\\1", $ret, 1);
             }
             else
             {
