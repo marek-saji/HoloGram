@@ -407,15 +407,6 @@ class Functions extends HgBase
     {
         if (!class_exists('tidy',false))
         {
-            static $error_displayed = false;
-            if (!$error_displayed)
-            {
-                $error_displayed = true;
-                trigger_error('Tidy class is not present! We are very unpappy'
-                        . ' about that, as we have to use less efficient method'
-                        . ' method (this warning appears only once).',
-                        E_USER_WARNING );
-            }
             return $this->truncateHTMLUgly($string, $length, $suffix);
         }
 
@@ -740,6 +731,9 @@ class Functions extends HgBase
 
     /**
      * Zwraca autora metody, w ktorej zawiera sie linia kodu w podanym pliku.
+     *
+     * @todo unused (marked 2010-05-20), use or remove
+     *
      * @param string $file Plik zrodlowy.
      * @param integer $line Numer linii.
      * @return array tablica z autorami metody
@@ -774,6 +768,8 @@ class Functions extends HgBase
 
     /**
      * Metoda do budowania stronicaowania
+     *
+     * @todo remove this, deprecated since 2010-05-20
      *
      * @param integer $count - ile wszystkich rekordów
      * @param integer $on_page - po ile na stronie
