@@ -94,10 +94,9 @@ class UploadModel extends Model
         }
 
         $this->_table_name = 'upload'; // all upload models may share
-        self::_getPath(null, null); // make sure the path exists
         $this->_upload_dir = UPLOAD_DIR . $this->_subdirectory
                              . DIRECTORY_SEPARATOR;
-
+        self::_getPath(null, null); // make sure the path exists
         parent::__construct();
 
         // (also a filename)
@@ -407,7 +406,7 @@ class UploadModel extends Model
     {
         $directory = $this->_upload_dir . $model . DIRECTORY_SEPARATOR;
 
-        if (!file_exists($directory) && !mkdir($directory, 0777, true))
+        if (!file_exists($directory) && !mkdir($directory, 0700, true))
             throw new HgException("Error while creating upload dir: `$directory'!");
 
         if (!is_dir($directory))

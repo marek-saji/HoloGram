@@ -78,7 +78,7 @@ class ImagesUploadModel extends Model
 
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
-        elseif(mkdir($folder))
+        elseif(mkdir($folder, 0700, true))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s created', $name));
         else
             throw new HgException($this->trans('%s is not created!', $folder));
@@ -218,7 +218,7 @@ class ImagesUploadModel extends Model
                     if(g()->debug->allowed())
                         printf('<p class="debug">creating <code>%s</code>', $path);
 
-                    mkdir($this->__upload_dir . $data['model'] . '/' . $hash);
+                    mkdir($this->__upload_dir . $data['model'] . '/' . $hash, 0700, true);
                     copy($this->_file['tmp_name'], $path);
                     move_uploaded_file($this->_file['tmp_name'], $path);
                 }
@@ -273,7 +273,7 @@ class ImagesUploadModel extends Model
 
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
-        elseif(mkdir($folder))
+        elseif(mkdir($folder, 0700, true))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s created', $name));
         else
             throw new HgException($this->trans('%s is not created!', $folder));
