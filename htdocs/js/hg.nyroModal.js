@@ -41,6 +41,7 @@ hg['nyroModalInit'].f = function()
         closeSelector: prevSettings.closeSelector+', .modalClose',
         // Value added when a form or Ajax is sent with a filter content
         selIndicator: 'modalSel',
+        windowResize: false,
         // min size. let's make it small.
         minWidth:  48,
         minHeight: 48,
