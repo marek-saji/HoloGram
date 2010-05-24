@@ -219,7 +219,6 @@ class ImagesUploadModel extends Model
                         printf('<p class="debug">creating <code>%s</code>', $path);
 
                     mkdir($this->__upload_dir . $data['model'] . '/' . $hash, 0700, true);
-                    copy($this->_file['tmp_name'], $path);
                     move_uploaded_file($this->_file['tmp_name'], $path);
                 }
                 elseif(is_uploaded_file($this->_file['tmp_name']))
