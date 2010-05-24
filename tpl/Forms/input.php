@@ -43,11 +43,6 @@ if (false !== $id)
     $attrs['id'] = $id;
 $attrs['name'] = $ident.'['.$input.']';
 
-if(isset($cloneable_id))
-    $attrs['name'] .= '['.$cloneable_id.']';
-if(isset($cloneable))
-    $attrs['name'] .= '[]';
-
 $attrs['name'] .= $name_suffix;
 
 $attrs['value'] = $data;
