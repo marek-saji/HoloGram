@@ -1,4 +1,13 @@
 <?php
+// for FMediaFile
+
+// greatest dimensions smaller or equal to original (will keep aspect ratio)
+define('IMAGE_RESIZE_FIT', 0);
+// similar to IMAGE_RESIZE_FIT, but adds transparent stripes
+define('IMAGE_RESIZE_PAD', 1);
+// will strech the image, does not keep aspect ratio
+define('IMAGE_RESIZE_STRECH', 2);
+
 
 /**
  *  @todo: fix default and automatic values
@@ -1039,6 +1048,16 @@ class FInt extends Field
             break;
         }
     }
+
+    public function dbString($value)
+    {
+        if(NULL !== ($av = $this->autoValue()))
+            return ($av);
+        if($value === null || $value === '')
+            return "NULL";
+        else
+            return (pg_escape_string($value));
+    }
 }
 
 /**
@@ -1049,17 +1068,36 @@ class FFloat extends Field
 
     /**
      * Constructor.
-     * @param $name field name
-     * @param $precision byte-length of the field. Either 2, or 4, or 8. Any other value is treated as 4.
-     * @param $notnull a not null property
-     * @param $def_val A default value of the field.
+     *
+     * @author ?
+     * @author m.augustynowicz added {max,min} value and max decimals
+     *
+     * @param string $name field name
+     * @param int $precision byte-length of the field.
+     *        Either 2, or 4, or 8. Any other value is treated as 4.
+     * @param boolean $notnull a not null property
+     * @param null|float $def_val A default value of the field.
+     * @param null|float $min_val minimal value
+     * @param null|float $max_val maximal value
+     * @param null|int $max_decimals maximum number of decimals after the point
      */
-    public function __construct($name, $precision = 4, $notnull = false, $def_val = null)
+    public function __construct($name, $precision = 4, $notnull = false, $def_val = null, $min_val=null, $max_val=null, $max_decimals = null)
     {
         parent::__construct($name, $notnull, $def_val);
-        if($precision != 4 && $precision != 8)
+
+        if ($precision != 4 && $precision != 8)
             $precison = 4;
         $this->_rules['precision'] = $precision;
+
+        $this->_rules['min_val'] = $min_val;
+        $this->_rules['max_val'] = $max_val;
+        $this->_rules['max_decimals'] = $max_decimals;
+
+        $this->mess(array('invalid' => 'Invalid floating point value'));
+        $this->mess(array('min_val_excided' => 'Number is to small'));
+        $this->mess(array('max_val_excided' => 'Number is to big'));
+        $this->mess(array('max_decimals_excided'
+                => 'Too many digits after decimal point') );
     }
 
     public function checkType($def)
@@ -1076,14 +1114,32 @@ class FFloat extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if(NULL !== $value)
+        if (NULL !== $value)
         {
             $value = g('Functions')->floatVal($value);
-            if(false === $value)
+            if (false === $value)
                 $err['invalid'] = true;
+            if (null !== $this->_rules['min_val'])
+            {
+                if ($value < $this->_rules['min_val'])
+                    $err['min_val_excided'] = true;
+            }
+            if (null !== $this->_rules['max_val'])
+            {
+                if ($value > $this->_rules['max_val'])
+                    $err['max_val_excided'] = true;
+            }
+            if (null !== $this->_rules['max_decimals'])
+            {
+                $decimals = $value - (int)$value;
+                $decimals_no = strlen((string) $decimals_no) - 2;
+                if ($decimals_no > $this->_rules['max_decimals'])
+                    $err['max_decimals_excided'] = true;
+            }
         }
-        elseif(!$this->checkAutoValue($value))
+        elseif (!$this->checkAutoValue($value))
             $err['notnull'] = true;
+
         return ($this->__errors($err, $value));
     }
 
@@ -1109,6 +1165,55 @@ class FFloat extends Field
 }
 
 /**
+ * Floting point type with secified number of digits after decimal separator.
+ * min and max value can be defined
+ * @author b.matuszewski
+ */
+class FDouble extends FFloat
+{
+
+    /**
+     * Constructor.
+     * @param $name field name
+     * @param $precision byte-length of the field. Either 2, or 4, or 8. Any other value is treated as 8.
+     * @param $notnull a not null property
+     * @param $def_val A default value of the field.
+     * @param int $decimal_places - number of digits after decimal separator (. or ,)
+     * @param float $min_val - minimum value of a field
+     * @param float $max_val - maximum value of a field
+     */
+    public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = 2, $min_val = null, $max_val = null)
+    {
+        parent::__construct($name, $notnull, $def_val);
+        if($precision != 4 && $precision != 8)
+            $precison = 8;
+        $this->_rules['precision'] = $precision;
+        $this->_rules['decimal_places'] = $decimal_places;
+        $this->_rules['min_val'] = $min_val;
+        $this->_rules['max_val'] = $max_val;
+        $this->mess(array('invalid' => 'Invalid floating point value'));
+        $this->mess(array('min_val_excided' => 'Number is to small'));
+        $this->mess(array('max_val_excided' => 'Number is to big'));
+    }
+
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(!$this->checkAutoValue($value) && NULL === $value)
+            $err['notnull'] = true;
+        $value = preg_replace('!,!','.',$value);
+        $reg_expression = sprintf('/^[\+\-]?[0-9]*[[\.]?[0-9]{0,%s}]?$/', $this->_rules['decimal_places'] > 0 ? $this->_rules['decimal_places'] : 1);
+        if(!preg_match($reg_expression, $value))
+            $err['invalid'] = true;
+        elseif($this->_rules['min_val'] !== null && $value < $this->_rules['min_val'])
+            $err['min_val_excided'] = true;
+        elseif($this->_rules['max_val'] !== null && $value > $this->_rules['max_val'])
+            $err['max_val_excided'] = true;
+        return ($this->__errors($err, $value));
+    }
+}
+
+/**
  * A date field. It stores the date only. You also might be interested in FTime and FTimestamp fields.
  */
 class FDate extends Field
@@ -1130,8 +1235,11 @@ class FDate extends Field
         $err = array();
         if(NULL != $value)
         {
-            if(false === strtotime($value))
-                $err['invalid'] = true;
+            if (!is_int($value)) // we allow to pass timestamp
+            {
+                if(false === strtotime($value))
+                    $err['invalid'] = true;
+            }
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
@@ -1440,35 +1548,99 @@ class FForeignId extends FInt
     }
 }
 
-class FImageFile extends FString
+/**
+ * Very special {@see FForeignId} for {@see UploadModel}
+ *
+ * @todo invalid() -- check type
+ *
+ * @author m.jutkiewicz
+ * @author m.augustynowicz making it UserModel specific
+ */
+class FFile extends FString
 {
-    protected $_foreign_model = '';
+    protected $_foreign_model = 'Upload';
 
-    public function __construct($name, $notnull = false, $foreign_model = '')
+    /**
+     * @val array for supported values refer to UploadModel
+     */
+    protected $_conf = array();
+
+    /**
+     *
+     * @param string $name
+     * @param boolean $notnull add "NOT NULL"?
+     * @param array $conf for supported values refer to UploadModel
+     */
+    public function __construct($name, $notnull = false, array $conf=array())
     {
+        $this->_conf = array_merge($this->_conf, $conf);
+
         parent::__construct($name, $notnull, null, 0, 32);
-
-        if(!is_string($foreign_model))
-            throw new HgException("Foreign model parameter has to be a string.");
-
-        $this->foreignModel($foreign_model);
     }
 
     /**
-     * Gets or sets the foreign model.
+     * Gets the foreign model.
      */
-    public function foreignModel($foreign_model = '')
+    public function getModel()
     {
-        if(empty($foreign_model))
-            return ($this->_foreign_model);
+        if (is_string($this->_foreign_model))
+        {
+            $this->_foreign_model = g($this->_foreign_model, 'Model',
+                    array('field'=>$this)
+                );
+        }
+        return $this->_foreign_model;
+    }
+
+    /**
+     * Settings getter
+     *
+     * @param string $property
+     * @param mixed $value if specified, will check whether $value
+     *        is present in requested config $property.
+     *        NOTE: when $propety is true, it always return TRUE
+     *
+     * @return mixed when no $value specified, returns $value,
+     *         boolean otherwise
+     */
+    public function getConf($property, $value=null)
+    {
+        if (func_num_args() == 1)
+            return @ $this->_conf[$property];
         else
         {
-            if(!is_string($foreign_model))
-                throw new HgException("Foreign model parameter has to be a string.");
+            if (!isset($this->_conf[$property]))
+                return null;
+            else if (true === $this->_conf[$property])
+                return true;
             else
-                $this->_foreign_model = $foreign_model;
+                return isset($this->_conf[$property][$value]);
         }
     }
+}
+
+/**
+ * Very special FForeignId for ImagesUploadModel
+ * @author m.augustynowicz
+ */
+class FImageFile extends FFile
+{
+    protected $_foreign_model = 'ImagesUpload';
+}
+
+/**
+ * Very special FForeignId for MediaUploadModel
+ * @author m.augustynowicz
+ */
+class FMediaFile extends FFile
+{
+    protected $_foreign_model = 'MediaUpload';
+
+    /**
+     * @val array for supported values refer to MediaUploadModel (and up)
+     */
+    protected $_conf = array();
+
 }
 
 /**

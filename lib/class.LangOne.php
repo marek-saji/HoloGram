@@ -1,6 +1,6 @@
 <?php
 if (!defined('FALLBACK_LANG'))
-    define('FALLBACK_FALNG', 'en-GB');
+    define('FALLBACK_LANG', 'en-GB');
 
 /**
  * For applications with only one language.

@@ -4,6 +4,7 @@
  * @author m.augustynowicz
  *
  * (params passed as local variables) 
+ * @param string $id id attribute (overpowers attr[id])
  * @param array $attrs html attributes for <form /> tag
  * @param null|string $action
  * @param string $class
@@ -16,6 +17,8 @@
  */
 extract(array_merge(
         array(
+            'id'            => null,
+            'ident'         => null,
             'attrs'         => array(),
             'action'        => null,
             'class'         => '',
@@ -26,6 +29,7 @@ extract(array_merge(
         ),
         (array) $____local_variables
     ));
+
 if ($action)
     $attrs['action'] = $action;
 if (false === $autocomplete)
@@ -33,32 +37,36 @@ if (false === $autocomplete)
 if ($has_files)
     $attrs['enctype'] = 'multipart/form-data';
 if (!isset($attrs['method']))
-    $attrs['method'] = 'POST';
-if (!isset($attrs['id']))
-    $attrs['id'] = $ident;
+    $attrs['method'] = 'post';
+if (isset($id))
+    $attrs['id'] = $id;
+else
+    $id = $attrs['id'];
+if (isset($ident))
+    $attrs['name'] = $ident;
 @$attrs['class'] .= ' hg ' . $class;
 
 printf('<form %s>', $f->xmlAttr($attrs));
 
 if ($err_handling) :
 ?>
-<div class="form_errors" id="<?=($ident.'__err')?>" <?=(@empty($errors))?'style="display:none"':''?>>
-    <ol>
+<div class="form_errors" id="<?=($id.'__err')?>" name="<?=$ident?>" <?=(@empty($errors))?'style="display:none"':''?>>
     <?php
     if (@$errors)
     {
+        echo '<ol>';
         foreach ($errors as $key => $error)
         {
-            printf('<li id="%s+%s">%s</li>', $ident, $key, $error);
+            printf('<li id="%s+%s">%s</li>', $id, $key, $error);
         }
+        echo '</ol>';
     }
     ?>
-    </ol>
 </div>
 
 <?php
 if($ajax)
-    g()->view->addOnLoad('$(\'#'.$ident.'\').submit(function(){return hg(\'form_validate\')(\''.$ident.'\');})');
+    g()->view->addOnLoad('$(\'#'.$id.'\').submit(function(){return hg(\'form_validate\')(\''.$id.'\');})');
 
 endif; // handle errors
 

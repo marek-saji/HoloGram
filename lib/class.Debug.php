@@ -212,9 +212,10 @@ class Debug extends HgBase
      * @param string $msg Message to display.
      * @param integer|array $trace if array given, it's being used instead
      *        of debug_backtrace(), if integer - debug_backtrace() gets shifted
+     * @param bool $show_context shall we show context (it may be quite big!)
      * @return void
      */
-    public function trace($msg = '', $trace=array())
+    public function trace($msg = '', $trace=array(), $show_context=true)
     {
         static $files = array();
 
@@ -386,7 +387,7 @@ JS;
                 echo '</td></tr>';
             }
 
-            if (@$call['context'])
+            if ($show_context && @$call['context'])
             {
                 echo '<tr><td '.$cell_style.' colspan="2">';
                 if (! (defined('ENVIRONMENT') && ENVIRONMENT == LOCAL_ENV))

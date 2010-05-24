@@ -129,7 +129,7 @@ class TableController extends Component
             return(array($x));
     }
     
-    protected function __actionParams(&$record, &$pk, &$params)
+    protected function _actionParams(&$record, &$pk, &$params)
     {
         $res = g()->conf['link_split'];
         foreach($params as $n => &$p)

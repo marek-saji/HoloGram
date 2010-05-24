@@ -2,7 +2,7 @@
 g()->load('DataSets', null);
 
 /**
- * Model for uploaded files.
+ * Model for uploaded images.
  * @author m.jutkiewicz
  * 
  * WARNING: if you are using transaction's rollback, you have to
@@ -25,8 +25,8 @@ g()->load('DataSets', null);
  */
 class ImagesUploadModel extends Model
 {
-    private $__uploadDir;
-    private $__allowedExtensions = array(
+    private $__upload_dir;
+    private $__allowed_extensions = array(
     	'jpg',
     	'png',
     	'gif',
@@ -34,7 +34,7 @@ class ImagesUploadModel extends Model
 
     public function __construct()
     {
-        $this->__uploadDir = UPLOAD_DIR;
+        $this->__upload_dir = UPLOAD_DIR . 'images/';
         parent::__construct();
 
         $this->__addField(new FString('id', true, null, 32, 32));
@@ -58,7 +58,7 @@ class ImagesUploadModel extends Model
      */
     public function setUploadDir($dir)
     {
-        $this->__uploadDir = $dir;
+        $this->__upload_dir = $dir;
     }
 
     /**
@@ -69,16 +69,16 @@ class ImagesUploadModel extends Model
      */
     public function getUploadDir()
     {
-        return $this->__uploadDir;
+        return $this->__upload_dir;
     }
 
     protected function __syncSingle(&$data, $action, &$error)
     {
-        $folder = $this->__uploadDir . $data['model'] . '/';
+        $folder = $this->__upload_dir . $data['model'] . '/';
 
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
-        elseif(mkdir($folder))
+        elseif(mkdir($folder, 0700, true))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s created', $name));
         else
             throw new HgException($this->trans('%s is not created!', $folder));
@@ -88,8 +88,8 @@ class ImagesUploadModel extends Model
             case 'delete':
                 if(!empty($data['model']) && !empty($data['id']))
                 {
-                    $path = $this->__uploadDir . $data['model'] . '/' . $data['id'];
-                    g('Functions')->rmrf($path);
+                    $path = $this->__upload_dir . $data['model'] . '/' . $data['id'];
+                    g('Functions')->rmrf($path); // will echo "deleting $path"
                     $this->filter(array('id' => $data['id']));
                 }
             break;
@@ -101,7 +101,7 @@ class ImagesUploadModel extends Model
                 if(empty($image_files) || !array_key_exists('sizes', $image_files) || !array_key_exists('store_original', $image_files) || !array_key_exists('stripes', $image_files) || !array_key_exists('format', $image_files))
                     throw new HgException($this->trans('$image_sizes defined incorrectly.'));
 
-				if(!in_array($image_files['format'], $this->__allowedExtensions))
+				if(!in_array($image_files['format'], $this->__allowed_extensions))
                     throw new HgException($this->trans('Destination format defined incorrectly: %s.', $image_files['format']));
 
                 $rgb = array();
@@ -197,7 +197,7 @@ class ImagesUploadModel extends Model
                         imagecopyresampled($resized, $im, ($new_w - $size['width'])/2, ($new_h - $size['height'])/2, 0, 0, $size['width'], $size['height'], $size['orig_width'], $size['orig_height']);
 
                         //unlink($this->_file['tmp_name']);
-                        $f($resized, $this->__uploadDir . 'tmp' . $hash);
+                        $f($resized, $this->__upload_dir . 'tmp' . $hash);
                         imagedestroy($im);
                         imagedestroy($resized);
                     }
@@ -205,7 +205,7 @@ class ImagesUploadModel extends Model
                     if(!$this->__addFile($data['model'], $hash, $data['extension'], $w, $h))
                         return false;
 
-                    unlink($this->__uploadDir . 'tmp' . $hash);
+                    unlink($this->__upload_dir . 'tmp' . $hash);
                 }
 
                 if($image_files['store_original'] && is_uploaded_file($this->_file['tmp_name']))
@@ -213,7 +213,13 @@ class ImagesUploadModel extends Model
                     $im = $func($this->_file['tmp_name']);
                     $f($im, $this->_file['tmp_name']);
                     imagedestroy($im);
-                    move_uploaded_file($this->_file['tmp_name'], $this->__uploadDir . $data['model'] . '/' . $hash . '/' . 'original' . '.' . $data['extension']);
+                    $path = $this->__upload_dir . $data['model'] . '/' . $hash . '/original' . '.' . $data['extension'];
+
+                    if(g()->debug->allowed())
+                        printf('<p class="debug">creating <code>%s</code>', $path);
+
+                    mkdir($this->__upload_dir . $data['model'] . '/' . $hash, 0700, true);
+                    move_uploaded_file($this->_file['tmp_name'], $path);
                 }
                 elseif(is_uploaded_file($this->_file['tmp_name']))
                     unlink($this->_file['tmp_name']);
@@ -250,8 +256,8 @@ class ImagesUploadModel extends Model
             {
                 if(!empty($data['model']) && !empty($data['id']))
                 {
-                    $path = $this->__uploadDir . $data['model'] . '/' . $data['id'];
-                    g('Functions')->rmrf($path);
+                    $path = $this->__upload_dir . $data['model'] . '/' . $data['id'];
+                    g('Functions')->rmrf($path); // will echo "deleting $path"
                 }
             }
         }
@@ -262,11 +268,11 @@ class ImagesUploadModel extends Model
     protected function __addFile($model, $hash, $extension, $width = null, $height = null)
     {
         $file = $this->_file;
-        $folder = $this->__uploadDir . $model . '/' . $hash . '/';
+        $folder = $this->__upload_dir . $model . '/' . $hash . '/';
 
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
-        elseif(mkdir($folder))
+        elseif(mkdir($folder, 0700, true))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s created', $name));
         else
             throw new HgException($this->trans('%s is not created!', $folder));
@@ -282,7 +288,7 @@ class ImagesUploadModel extends Model
                     $info = 'Błąd - %s - Zbyt duży plik';
                     break;
                 case 3:
-                    $info = 'Błąd - %s - Nie udana próba wysłania pliku. Prosze spróbować jeszcze raz.';
+                    $info = 'Błąd - %s - Nieudana próba wysłania pliku. Prosze spróbować jeszcze raz.';
                     break;
                 case 4:
                     $info = 'Błąd - %s - Brak pliku.';
@@ -315,9 +321,14 @@ class ImagesUploadModel extends Model
             $mime = $file['type'];
 
         //upload file
-        if(is_file($this->__uploadDir . 'tmp' . $hash))
+        if(is_file($this->__upload_dir . 'tmp' . $hash))
         {
-            if(!copy($this->__uploadDir . 'tmp' . $hash, $folder . $width . 'x' . $height . '.' . $extension))
+            $path = $folder . $width . 'x' . $height . '.' . $extension;
+
+            if(g()->debug->allowed())
+                printf('<p class="debug">creating <code>%s</code>', $path);
+
+            if(!copy($this->__upload_dir . 'tmp' . $hash, $path))
             {
                 g()->addInfo(null, 'error', $this->trans('File has not been sent.'));
                 return false;
@@ -358,7 +369,7 @@ class ImagesUploadModel extends Model
      */
     public function getFullFileName($model, $file_name)
     {
-        $folder = $this->__uploadDir . $model . '/';
+        $folder = $this->__upload_dir . $model . '/';
 
         if(!is_dir($folder))
         {

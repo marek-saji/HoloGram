@@ -6,6 +6,7 @@ define('ORDER_RANDOM', 'RANDOM()');
 
 
 /**
+*
 * Interface of the data set.  A dataset is an abstraction of any sql tabular data retrieved with a query.
 * A query is considered to consist of several parts. First of all from a field set, that define the values
 * to retrieve. The second part, the one following the FROM keyword, is called a data set generator (@see generator()).
@@ -109,6 +110,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     protected $_alias = '';
 	protected $_count = NULL;
     protected $_order = NULL;
+    protected $_nulls_first = array();
 
     public function __construct()
     {
@@ -278,6 +280,17 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     }
 
     /**
+     * Generates UPDATE part of query
+     * @uses generator()
+     * @author m.augustynowicz
+     * @return string
+     */
+    protected function _queryUpdate()
+    {
+        return "UPDATE\n" . $this->_ident($this->generator());
+    }
+
+    /**
      * Generates WHERE part of query
      * @uses generator()
      * @author m.augustynowicz moved from query()
@@ -302,6 +315,17 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     }
 
     /**
+     * Generates SET part of query
+     * @author m.augustynowicz
+     * @param IBoolean $values
+     * @return string
+     */
+    protected function _querySet($values)
+    {
+        return "\nSET\n" . $this->_ident($values->generator());
+    }
+
+    /**
      * Generates GROUP BY part of query
      * @uses $_groupby
      * @author m.augustynowicz moved from query()
@@ -317,7 +341,9 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     /**
      * Generates ORDER BY part of query
      * @uses $_order
+     * @uses $_nulls_first
      * @author m.augustynowicz moved from query()
+     * @author bartuś maintainig nulls first/last clouse
      * @return string
      */
     protected function _queryOrderBy()
@@ -331,7 +357,11 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 $field = $def['field']->generator();
             else
                 $field = $def['field'];
-            $sql[] = "$field {$def['dir']}";
+
+            if(isset($this->_nulls_first[$name]))
+                $sql[] = "$field {$def['dir']}" . ($this->_nulls_first[$name] ? " NULLS FIRST\n" : " NULLS LAST\n");
+            else
+                $sql[] = "$field {$def['dir']}";
         }
         unset($def);
         $sql = "\nORDER BY\n".$this->_ident(join(",\n", $sql));
@@ -441,16 +471,24 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     * Sets or retrieves current records ordering.
     * @author p.piskorski
     * @author m.augustynowicz
+    * @author b.matuszewski
+    *    adding $nulls_first
     *
     * @param $field IField|string|boolean
     *     when instance of IField given: it's generator will be used;
     *     when string: it is expected to be this DataSet's field name
     *     when true: method returns associative array with sorting information
     *     when false: method returns null d:
+    *     @TODO verify this description IMO when false method returns actual sorting information and resets them
+    *
     * @param $action string|boolean
     *     string sets ordering: either ASC or DESC, unknown values got changed to ASC;
     *     boolean sets action: true returns ordering information for specified field,
     *                          false unsets ordering for it.
+    * @param $nulls_first null|boolean
+    *    when null NULLS FIRST/NULLS LAST clouse will be ommited
+    *    when true NULLS FIRST clouse will be used
+    *    when false NULLS LAST clouse will be used
     *
     * @return string|int
     *   when setting: id associated to newly set ordering. can be used to unset it.
@@ -489,7 +527,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     *   // or
     *   $ds->order(true);
     */
-    public function order($field=true, $dir_or_action='ASC')
+    public function order($field=true, $dir_or_action='ASC', $nulls_first = null)
     {
         // work on all fields
         if (is_bool($field))
@@ -574,10 +612,13 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 $this->_order[$key] = compact('field', 'dir');
                 return $key;
             }
+            if($nulls_first === null)
+                unset($this->_nulls_first[$key]);
+            else
+                $this->_nulls_first[$key] = (bool) $nulls_first;
         }
     }
-    
-    
+
     /**
     * Retrieves a field
     * @param $name Name of the searched field.
@@ -1210,35 +1251,46 @@ class Model extends DataSet implements IModel
     
     public function delete($execute=false)
     {
-        $sql = "DELETE FROM {$this->_table_name} ";
-        if ($this->_filter) 
-            $sql .= "\nWHERE\n  ".$this->_filter->generator();
+        $sql = 'DELETE';
+        $sql .= $this->_queryFrom();
+        $sql .= $this->_queryWhere();
         return $execute?g()->db->execute($sql):$sql;
     }
     
     
     /**
     * Updates recodrs matched by the current filter with the given values.
-    * @param $values array of $name=>$field, where $name contain names of the fields to be 
-    *     updated, and $fields IFields with new values.
+    * @param $values array of $field_name=>$value, where $field_name contain
+    * names of the fields to be updated, and $value -- value.
     * @param $execute set true to automatically execute prepared query
     * @return When $execute is false (default) the generated query is returned. 
     */
     public function update(array $values, $execute=false)
     {
-        $sql = '';
+        $set = array();
+        $error = array();
         foreach ($values as $name => $val)
         {
-            $sql .= "    ".$this[$name]->getName()." = ". $val->generator() .",\n";
+            if ($err = $this[$name]->invalid($val))
+                $error[$name] = $err;
+            else
+                $set[] = $this[$name]->generator() . "=" . $this[$name]->dbString($val);
         }
-        if (!empty($values))
-            $sql[strlen($sql)-2]=' ';
-        if ($sql)
-            $sql = $this->_ident($sql);
-        $sql = " UPDATE {$this->_table_name} SET\n".$sql;
-        if ($this->_filter) 
-            $sql .= "\nWHERE\n".$this->_ident($this->_filter->generator());
-        return $execute?g()->db->execute($sql):$sql;        
+
+        if(!empty($error))
+            return $error;
+
+        $set = join(",\n", $set);
+        $this->__iBoolean($set);
+
+        $sql  = $this->_queryUpdate();
+        $sql .= $this->_querySet($set);
+        $sql .= $this->_queryWhere();
+
+        if (!$execute)
+            return $sql;
+        else
+            return g()->db->execute($sql) && !g()->db->lastErrorMsg();
     }
     
     
@@ -1321,8 +1373,7 @@ class Model extends DataSet implements IModel
             else
                 $sql .= $tmp;
         }
-        
-        //var_dump($error);
+
         if(!empty($error))
             return $error;
         else if (!$execute)
@@ -1406,6 +1457,7 @@ class Model extends DataSet implements IModel
                 if(!isset($data[$pk]) || !$data[$pk])
                 {
                     $action = 'insert';
+                    trigger_error('Tried to update-sync, but no PK given, falling back to insert!', E_USER_WARNING);
                     break;
                 }
         }

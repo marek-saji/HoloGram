@@ -12,7 +12,10 @@ hg['nyroModalInit'].ajax_i = null;
 hg['nyroModalInit'].f = function()
 {
     if (typeof $.nyroModalSettings == 'undefined')
+    {
+        console.error('Tried to initialize nyroModal, but it was not found!');
         return false;
+    }
 
     // these will be shown by nyroModal
     $('.modaled').hide();
@@ -62,6 +65,8 @@ hg['nyroModalInit'].f = function()
         },
         // ajax related things
         ajax: {
+            data: {'hg+id_offset': window.hg_id_offset},
+            type: 'POST',
             // will treat response as HTML string
             dataType: 'html',
             // and parse it with this callback:
@@ -79,7 +84,7 @@ hg['nyroModalInit'].f = function()
     // it's alive, aLIVE!
     $('.modal').live('click', function(e){
         e.preventDefault();
-        $.nyroModalManual($.extend($.fn.nyroModal.settings, {from: this}));
+        $.nyroModalManual($.extend({}, $.fn.nyroModal.settings, {from: this}));
     });
 
     return true;

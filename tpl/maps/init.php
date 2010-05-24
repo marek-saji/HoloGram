@@ -22,7 +22,10 @@ if (g()->debug->on('disable','gmaps'))
 
 extract(array_merge(
         array(
-            // seems like '2' means '2.0' and 2.x means "latest", 2.150 works with overlays
+            // stable:  2.s (e.g. 2.140)
+            // current: 2   (e.g. 2.225)
+            // latest:  2.x (e.g. 2.232)
+            // see: http://code.google.com/p/gmaps-api-issues/wiki/JavascriptMapsAPIChangelog
             'ver'       => '2.x',
             'locale'    => g()->lang->get(),
         ),

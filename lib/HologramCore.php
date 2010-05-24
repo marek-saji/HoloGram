@@ -127,10 +127,16 @@ interface IController
     
     /**
     * Adds a child controller (a subcontroller)
-    * @param $controller a Controller to add
+    * @param Controller|string $controller to add
+    *        (object or name to pass to Kernel::get())
+    * @param null|string|array $name_or_args if string passed as $controller,
+    *        this will be used to initialize $controller,
+    *        null -- use lowercased $controller as name
+    *        string -- use as name
+    *        array -- pass to $controller's constructor
     * @return the $controller itself (to allow chainig)
     */
-    public function addChild($controller);
+    public function addChild($controller, $name_or_args=null);
     
     /**
     * Checks if given controlelr 
@@ -658,7 +664,7 @@ JS;
             g()->debug->dump($result);
             print "</pre>";
             print '<div style="display:none">';
-            g()->debug->trace(1);
+            g()->debug->trace(1, null, false);
             print "</div>";
             print "</div>";
             if ($msg = $this->lastErrorMsg())
@@ -1567,14 +1573,23 @@ abstract class Controller extends HgBase implements IController
     /**
      * Sets template that will be used to render the component
      * @author m.augustynowicz
-     * @param string $tpl template name
+     * @param null|string $tpl template name
      * @return boolean false when template does not exist
      *         (it is set nevertheless, so we can display
      *         "template %s lost in action")
      */
     protected function _setTemplate($tpl)
     {
-        $tpl = strtolower($tpl);
+        if (null === $tpl)
+        {
+            $this->_template = $tpl;
+            return true;
+        }
+        $tpl = explode('/', $tpl);
+        end($tpl);
+        $last = key($tpl);
+        $tpl[$last] = strtolower($tpl[$last]);
+        $tpl = implode('/', $tpl);
         $this->_template = $tpl;
         $this->_action = $tpl; // legacy
         return false !== $this->file($tpl,'tpl');
@@ -1611,6 +1626,8 @@ abstract class Controller extends HgBase implements IController
                    $this->path(), $action );
         }
 
+        $this->_launched_action = $action;
+
         if (!method_exists($this, $method))
         {
             echo '<p><strong>method does not exist</strong></p>';
@@ -1619,13 +1636,12 @@ abstract class Controller extends HgBase implements IController
         else if (method_exists($this,"onAction")
                  && false === $this->onAction($action,$params) )
         {
-            echo '<p><strong>not launching -- onAction() retunred false</strong></p>';
+            echo '<p><strong>not launching -- onAction() returned false</strong></p>';
             $ret = 1;
         }
         else
         {
             $this->_setTemplate($action);
-            $this->_launched_action = $action;
             $this->$method($params);
         }
 
@@ -1650,7 +1666,7 @@ abstract class Controller extends HgBase implements IController
     {
         $real_action = & $this->_launched_action;
         unset($this->_launched_action);
-        $this->_template = null;
+        $this->_template = '';
         $ret = $this->launchAction($action, $params);
         $this->_launched_action = & $real_action;
         return $ret;
@@ -1692,7 +1708,7 @@ abstract class Controller extends HgBase implements IController
         else if (method_exists($this,"onAction")
                  && false === $this->onAction($action,$params) )
         {
-            echo '<p>not launching -- onAction() retunred false</p>';
+            echo '<p>not launching -- onAction() returned false</p>';
             $ret = 1;
         }
         else
@@ -1714,10 +1730,20 @@ abstract class Controller extends HgBase implements IController
         return $this->_launched_action;
     }
 
-    protected function __routeAction($current, $req)
+    /**
+     * @param string $current
+     * @param string Request $req
+     * @param boolean $really_route or maybe just check whether it would route?
+     *
+     * @return boolean
+     */
+    protected function __routeAction($current, Request $req, $really_route=true)
     {
         if (NULL === ($child = $this->getChild($current)))
             return(false);
+
+        if (!$really_route)
+            return true;
         
         if (method_exists($this,$callback = "onActionRouted2$current"))
             if (false === $this->$callback())
@@ -2048,9 +2074,44 @@ abstract class Controller extends HgBase implements IController
         
         g('Functions')->arrayMergeRecursive($current_tree,$new_tree);
 
-        $url = g()->req->getFullTreeBasedUrl($current_tree,false,true);
+        $url = g()->req->getTreeBasedUrl($current_tree);
         g()->req->enhanceURL($url);
         return g()->req->getBaseUri().$url;
+    }
+
+    /**
+     * Makes a controller.
+     *
+     * Same parameters as IController::addChild()
+     * @author m.augustynowicz
+     *
+     * @param Controller|string $controller to add
+     *        (object or name to pass to Kernel::get())
+     * @param null|string|array $name_or_args if string passed as $controller,
+     *        this will be used to initialize $controller,
+     *        null -- use lowercased $controller as name
+     *        string -- use as name
+     *        array -- pass to $controller's constructor
+     * @return Controller
+     */
+    protected function _makeController($controller, $name_or_args=null)
+    {
+        if (is_string($controller))
+        {
+            if (is_array($name_or_args))
+                $args = & $name_or_args;
+            else
+            {
+                if (null === $name_or_args)
+                    $name_or_args = strtolower($controller);
+                $args = array(
+                    'name'   => $name_or_args,
+                    'parent' => $this
+                );
+            }
+            $controller = g($controller, 'Controller', $args);
+        }
+        return $controller;
     }
 }
 
@@ -2067,8 +2128,9 @@ abstract class TrunkController extends Controller
     private $__child;
     private $__child_name;
 
-    public function addChild($controller)
+    public function addChild($controller, $name_or_args=null)
     {
+        $controller = $this->_makeController($controller, $name_or_args);
         $this->__child = $controller;
         $this->__child_name = $controller->getName();
     }    
@@ -2176,13 +2238,16 @@ abstract class Component extends Controller
      *
      * @param string $action name
      * @param array $params what will be passed to the action
+     * @param boolean $just_checking pass false if you inteded to launch
+     *        that action (it may cause displaying some "error denied"
+     *        user messages and such)
      * @return boolean/int does logged-in user has access to this action?
      *         true when access granted by callback,
      *         1 when from config,
      *         false when access denied by callback
      *         0 when from config
      */
-    public function hasAccess($action, array &$params = array())
+    public function hasAccess($action, array &$params = array(), $just_checking=true)
     {
         static $cache = array();
 
@@ -2202,7 +2267,7 @@ abstract class Component extends Controller
 
             if (!method_exists($this, $callback))
                 $ret = 0;
-            else if (!$this->$callback($params))
+            else if (!$this->$callback($params, $just_checking))
                 $ret = false;
             else
                 $ret = true;
@@ -2466,11 +2531,20 @@ abstract class Component extends Controller
 
     /**
     * Adds a subcontroller.
-    * @param $controller A subcontroller to add. The name of the controller has to be unique in the parents children scope. 
+    *
+    * @param Controller|string $controller to add
+    *        (object or name to pass to Kernel::get())
+    * @param null|string|array $name_or_args if string passed as $controller,
+    *        this will be used to initialize $controller,
+    *        null -- use lowercased $controller as name
+    *        string -- use as name
+    *        array -- pass to $controller's constructor
     * @return The added controller.
     */
-    public function addChild($controller)
+    public function addChild($controller, $name_or_args=null)
     {
+        $controller = $this->_makeController($controller, $name_or_args);
+        
         if ($this->isChild($controller->getName()))
             throw new HgException("This component already has a child named ".$controller->getName());
         $this->__components[$controller->getName()] = $controller;
@@ -2558,6 +2632,9 @@ abstract class Component extends Controller
             $that = $this;
             $template = $this->_template;
         }
+
+        if (null === $template)
+            return;
 
         if(!$template)
         {

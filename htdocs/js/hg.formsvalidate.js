@@ -75,7 +75,7 @@ hg['input_validate'].f = function(input, err, form, whole_form,no_id)
     else
         form = $(form);
     var url = form.attr('action');
-    form = form.attr('id');
+    form = form.attr('name');
 
     var error_count = 0;
 

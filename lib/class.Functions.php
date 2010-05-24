@@ -21,6 +21,16 @@ define('DATE_SHOW_ALL', 3);
 class Functions extends HgBase
 {
     /**
+     * Numeric suffix used to generate unique IDs for use in HTML
+     * @author m.augustynowicz
+     * @see uniqueId()
+     * @var integer
+     */
+    static protected $_unique_id_offset = 0;
+
+
+
+    /**
      * Find links in given text and create anchors for them.
      *
      * Warning: find only links that start with www or http.
@@ -333,6 +343,11 @@ class Functions extends HgBase
                 );
         }
 
+        if (!isset($config['input-encoding']))
+            $config['input-encoding'] = 'utf-8';
+        if (!isset($config['output-encoding']))
+            $config['output-encoding'] = 'utf-8';
+
         if (null === $tidy)
             $tidy = new tidy();
 
@@ -388,12 +403,25 @@ class Functions extends HgBase
      * @param integer $length max length after truncating
      * @param string $suffix optional suffix to add to truncated string
      */
-    function truncateHTML($string, $length=null, $suffix='&hellip;')
+    function truncateHTML($string, $length, $suffix='&hellip;')
     {
         if (!class_exists('tidy',false))
+        {
+            static $error_displayed = false;
+            if (!$error_displayed)
+            {
+                $error_displayed = true;
+                trigger_error('Tidy class is not present! We are very unpappy'
+                        . ' about that, as we have to use less efficient method'
+                        . ' method (this warning appears only once).',
+                        E_USER_WARNING );
+            }
             return $this->truncateHTMLUgly($string, $length, $suffix);
+        }
 
         // any need to truncate?
+        if (!$length)
+            return $string;
         if ($length && strlen($string) <= $length)
             return $string;
 
@@ -542,7 +570,7 @@ class Functions extends HgBase
             // only add string if text was cut
             if ( strlen($string) > $length )
             {
-                return( $ret.$addstring );
+                return preg_replace('!((?:<[^>]+>\s*)*)$!', "$addstring\\1", $ret, 1);
             }
             else
             {
@@ -712,6 +740,9 @@ class Functions extends HgBase
 
     /**
      * Zwraca autora metody, w ktorej zawiera sie linia kodu w podanym pliku.
+     *
+     * @todo unused (marked 2010-05-20), use or remove
+     *
      * @param string $file Plik zrodlowy.
      * @param integer $line Numer linii.
      * @return array tablica z autorami metody
@@ -746,6 +777,8 @@ class Functions extends HgBase
 
     /**
      * Metoda do budowania stronicaowania
+     *
+     * @todo remove this, deprecated since 2010-05-20
      *
      * @param integer $count - ile wszystkich rekordów
      * @param integer $on_page - po ile na stronie
@@ -1247,5 +1280,82 @@ class Functions extends HgBase
 
         return sprintf($fmt, $name, $this->xmlAttr($attr), $value);
     }
+
+
+    /**
+     * Generates and gets unique id (for use in html)
+     * @author m.augustynowicz
+     *
+     * @param null|string $id id prefix pass null to get current numeric offset
+     * @param null|integer $set_offset if given, sets starting offset for this
+     *        and future ids (in general: do not use!)
+     * @return string
+     */
+    public function uniqueId($id, $set_offset=null)
+    {
+        if (null !== $set_offset)
+            self::$_unique_id_offset = $set_offset;
+
+        if (null === $id)
+            return self::$_unique_id_offset;
+        
+        if (!$id)
+            $id = 'hgid';
+        $id = sprintf('%s__%s', $this->ASCIIfyText($id),
+                                ++self::$_unique_id_offset );
+        return $id;
+    }
+
+
+    /**
+     * Unified way for execucmdting UNIX commands
+     * @author m.augustynowicz
+     *
+     * @uses conf[unix]
+     *
+     * @param string $cmd see PHPs exec() for reference,
+     *        can also be key in conf[unix], then cmd path may be modified
+     * @param string $args list of argument
+     * @param string $output see PHPs exec() for reference
+     * @param string $return_code see PHPs exec() for reference
+     *
+     * @return false|string last line of the output;
+     *         false on any error
+     */
+    public function exec($cmd, $args, & $output=null, & $return_code=null)
+    {
+        $all_conf = & g()->conf['unix'];
+        $hg_args = '';
+        if (array_key_exists($cmd, $all_conf))
+        {
+            $conf = & $all_conf[$cmd];
+            if (false === $conf)
+                return false;
+            if (isset($conf['path']))
+                $cmd = $conf['path'];
+            if (isset($conf['args']))
+                $hg_args = $conf['args'];
+            if (isset($conf['args_args']))
+                $args = vsprintf($args, $conf['args_args']);
+        }
+
+
+        $cmd = sprintf('%s %s %s 2>&1', $cmd, $hg_args, $args);
+
+        if (g()->debug->allowed())
+        {
+            echo '<pre class="shell">';
+            printf("<span class=\"cmd\"><span class=\"PS1\">%s $</span> %s</span>\n", getcwd(), $cmd);
+        }
+        $last_line = exec($cmd, $output, $return_code);
+        if (g()->debug->allowed())
+        {
+            printf("<span class=\"output\">%s</span>\n", join("\n", $output));
+            printf('<small class="return_code">(returned %s)</small>', $return_code);
+            echo '</pre>';
+        }
+        return $last_line;
+    }
+
 }
 
