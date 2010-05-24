@@ -7,7 +7,7 @@
  *      <span class="tooltip">(?)</span>
  *      <div class="tooltip_content"><h6>help</h6><p>html tooltip</p></div>
  *    </div>
- * 3. <span hg:tooltip="#tooltip_content_selector">(?)</span>
+ * 3. <span hg__tooltip="#tooltip_content_selector">(?)</span>
  *
  * @author m.augustynowicz
  *
@@ -17,16 +17,24 @@
  */
 hg['tooltip'].f = function(t, e)
 {
+    if (typeof t == 'undefined')
+    {
+        $('.tooltip')
+            .live('mouseenter', function(){hg('tooltip')(this);})
+            .live('mouseleave', function(){hg('tooltipHide')(this);})
+        ;
+        return;
+    }
+
     t = $(t);
     var title = t.attr('title');
-    var rel = t.attr('hg:tooltip');
+    var rel = t.attr('hg__tooltip');
     if (rel)
     {
         var tooltip = $(rel);
     }
     else
     {
-
         if (title)
             t.wrap('<div class="tooltip_wrapper" style="margin:0;padding:0;"></div>');
         var wrapper = t.parents('.tooltip_wrapper:first');
