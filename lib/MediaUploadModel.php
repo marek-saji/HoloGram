@@ -165,18 +165,18 @@ class MediaUploadModel extends UploadModel
 
         list($type) = explode('/', $data['original_mime']);
 
-        switch($type)
+        switch ($type)
         {
             case 'audio' :
                 return $this->_createAudio($path, $data);
-            break;
+                break;
             case 'video' :
                 return $this->_createVideo($path, $data);
-            break;
+                break;
             default :
                 // nothing to do, we happy.
                 return true;
-            break;
+                break;
         }
     }
 
