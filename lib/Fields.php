@@ -1095,7 +1095,7 @@ class FFloat extends Field
 
         $this->mess(array('invalid' => 'Invalid floating point value'));
         $this->mess(array('min_val_excided' => 'Number is to small'));
-        $this->mess(array('max_val_excided' => 'Number is to big'));
+        $this->mess(array('max_val_excided' => 'Number is too big'));
         $this->mess(array('max_decimals_excided'
                 => 'Too many digits after decimal point') );
     }
@@ -1192,8 +1192,8 @@ class FDouble extends FFloat
         $this->_rules['min_val'] = $min_val;
         $this->_rules['max_val'] = $max_val;
         $this->mess(array('invalid' => 'Invalid floating point value'));
-        $this->mess(array('min_val_excided' => 'Number is to small'));
-        $this->mess(array('max_val_excided' => 'Number is to big'));
+        $this->mess(array('min_val_excided' => 'Number is too small'));
+        $this->mess(array('max_val_excided' => 'Number is too big'));
     }
 
     public function invalid(&$value)
