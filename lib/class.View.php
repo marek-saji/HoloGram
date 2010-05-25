@@ -62,7 +62,7 @@ class View extends HgBase implements IView
         $jquery_version = '1.4.2';
         $min = $js_debug ? '.min' : '';
         if (g()->debug->on('disable','externalcdn'))
-            $this->addJs($this->_renderer->file('jquery','js'));
+            $this->addJs($this->_renderer->file('jquery-'.$jquery_version.$min,'js'));
         else
         {
             $this->addJs('http://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
