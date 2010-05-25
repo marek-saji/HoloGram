@@ -6,6 +6,7 @@ define('ORDER_RANDOM', 'RANDOM()');
 
 
 /**
+*
 * Interface of the data set.  A dataset is an abstraction of any sql tabular data retrieved with a query.
 * A query is considered to consist of several parts. First of all from a field set, that define the values
 * to retrieve. The second part, the one following the FROM keyword, is called a data set generator (@see generator()).
@@ -358,7 +359,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 $field = $def['field'];
 
             if(isset($this->_nulls_first[$name]))
-                $sql[] = "$field {$def['dir']}" . ($this->_nulls_first[$name] ? " NULLS FIRST\n" : " NULLS LAST");
+                $sql[] = "$field {$def['dir']}" . ($this->_nulls_first[$name] ? " NULLS FIRST\n" : " NULLS LAST\n");
             else
                 $sql[] = "$field {$def['dir']}";
         }
@@ -470,16 +471,24 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     * Sets or retrieves current records ordering.
     * @author p.piskorski
     * @author m.augustynowicz
+    * @author b.matuszewski
+    *    adding $nulls_first
     *
     * @param $field IField|string|boolean
     *     when instance of IField given: it's generator will be used;
     *     when string: it is expected to be this DataSet's field name
     *     when true: method returns associative array with sorting information
     *     when false: method returns null d:
+    *     @TODO verify this description IMO when false method returns actual sorting information and resets them
+    *
     * @param $action string|boolean
     *     string sets ordering: either ASC or DESC, unknown values got changed to ASC;
     *     boolean sets action: true returns ordering information for specified field,
     *                          false unsets ordering for it.
+    * @param $nulls_first null|boolean
+    *    when null NULLS FIRST/NULLS LAST clouse will be ommited
+    *    when true NULLS FIRST clouse will be used
+    *    when false NULLS LAST clouse will be used
     *
     * @return string|int
     *   when setting: id associated to newly set ordering. can be used to unset it.
@@ -518,7 +527,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     *   // or
     *   $ds->order(true);
     */
-    public function order($field=true, $dir_or_action='ASC')
+    public function order($field=true, $dir_or_action='ASC', $nulls_first = null)
     {
         // work on all fields
         if (is_bool($field))
@@ -603,46 +612,13 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 $this->_order[$key] = compact('field', 'dir');
                 return $key;
             }
-        }
-    }
-    
-    /**
-     * Sets NULLS FIRST or NULLS LAST clouse
-     * @author bartuś
-     *
-     * @param array $fields - $field_name => $nulls_first
-     *    $nulls_first === true     => NULLS FIRST
-     *    $nulls_first === false    => NULLS LAST
-     *    $nulls_first === null     => no NULLS * clause
-     *
-     * @usage
-     * $ds->order('foo');
-     * $ds->nullsFirst(array('foo' => true)); //will give
-     *    ORDER BY foo ASC NULLS FIRST
-     * $ds->order('foo');
-     * $ds->order('bar');
-     * $ds->nullsFirst(array('foo' => true, 'bar' => false)); //will give
-     *    ORDER BY foo ASC NULLS FIRST, bar ASC NULLS LAST
-     * $ds->order('foo');
-     * $ds->order('bar');
-     * $ds->nullsFirst(array('foo' => true, 'bar' => null)); //will give
-     *    ORDER BY foo ASC NULLS FIRST, bar ASC
-     *
-     * WARNING you have to provide $field_name as "dsJ$x"."actual_name" if working with joins
-     */
-    public function nullsFirst($fields)
-    {
-        foreach($fields as $name => $val)
-        {
-            if($val === null)
-                unset($this->_nulls_first[$name]);
+            if($nulls_first === null)
+                unset($this->_nulls_first[$key]);
             else
-                $this->_nulls_first[$name] = $val;
+                $this->_nulls_first[$key] = (bool) $nulls_first;
         }
-        return $this;
     }
-    
-    
+
     /**
     * Retrieves a field
     * @param $name Name of the searched field.

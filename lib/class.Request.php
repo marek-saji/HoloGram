@@ -208,11 +208,12 @@ class Request extends HgBase
         }
 
         $this->_given_url = $text_url;
-		if (strpos($_SERVER['SERVER_SOFTWARE'], '(Win32)'))
-			$base_uri = str_replace('\\', '/', $base_uri);
+        if ('/' != DIRECTORY_SEPARATOR)
+            /** @todo is there a possibility that this will cause errors? */
+            $base_uri = str_replace(DIRECTORY_SEPARATOR, '/', $base_uri);
         $base_uri = rtrim($base_uri, '/');
         $this->_base_uri = $base_uri.'/';
-		
+
         if (g()->conf['link_split'] == urlencode(g()->conf['link_split']))
             $this->_link_split_encoded =
                             '%'.strtoupper(dechex(ord(g()->conf['link_split'])));

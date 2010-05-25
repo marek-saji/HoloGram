@@ -10,6 +10,8 @@
  *
  * (params passed as local variables) 
  * @param string|false $id uniqe id. pass false to skip id attr
+ * @param string $name_suffix e.g. "[42][]" (note that name has to have
+ *        arrayish value, use at your own risk)
  * @param array $attrs
  * @param boolean $disabled
  * @param string $class
@@ -21,6 +23,7 @@ extract(array_merge(
         array(
             'attrs'       => array(),
             'id'          => null,
+            'name_suffix' => '',
             'disabled'    => false,
             'class'       => '',
             'autocomplete'=> true,
@@ -40,10 +43,7 @@ if (false !== $id)
     $attrs['id'] = $id;
 $attrs['name'] = $ident.'['.$input.']';
 
-if(isset($cloneable_id))
-    $attrs['name'] .= '['.$cloneable_id.']';
-if(isset($cloneable))
-    $attrs['name'] .= '[]';
+$attrs['name'] .= $name_suffix;
 
 $attrs['value'] = $data;
 if (false === $autocomplete)

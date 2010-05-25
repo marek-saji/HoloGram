@@ -125,10 +125,9 @@ class Forms extends HgBase
     {
         $f = g('Functions');
 
-        $has_files = @$this->__form['upload'];
+        $has_files = & $this->__form['upload'];
 
-        /*
-        if (null === $has_fields) // autodetect
+        if (null === $has_files) // autodetect
         {
             foreach ($this->__form['inputs'] as &$input)
             {
@@ -140,7 +139,7 @@ class Forms extends HgBase
                         continue;
                     foreach ($model['fields'] as &$field)
                     {
-                        if ('field is of type FILE') // fill the code here!
+                        if (is_a($field, 'FFile'))
                         {
                             $has_files = true;
                             break(3); // no need to continue
@@ -148,8 +147,11 @@ class Forms extends HgBase
                     }
                 }
             }
+            if (null === $has_files)
+                $has_files = true;
         }
-         */
+        unset($field);
+        unset($model);
     
         $params = array_merge(array(
             'id' => $f->uniqueId($this->__ident),

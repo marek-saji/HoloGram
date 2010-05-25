@@ -406,7 +406,18 @@ class Functions extends HgBase
     function truncateHTML($string, $length, $suffix='&hellip;')
     {
         if (!class_exists('tidy',false))
+        {
+            static $error_displayed = false;
+            if (!$error_displayed)
+            {
+                $error_displayed = true;
+                trigger_error('Tidy class is not present! We are very unpappy'
+                        . ' about that, as we have to use less efficient method'
+                        . ' method (this warning appears only once).',
+                        E_USER_WARNING );
+            }
             return $this->truncateHTMLUgly($string, $length, $suffix);
+        }
 
         // any need to truncate?
         if (!$length)
@@ -559,7 +570,7 @@ class Functions extends HgBase
             // only add string if text was cut
             if ( strlen($string) > $length )
             {
-                return( $ret.$addstring );
+                return preg_replace('!((?:<[^>]+>\s*)*)$!', "$addstring\\1", $ret, 1);
             }
             else
             {
@@ -729,6 +740,9 @@ class Functions extends HgBase
 
     /**
      * Zwraca autora metody, w ktorej zawiera sie linia kodu w podanym pliku.
+     *
+     * @todo unused (marked 2010-05-20), use or remove
+     *
      * @param string $file Plik zrodlowy.
      * @param integer $line Numer linii.
      * @return array tablica z autorami metody
@@ -763,6 +777,8 @@ class Functions extends HgBase
 
     /**
      * Metoda do budowania stronicaowania
+     *
+     * @todo remove this, deprecated since 2010-05-20
      *
      * @param integer $count - ile wszystkich rekordów
      * @param integer $on_page - po ile na stronie
@@ -1288,6 +1304,57 @@ class Functions extends HgBase
         $id = sprintf('%s__%s', $this->ASCIIfyText($id),
                                 ++self::$_unique_id_offset );
         return $id;
+    }
+
+
+    /**
+     * Unified way for execucmdting UNIX commands
+     * @author m.augustynowicz
+     *
+     * @uses conf[unix]
+     *
+     * @param string $cmd see PHPs exec() for reference,
+     *        can also be key in conf[unix], then cmd path may be modified
+     * @param string $args list of argument
+     * @param string $output see PHPs exec() for reference
+     * @param string $return_code see PHPs exec() for reference
+     *
+     * @return false|string last line of the output;
+     *         false on any error
+     */
+    public function exec($cmd, $args, & $output=null, & $return_code=null)
+    {
+        $all_conf = & g()->conf['unix'];
+        $hg_args = '';
+        if (array_key_exists($cmd, $all_conf))
+        {
+            $conf = & $all_conf[$cmd];
+            if (false === $conf)
+                return false;
+            if (isset($conf['path']))
+                $cmd = $conf['path'];
+            if (isset($conf['args']))
+                $hg_args = $conf['args'];
+            if (isset($conf['args_args']))
+                $args = vsprintf($args, $conf['args_args']);
+        }
+
+
+        $cmd = sprintf('%s %s %s 2>&1', $cmd, $hg_args, $args);
+
+        if (g()->debug->allowed())
+        {
+            echo '<pre class="shell">';
+            printf("<span class=\"cmd\"><span class=\"PS1\">%s $</span> %s</span>\n", getcwd(), $cmd);
+        }
+        $last_line = exec($cmd, $output, $return_code);
+        if (g()->debug->allowed())
+        {
+            printf("<span class=\"output\">%s</span>\n", join("\n", $output));
+            printf('<small class="return_code">(returned %s)</small>', $return_code);
+            echo '</pre>';
+        }
+        return $last_line;
     }
 
 }
