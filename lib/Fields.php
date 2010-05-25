@@ -1598,7 +1598,7 @@ class FFile extends FString
         if(is_array($value))
         {
             $err = array();
-            return $this->__errors($err, $value)
+            return $this->__errors($err, $value);
         }
         else
             return parent::invalid($value);
