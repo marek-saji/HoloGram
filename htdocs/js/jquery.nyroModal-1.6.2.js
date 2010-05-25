@@ -1139,8 +1139,8 @@ jQuery(function($) {
 				height: currentSettings.height
 			},
 			wrapper2: {
-				width: currentSettings.width + outerContent.w.total,
-				height: currentSettings.height + outerContent.h.total
+				width: currentSettings.width/* + outerContent.w.total*/,
+				height: currentSettings.height/* + outerContent.h.total*/
 			},
 			wrapper: {
 				width: currentSettings.width + outerContent.w.total + outerWrapper2.w.total,
