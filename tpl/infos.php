@@ -10,9 +10,12 @@ else
 }
 
 if (!$classy_infos)
+{
+    print '<aside id="infos"></aside>';
     return;
+}
 
-print '<div id="infos">';
+print '<aside id="infos">';
 foreach ($classy_infos as $class => $infos)
 {
     if (empty($infos))
@@ -27,7 +30,7 @@ foreach ($classy_infos as $class => $infos)
     }
     printf('</ol>');
 }
-print '</div>';
+print '</aside>';
 
 $classy_infos = array();
 
