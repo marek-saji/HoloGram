@@ -1591,6 +1591,18 @@ class FFile extends FString
         }
         return $this->_foreign_model;
     }
+    
+    /**@TODO run model's validation*/
+    public function invalid(& $value)
+    {
+        if(is_array($value))
+        {
+            $err = array();
+            return $this->__errors($err, $value)
+        }
+        else
+            return parent::invalid($value);
+    }
 
     /**
      * Settings getter
