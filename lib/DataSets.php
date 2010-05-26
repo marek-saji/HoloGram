@@ -189,6 +189,50 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     /**
     * Sets the whitelist
      * @todo fix this (will break compatibility..
+     *
+     * 26.05.2010. added $alias handling for non agreageted fields
+     * @author b.matuszewski
+     *
+     * WARNING
+     * not tested with agregated fields
+     * you have been warned ;-P
+     *
+     * USAGE example
+     *  $dsJ0 = g('OfferLocalization', 'model'); //has offer_id, country_id, region_id, city_id
+     *  $dsJ1 = g('Country', 'model'); //has id, name
+     *  $dsJ2 = g('Region', 'model'); //has id, name
+     *  $dsJ3 = g('City', 'model'); //has id, name
+     *
+     *  $join = new Join($dsJ0, $dsJ1, new FoBinary($dsJ0->getField('country_id'), '=', $dsJ1->getField('id')));
+     *  $join->addJoin($dsJ2, new FoBinary($dsJ0->getField('region_id'), '=', $dsJ2->getField('id')));
+     *  $join->addJoin($dsJ3, new FoBinary($dsJ0->getField('city_id'), '=', $dsJ3->getField('id')));
+     *
+     *  $join->whiteList(array(
+     *      'country_name' => '"dsJ1"."name"',
+     *      'region_name'  => '"dsJ2"."name"',
+     *      'city_name'    => '"dsJ3"."name"',
+     *                        'offer_id',
+     *  ));
+     *
+     *  $dump = $join->exec();
+     *  var_dump($dump);
+     *
+     * THIS WILL PRODUCE
+     *    array(1) {
+     *      [0]=>
+     *      array(4) {
+     *        ["country_name"]=>
+     *        string(5) "Polska"
+     *        ["region_name"]=>
+     *        string(18) "Kujawsko-Pomorskie"
+     *        ["city_name"]=>
+     *        string(5) "Torun"
+     *        ["offer_id"]=>
+     *        string(1) "1"
+     *      }
+     *    }
+     *
+     * I hope this change will help us all a little bit and don't break any thing
      */
     public function whiteList(array $field_keys=NULL, $merge=false)
     {
@@ -199,7 +243,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         
         $new_whitelist = array();
         
-        foreach($field_keys as $column)
+        foreach($field_keys as $alias => $column)
         {
             if(is_array($column))
             {
@@ -211,7 +255,6 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             {
                 $field = $column;
                 $aggregate = false;
-                $alias = null;
             }
             if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','avg','sum')))
                 throw new HgException('Unknown aggregate function: '.$aggregate.' !');
@@ -220,7 +263,12 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 if($aggregate)
                     $new_whitelist[$aggregate.' '.str_replace('"','',$field)] = new FoFunc($aggregate,$fields[$field]);                
                 else
-                    $new_whitelist[$field] = $fields[$field];
+                {
+                    if(is_numeric($alias))
+                        $new_whitelist[] = $fields[$field];
+                    else
+                        $new_whitelist[$alias] = $fields[$field];
+                }
             }
         }
         
@@ -687,7 +735,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         $res = array();
         foreach ($this->_whitelist as $f=>$c)
         {
-            if($c instanceOf FoFunc)
+            if($c instanceOf FoFunc || !is_numeric($f))
                 $res[] = $c->generator()." AS \"$f\"";
             else
                 $res[] = $c->generator();
