@@ -9,6 +9,7 @@ define('IMAGE_RESIZE_PAD', 1);
 define('IMAGE_RESIZE_STRECH', 2);
 
 
+
 /**
  *  @todo: fix default and automatic values
  * FIXME : check parameter types. Some functions expect some parameters to be Models, while they probably should be IModels 
@@ -279,11 +280,11 @@ abstract class FAnyType implements IField
  */
 class FConst extends FAnyType implements IField
 {
-    private $__value;
+    protected $_value;
 
     public function __construct($value, $type = '')
     {
-        $this->__value = $value;
+        $this->_value = $value;
         if(empty($type))
         {
             switch(gettype($value))
@@ -324,11 +325,11 @@ class FConst extends FAnyType implements IField
     public function generator()
     {
         if($this->_genType == 'FString')
-            return ("'{$this->__value}'");
+            return ("'{$this->_value}'");
         elseif($this->_genType == 'FNull')
             return 'NULL';
         else
-            return ($this->__value);
+            return ($this->_value);
     }
 
     /**
@@ -634,7 +635,7 @@ abstract class Field implements IModelField
         return empty($res) ? false : $res;
     }
 
-    protected function __errors(&$error, &$value)
+    protected function _errors(&$error, &$value)
     {
         if($tmp = self::invalid($value))
             $error[$tmp] = true;
@@ -653,7 +654,7 @@ abstract class Field implements IModelField
         return ($error);
     }
 
-    private function _filterNulls($val)
+    protected function _filterNulls($val)
     {
         return ($val !== NULL);
     }
@@ -717,7 +718,7 @@ class FString extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     public function dbString($value)
@@ -787,7 +788,7 @@ class FEmail extends FString
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     static function isEmail($text)
@@ -875,7 +876,7 @@ class FURL extends FString
             }
         }
 
-        return $this->__errors($err, $value);
+        return $this->_errors($err, $value);
     }
 }
 
@@ -913,7 +914,7 @@ class FLocationCoords extends Field
             $value = null;
             if(!$this->checkAutoValue($value))
                 $err['notnull'] = true;
-            return $this->__errors($err, $value);
+            return $this->_errors($err, $value);
         }
 
         if (!is_array($value))
@@ -947,7 +948,7 @@ class FLocationCoords extends Field
         if ($parent_err = parent::invalid($value))
             $err = array_merge($parent_err, $err);
 
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     /**
@@ -1030,7 +1031,7 @@ class FInt extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     public function dbType()
@@ -1140,7 +1141,7 @@ class FFloat extends Field
         elseif (!$this->checkAutoValue($value))
             $err['notnull'] = true;
 
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     public function dbString($value)
@@ -1209,7 +1210,7 @@ class FDouble extends FFloat
             $err['min_val_excided'] = true;
         elseif($this->_rules['max_val'] !== null && $value > $this->_rules['max_val'])
             $err['max_val_excided'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 }
 
@@ -1243,7 +1244,7 @@ class FDate extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     public function dbType()
@@ -1291,7 +1292,7 @@ class FTime extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     public function dbType()
@@ -1342,7 +1343,7 @@ class FTimestamp extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     public function dbString($value)
@@ -1389,7 +1390,7 @@ class FBool extends Field implements IBoolean
         }
         elseif(!$this->checkAutoValue($val))
             $err['notnull'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     public function dbString($value)
@@ -1473,7 +1474,7 @@ class FId extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        return ($this->__errors($err, $value));
+        return ($this->_errors($err, $value));
     }
 
     public function dbType($create = true)
@@ -1780,10 +1781,10 @@ class FoFunc extends FAnyType implements IEvalField
 
     /**
      * Constructor
-     * @param $function__name 
+     * @param $function_name 
      * @param ... Function parameters. 
      */
-    public function __construct($function__name)
+    public function __construct($function_name)
     {
         $this->match(func_get_args());
     }
@@ -1814,8 +1815,8 @@ class FoFunc extends FAnyType implements IEvalField
  */
 class FoChain extends FAnyType implements IEvalField
 {
-    private $__operands = array();
-    private $__glue = '?';
+    protected $_operands = array();
+    protected $_glue = '?';
 
     /**
      * Constructor. Requires first two links of the chain. One can add other links with subsequent calls to also().
@@ -1837,7 +1838,7 @@ class FoChain extends FAnyType implements IEvalField
             default:
                 throw new HgException("operator $operator is not supported");
         }
-        $this->__glue = $operator;
+        $this->_glue = $operator;
         if(empty($arg_1) || empty($arg_2))
             throw new HgException("Cannot pass empty operands to the FoChain constructor");
         $this->also($arg_1);
@@ -1854,9 +1855,9 @@ class FoChain extends FAnyType implements IEvalField
         if(NULL === $operand)
             return ($this);
         if(is_string($operand))
-            $this->__operands[] = new FoStatement($operand, $this->_genType);
+            $this->_operands[] = new FoStatement($operand, $this->_genType);
         elseif($operand instanceof IField) // && $operand->type($this->_genType))
-            $this->__operands[] = $operand;
+            $this->_operands[] = $operand;
         else
         {
             var_dump(array(
@@ -1874,13 +1875,13 @@ class FoChain extends FAnyType implements IEvalField
      */
     public function generator()
     {
-        $curr = reset($this->__operands);
+        $curr = reset($this->_operands);
         $res = '';
         if($curr)
             $res .= $curr->generator();
             //else //var_dump($this);
-        while($curr = next($this->__operands))
-            $res .= "\n{$this->__glue}    " . $curr->generator();
+        while($curr = next($this->_operands))
+            $res .= "\n{$this->_glue}    " . $curr->generator();
         return ($res);
     }
 
@@ -1919,7 +1920,7 @@ class FoBinaryChain extends FoChain implements IBoolean
             default:
                 throw new HgException("operator $operator is not supported");
         }
-        $this->__glue = strtoupper($operator);
+        $this->_glue = strtoupper($operator);
         if(empty($arg_1) || empty($arg_2))
             throw new HgException("Cannot pass empty operands to the FoChain constructor");
         $this->also($arg_1);
@@ -1936,9 +1937,9 @@ class FoBinaryChain extends FoChain implements IBoolean
         if(NULL === $operand)
             return ($this);
         if(is_string($operand))
-            $this->__operands[] = new FoStatement($operand, $this->_genType);
+            $this->_operands[] = new FoStatement($operand, $this->_genType);
         elseif($operand instanceof IField) // && $operand->type($this->_genType))
-            $this->__operands[] = $operand;
+            $this->_operands[] = $operand;
         else
         {
             var_dump(array(
@@ -1956,13 +1957,13 @@ class FoBinaryChain extends FoChain implements IBoolean
      */
     public function generator()
     {
-        $curr = reset($this->__operands);
+        $curr = reset($this->_operands);
         $res = '';
         if($curr)
             $res .= $curr->generator();
             //else //var_dump($this);
-        while($curr = next($this->__operands))
-            $res .= "\n{$this->__glue} " . $curr->generator();
+        while($curr = next($this->_operands))
+            $res .= "\n{$this->_glue} " . $curr->generator();
         return ($res);
     }
 }
@@ -1972,7 +1973,7 @@ class FoBinaryChain extends FoChain implements IBoolean
  */
 class FoBinary extends FCustomBoolean implements IEvalField, IBoolean
 {
-    private $__left, $__right, $__operator;
+    protected $_left, $_right, $_operator;
 
     /**
      * Constructor.
@@ -2005,14 +2006,14 @@ class FoBinary extends FCustomBoolean implements IEvalField, IBoolean
             $left = new FoStatement($left, $type);
         if(!$right instanceof IField)
             $right = new FoStatement($right, $type);
-        $this->__left = $left;
-        $this->__operator = $operator;
-        $this->__right = $right;
+        $this->_left = $left;
+        $this->_operator = $operator;
+        $this->_right = $right;
     }
 
     public function generator()
     {
-        return ($this->__left->generator() . " {$this->__operator} " . $this->__right->generator());
+        return ($this->_left->generator() . " {$this->_operator} " . $this->_right->generator());
     }
 }
 
@@ -2035,9 +2036,9 @@ class FoSubquery extends DataSet implements IField
  */
 class FoStatement extends FAnyType implements IEvalField, IField
 {
-    private $__statement;
-    private $__args = NULL;
-    private $__var_sign = '$';
+    protected $_statement;
+    protected $_args = NULL;
+    protected $_var_sign = '$';
 
     /**
      * Constructor.
@@ -2060,31 +2061,31 @@ class FoStatement extends FAnyType implements IEvalField, IField
      */
     public function __construct($statement, $type, $args = array(), $var_sign = '$')
     {
-        $this->__statement = $statement;
-        $this->__args = $args;
-        $this->__var_sign = $var_sign;
-        $this->__iField($type);
+        $this->_statement = $statement;
+        $this->_args = $args;
+        $this->_var_sign = $var_sign;
+        $this->_iField($type);
         $this->_genType = $type;
     }
 
     public function generator()
     {
-        if(empty($this->__args))
-            return ($this->__statement);
+        if(empty($this->_args))
+            return ($this->_statement);
         $values = array();
-        $s_len = strlen($this->__var_sign);
+        $s_len = strlen($this->_var_sign);
         $offset = 0;
         $res = '';
-        //var_dump($this->__statement);
-        while(FALSE !== ($pos = strpos($this->__statement, $this->__var_sign, $offset)))
+        //var_dump($this->_statement);
+        while(FALSE !== ($pos = strpos($this->_statement, $this->_var_sign, $offset)))
         {
-            if(FALSE === ($var_end = strpos($this->__statement, $this->__var_sign, $pos + $s_len)))
+            if(FALSE === ($var_end = strpos($this->_statement, $this->_var_sign, $pos + $s_len)))
                 throw new HgException('Variable end not found');
-            $var = substr($this->__statement, $pos + $s_len, $var_end - $pos - $s_len);
+            $var = substr($this->_statement, $pos + $s_len, $var_end - $pos - $s_len);
             //var_dump(compact('pos','var_end','var','offset'));            
             if(!isset($values[$var]))
-                $values[$var] = ($this->__args[$var] instanceof IField ? $this->__args[$var]->generator() : $this->__args[$var]);
-            $res .= substr($this->__statement, $offset, $pos - $offset) . $values[$var];
+                $values[$var] = ($this->_args[$var] instanceof IField ? $this->_args[$var]->generator() : $this->_args[$var]);
+            $res .= substr($this->_statement, $offset, $pos - $offset) . $values[$var];
             $offset = $var_end + $s_len;
             //var_dump(compact('res','offset'));            
         }
@@ -2095,7 +2096,7 @@ class FoStatement extends FAnyType implements IEvalField, IField
      * Checks if given type is an IField. 
      * This is by default an assertion-level function, when the result is bad, it throws)
      */
-    protected function __iField($type, $fail = true)
+    protected function _iField($type, $fail = true)
     {
         if('IField' == $type || in_array('IField', class_implements($type)))
             return true;

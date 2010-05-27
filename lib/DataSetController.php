@@ -380,7 +380,7 @@ class DataSetController extends PagesController
 	}
 	
 	
-	private function _isSupportedDs($args)
+	protected function _isSupportedDs($args)
 	{	    
         $valid =false;
         do

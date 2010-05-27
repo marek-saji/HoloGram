@@ -401,7 +401,7 @@ class View extends HgBase implements IView
      *
      * @return html code
      */
-    private function _tag($name, &$attrs=array(), &$content=null)
+    protected function _tag($name, &$attrs=array(), &$content=null)
     {
         $f = g('Functions');
 

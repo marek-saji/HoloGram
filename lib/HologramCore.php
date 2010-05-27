@@ -473,18 +473,18 @@ class DataBase
      */
     public function startTrans()
     {
-        $this->__printInDebugPre(__FUNCTION__, array());
+        $this->_printInDebugPre(__FUNCTION__, array());
         if ($this->__trans_counter<=0)
             pg_query('BEGIN;');
         $this->__trans_counter++;
-        $this->__printInDebugPost(__FUNCTION__, array());
+        $this->_printInDebugPost(__FUNCTION__, array());
    }
     
     public function failTrans()
     {
-        $this->__printInDebugPre(__FUNCTION__, array());
+        $this->_printInDebugPre(__FUNCTION__, array());
         $this->__trans_failed = true;
-        $this->__printInDebugPost(__FUNCTION__, array());
+        $this->_printInDebugPost(__FUNCTION__, array());
     }
     
     /**
@@ -493,7 +493,7 @@ class DataBase
      */
     public function completeTrans()
     {
-        $this->__printInDebugPre(__FUNCTION__, array());
+        $this->_printInDebugPre(__FUNCTION__, array());
         if ($this->__trans_counter>0)
             $this->__trans_counter--;
         if ($this->__trans_failed)
@@ -506,50 +506,50 @@ class DataBase
             if ($this->__trans_counter<=0)
                 pg_query('COMMIT;');
         }
-        $this->__printInDebugPost(__FUNCTION__, array());
+        $this->_printInDebugPost(__FUNCTION__, array());
     }
     
     public function getOne($query, $row=0, $field=0)
     {
         $argv = func_get_args();
-        $this->__printInDebugPre(__FUNCTION__, $argv);
+        $this->_printInDebugPre(__FUNCTION__, $argv);
         $result = false;
         if ($resource = $this->execute($query)) // sql error?
             $result = pg_fetch_result($resource, $row, $field);
-        $this->__printInDebugPost(__FUNCTION__, $argv, $result);
+        $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }
     
     public function getAll($query)
     {
         $argv = func_get_args();
-        $this->__printInDebugPre(__FUNCTION__, $argv);
+        $this->_printInDebugPre(__FUNCTION__, $argv);
         $result = false;
         if ($resource = $this->execute($query)) // sql error?
             $result = pg_fetch_all($resource);
-        $this->__printInDebugPost(__FUNCTION__, $argv, $result);
+        $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }
     
     public function getRow($query, $number=0)
     {
         $argv = func_get_args();
-        $this->__printInDebugPre(__FUNCTION__, $argv);
+        $this->_printInDebugPre(__FUNCTION__, $argv);
         $result = false;
         if ($resource = $this->execute($query)) // sql error?
             $result = pg_fetch_array($resource);
-        $this->__printInDebugPost(__FUNCTION__, $argv, $result);
+        $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }
 
     public function getCol($query, $number=0)
     {
         $argv = func_get_args();
-        $this->__printInDebugPre(__FUNCTION__, $argv);
+        $this->_printInDebugPre(__FUNCTION__, $argv);
         $result = false;
         if ($resource = $this->execute($query)) // sql error?
             $result = pg_fetch_all_columns($resource, $number);
-        $this->__printInDebugPost(__FUNCTION__, $argv, $result);
+        $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }    
     
@@ -558,11 +558,11 @@ class DataBase
         if ($print_in_debug = ('get' != substr(g('Functions')->getCaller('function'),0,3)))
         {
             $argv = func_get_args();
-            $this->__printInDebugPre(__FUNCTION__, $argv);
+            $this->_printInDebugPre(__FUNCTION__, $argv);
         }
         $result = pg_query($this->__db, $query);
         if ($print_in_debug)
-            $this->__printInDebugPost(__FUNCTION__, $argv, $result);
+            $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }
 
@@ -591,7 +591,7 @@ class DataBase
             g()->debug->set(false);
     }
 
-    protected function __printInDebugPre($func, $args)
+    protected function _printInDebugPre($func, $args)
     {
         if (g()->debug->allowed() && g()->isRendering())
         {
@@ -607,7 +607,7 @@ class DataBase
         print '<div style="margin: 0 2em;">';
     }
 
-    protected function __printInDebugPost($func, $args, $result=null)
+    protected function _printInDebugPost($func, $args, $result=null)
     {
         if (!g()->debug->on())
         {
@@ -1737,7 +1737,7 @@ abstract class Controller extends HgBase implements IController
      *
      * @return boolean
      */
-    protected function __routeAction($current, Request $req, $really_route=true)
+    protected function _routeAction($current, Request $req, $really_route=true)
     {
         if (NULL === ($child = $this->getChild($current)))
             return(false);
@@ -1758,9 +1758,9 @@ abstract class Controller extends HgBase implements IController
     }
     
 
-    protected function __handle(&$req, &$current, $route=true)
+    protected function _handle(&$req, &$current, $route=true)
     {
-        if ($route && $this->__routeAction($current,$req))
+        if ($route && $this->_routeAction($current,$req))
             return true;
             
         $action = $current;
@@ -2523,7 +2523,7 @@ abstract class Component extends Controller
         
         while ($current = $req->next())
         {
-            if (!$this->__handle($req,$current))
+            if (!$this->_handle($req,$current))
                 $this->redirect('HttpErrors/Error404');
         }
         $req->emerge();
