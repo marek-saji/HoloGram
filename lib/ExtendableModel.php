@@ -31,7 +31,7 @@
 	    /**
 	    public function __call($name, $args)
 	    {
-	        foreach($this->__inherits as &$inh)
+	        foreach($this->_inherits as &$inh)
 	        {
 	            if (method_exists($inh['class'],$name))
 	                return(call_user_func_array(array($inh['class'],$name),$args);
@@ -70,7 +70,7 @@
 	    * @param $name the name of extension
 	    * @param $model ModelExtension
 	    */
-	    protected function __extend($name, $model)
+	    protected function _extend($name, $model)
 	    {
 	        $this->_extensions[$name]=$model;
 	    }

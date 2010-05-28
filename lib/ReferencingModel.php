@@ -22,7 +22,7 @@ abstract class ReferencingModel extends ExtendableModel
             $inner_model->alias("dsIn{$this->getName()}$counter");
             $this->_inner_models[$name] = $inner_model;
             $name_id = strtolower($name);
-            $this->__addField( new FForeignId("{$name_id}_id",true,$name,8));
+            $this->_addField( new FForeignId("{$name_id}_id",true,$name,8));
             $this->relate('',$inner_model,'Nto1',"{$name_id}_id",'id');
         }
     }
@@ -61,9 +61,9 @@ abstract class ReferencingModel extends ExtendableModel
         foreach($data as $key=> &$single)
         {
             if (g('Functions')->isInt($key))
-                $this->__splitFields($single);
+                $this->_splitFields($single);
             else
-                $this->__splitFields($data);
+                $this->_splitFields($data);
         }
 
         return parent::sync($data,$execute,$action);
@@ -90,7 +90,7 @@ abstract class ReferencingModel extends ExtendableModel
         return $gen;
     }
     
-    protected function __splitFields(&$data)
+    protected function _splitFields(&$data)
     {
         foreach($this->_inner_models as $name=>$inner_model)
         {
@@ -119,11 +119,11 @@ abstract class InnerModel extends ReferencingModel
     {        
         parent::__construct();
         $this->_referenced_model = $referenced_model;
-        $this->__addField( new FId('id',8));
-        $this->__addField( $f_type =  new FString('type',true,null,3,32));
+        $this->_addField( new FId('id',8));
+        $this->_addField( $f_type =  new FString('type',true,null,3,32));
         $f_type->auto(array($this->_referenced_model,'getName'),array(),true);
         
-        $this->__pk('id');
+        $this->_pk('id');
         $this->whiteListAll();
     }
 }

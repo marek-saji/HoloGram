@@ -100,21 +100,21 @@ class UploadModel extends Model
         parent::__construct();
 
         // (also a filename)
-        $this->__addField(new FString('id', true, null, 32, 32));
+        $this->_addField(new FString('id', true, null, 32, 32));
 
         // relation to models
-        $this->__addField(new FString('model', true, null, 0, 128));
-        $this->__addField(new FInt('id_in_model', 4, true));
+        $this->_addField(new FString('model', true, null, 0, 128));
+        $this->_addField(new FInt('id_in_model', 4, true));
 
         // original uploaded file data
-        $this->__addField(new FString('original_mime', false, null, 0, 128));
-        $this->__addField(new FString('original_name', false, null, 0, 256));
+        $this->_addField(new FString('original_mime', false, null, 0, 128));
+        $this->_addField(new FString('original_name', false, null, 0, 256));
 
         // additional meta data
-        $this->__addField(new FString('title', false, null, 0, 64));
-        $this->__addField(new FString('description', false, null, 0, 1024));
+        $this->_addField(new FString('title', false, null, 0, 64));
+        $this->_addField(new FString('description', false, null, 0, 1024));
 
-        $this->__pk('id');
+        $this->_pk('id');
         $this->whiteListAll();
     }
 
@@ -151,7 +151,7 @@ class UploadModel extends Model
      *        (this will trigger warning)
      * @param array $error reference to errors
      */
-    protected function __syncSingle(&$data, $action, &$error)
+    protected function _syncSingle(&$data, $action, &$error)
     {
         $f = g('Functions');
 
@@ -249,12 +249,12 @@ class UploadModel extends Model
                 break;
         }
 
-        return parent::__syncSingle($data, $action, $error);
+        return parent::_syncSingle($data, $action, $error);
     }
 
     /**
      * Deleting row(s).
-     * in contrast to __syncSingle() makes use of filter() method
+     * in contrast to _syncSingle() makes use of filter() method
      *
      * @param boolean $execute launch the query or just build it?
      */

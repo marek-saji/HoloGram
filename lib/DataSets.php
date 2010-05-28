@@ -319,13 +319,13 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
 
     /**
      * Generates SELECT part of query
-     * @uses __getGroupByFields()
+     * @uses _getGroupByFields()
      * @author m.augustynowicz moved from query()
      * @return string
      */
     protected function _querySelect()
     {
-        return "SELECT\n".$this->_ident($this->__getWhitelistedFields());
+        return "SELECT\n".$this->_ident($this->_getWhitelistedFields());
     }
 
     /**
@@ -384,7 +384,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     {
         if (!$this->_groupby)
             return '';
-        return "\nGROUP BY\n".$this->_ident($this->__getGroupByFields());
+        return "\nGROUP BY\n".$this->_ident($this->_getGroupByFields());
     }
 
     /**
@@ -502,7 +502,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             $this->_filter = NULL;
         else
         {
-            $this->__iBoolean($condition);
+            $this->_iBoolean($condition);
             $this->_filter = $condition;
         }
 		$this->_count = NULL;
@@ -621,7 +621,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     if (!isset($fields[$field]))
                     {
                         $return = true;
-                        foreach ($this->__whitelist as $f=>$c)
+                        foreach ($this->_whitelist as $f=>$c)
                         {
                             if ($f == $field)
                             {
@@ -721,7 +721,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     * @param $field A field do be converted. Is a string is given, it's converted to an IBoolean generating FoStatement, 
     *    The other possibility is that it's an IBoolean generating IField.
     */
-    protected function __iBoolean(&$field)
+    protected function _iBoolean(&$field)
     {
         if (is_string($field))
             $field = new FoStatement($field,'IBoolean');
@@ -731,7 +731,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             throw new HgException('Joining IField must have IBoolean generator type');    
     }
     
-    protected function __getWhitelistedFields()
+    protected function _getWhitelistedFields()
     {
         $res = array();
         foreach ($this->_whitelist as $f=>$c)
@@ -746,7 +746,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         return join(",\n", $res);
     }
     
-    protected function __getGroupByFields()
+    protected function _getGroupByFields()
     {
         $current = array_intersect_key($this->getFields(),$this->_groupby);
         $res = '';
@@ -934,7 +934,7 @@ interface IModel extends IDataSet
 * Base class of data Models
 * FIXME : specify the IModel and use it!
 */
-class Model extends DataSet implements IModel
+abstract class Model extends DataSet implements IModel
 {
     protected $_data=array();
     protected $_fields=array(); //!< field set (columns) array of Fields
@@ -973,7 +973,7 @@ class Model extends DataSet implements IModel
         if (!$c)
             return($this->getName().' model');
     
-        if (!isset($this->__name_string))
+        if (!isset($this->_name_string))
         {
             $f = $this->getFields();
             $nf = array_intersect(
@@ -981,16 +981,16 @@ class Model extends DataSet implements IModel
                 array('title','name','surname','label','caption')
             );
             if (empty($nf))
-                $nf = $this->__primary_key;
+                $nf = $this->_primary_key;
             
             if (empty($nf))
                 $nf = key($f);
             
-            $this->__name_string = '$'.implode(' $',$nf);
+            $this->_name_string = '$'.implode(' $',$nf);
         }
                 
         extract($c);
-        return( eval("return({$this->__name_string})"));
+        return( eval("return({$this->_name_string})"));
     }
 
     /**
@@ -1330,7 +1330,7 @@ class Model extends DataSet implements IModel
             return $error;
 
         $set = join(",\n", $set);
-        $this->__iBoolean($set);
+        $this->_iBoolean($set);
 
         $sql  = $this->_queryUpdate();
         $sql .= $this->_querySet($set);
@@ -1408,7 +1408,7 @@ class Model extends DataSet implements IModel
             foreach($data as $key=> &$single)
             {
                 $tmp_error=array();
-                if (!$tmp = $this->__syncSingle($single,$action,$tmp_error))
+                if (!$tmp = $this->_syncSingle($single,$action,$tmp_error))
                     $error[$key] = $tmp_error;
                 else
                     $sql .= $tmp;
@@ -1417,7 +1417,7 @@ class Model extends DataSet implements IModel
         else
         {
             $tmp_error=array();
-            if (!$tmp = $this->__syncSingle($data,$action,$tmp_error))
+            if (!$tmp = $this->_syncSingle($data,$action,$tmp_error))
                 $error = $tmp_error;
             else
                 $sql .= $tmp;
@@ -1459,8 +1459,8 @@ class Model extends DataSet implements IModel
             $rel_name = ucfirst($model_name);
         if (FALSE !== array_key_exists($rel_name, $this->__relations))        
             throw new HgException("Relation '$rel_name' already exists");
-            //var_dump($this->_propose_keys($rel_name,$type));
-        extract($this->_propose_keys($rel_name,$type));
+            //var_dump($this->__proposeKeys($rel_name,$type));
+        extract($this->__proposeKeys($rel_name,$type));
         if (empty($foreign_key))
             $foreign_key = $pfk;
         if (empty($target_key))
@@ -1486,14 +1486,14 @@ class Model extends DataSet implements IModel
     
     
     /**
-    * Performs a single record synchronization for the sync() function. Possibly calls sync() or __syncSingle() of related 
+    * Performs a single record synchronization for the sync() function. Possibly calls sync() or _syncSingle() of related 
     * models
     * @param $data single record data
     * @param $action current default action. The action propagates down into the data array, so if any record is to 
     *     be deleted, then, by default, each record it relates to will also be deleted. This behavior is required to perform
     *     cascading deletions of 1toN related records.
     */
-    protected function __syncSingle(&$data, $action, &$error)
+    protected function _syncSingle(&$data, $action, &$error)
     {
         // determining the action
         
@@ -1525,7 +1525,7 @@ class Model extends DataSet implements IModel
             $rel_model = $relation['model'];
             $data[$relation['foreign_key']] = NULL; //may be overwriten later
             $tmp_error = array();
-            if($tmp = $rel_model->__syncSingle($data[$rel_name],$action,$tmp_error))
+            if($tmp = $rel_model->_syncSingle($data[$rel_name],$action,$tmp_error))
             {
                 $command .= $tmp;
                 $data[$relation['foreign_key']] = $data[$rel_name][$relation['target_key']];
@@ -1673,7 +1673,7 @@ class Model extends DataSet implements IModel
     * Inserts a new field into a model.
     * @param  IModelField $field A field to insert.
     */
-    protected function __addField(IModelField $field)
+    protected function _addField(IModelField $field)
     {
         $this->_fields[$field->getName()] = $field;
         $field->SourceModel($this);
@@ -1686,7 +1686,7 @@ class Model extends DataSet implements IModel
     * @param string $field A field to remove.
     * @return bool True if removed successfully.
     */
-    protected function __removeField($field)
+    protected function _removeField($field)
     {
         if(@$this->_fields[$field])
         {
@@ -1705,7 +1705,7 @@ class Model extends DataSet implements IModel
      *
      * @author m.izewski
      */
-    protected function __addIndex($name, $expr, $type = null)
+    protected function _addIndex($name, $expr, $type = null)
     {
         if(empty($name) || empty($expr))
             throw new HgException("Given name and expression can not be empty.");
@@ -1736,7 +1736,7 @@ class Model extends DataSet implements IModel
      *
      * @author m.izewski
      */
-    protected function __addTrigger($name, array $fields,  array $events, $exec, $when = 'before', $row = false )  
+    protected function _addTrigger($name, array $fields,  array $events, $exec, $when = 'before', $row = false )  
     {
         //check if there is no trigger of given name already declared in this model
         if(!empty($this->_triggers[$name]))
@@ -1765,7 +1765,7 @@ class Model extends DataSet implements IModel
     * @param $primary_keys mixed Either a name of the field accounting for the primary key, 
     *     or an array of those.
     */
-    protected function __pk($primary_keys)
+    protected function _pk($primary_keys)
     {
         $args = func_get_args();
         foreach($args as $arg)
@@ -1782,7 +1782,7 @@ class Model extends DataSet implements IModel
                     throw new HgException("No such field '$pkey'");
         }
         //register index for primary keys...
-        $this->__addIndex($this->_table_name.'_pk', implode(',',$args));
+        $this->_addIndex($this->_table_name.'_pk', implode(',',$args));
     }
     
     /**
@@ -1790,7 +1790,7 @@ class Model extends DataSet implements IModel
     * @param $rel_name name of the relation
     * @param $type Relation type.
     */
-    private function _propose_keys($rel_name,$type)
+    private function __proposeKeys($rel_name,$type)
     {
         $pfk='id';
         $ptk ='id';
@@ -1830,7 +1830,7 @@ class Relation extends Join
         $this->alias("dsJ");
 		$this->rel($path);
 		
-        //extract($this->__prepare($this->_first, $relation));
+        //extract($this->_prepare($this->_first, $relation));
         //parent::__construct($this->_first, $target, $on, $join_type);
     }
     
@@ -1848,7 +1848,7 @@ class Relation extends Join
         //$base = new Dummy();
         //$base->b=$this->_first;
         //var_dump($base);
-	    $this->__addRel($path, $this->_relations);
+	    $this->_addRel($path, $this->_relations);
         //$this->dumpRelations();
     }
     
@@ -1857,7 +1857,7 @@ class Relation extends Join
 	{
         $counter=0;
         $this->alias('ds');
-        $res = $this->__getArraySql($this->_relations, $counter);
+        $res = $this->_getArraySql($this->_relations, $counter);
         echo "<pre>"; echo($res); echo "</pre>";
         $res = unserialize(g()->db->getOne($res));
         return($res);
@@ -1869,13 +1869,13 @@ class Relation extends Join
         echo "<pre>";
         $level='';
         echo $this->_first->getName()."\n";
-        $this->__walkAndDumpRelations($this->_relations,$level);
+        $this->_walkAndDumpRelations($this->_relations,$level);
         //var_dump($this->_relations);
         echo "</pre>";
     }
 
      
-    protected function __walkAndDumpRelations(&$el, $level)
+    protected function _walkAndDumpRelations(&$el, $level)
     {
         if (isset($el['_def']))
             echo "$level{$el['_def']['type']} {$el['_def']['model_name']} (<small>{$el['_def']['rel_name']}</small>)\n";
@@ -1889,13 +1889,13 @@ class Relation extends Join
                 continue;
             }
             $dive = &$el[$key];
-            $this->__walkAndDumpRelations($dive,$level);
+            $this->_walkAndDumpRelations($dive,$level);
         }
         $level = substr($level,0,-2);
         echo "$level}\n";
     }
 	
-	protected function __addRel($path, &$rel)
+	protected function _addRel($path, &$rel)
 	{
 		if (!is_array($path))
 		    $path = array($path);
@@ -1905,16 +1905,16 @@ class Relation extends Join
 		    $n_rel = &$rel;
 		    if (is_string($key))
 			{
-			    $this->__addSinglePath($key,$n_rel);
-				$this->__addRel($way,$n_rel);
+			    $this->_addSinglePath($key,$n_rel);
+				$this->_addRel($way,$n_rel);
 			}
 			else
-			    $this->__addSinglePath($way,$n_rel);
+			    $this->_addSinglePath($way,$n_rel);
 		}
 	}
 	
     
-	protected function __addSinglePath($path, &$rel)
+	protected function _addSinglePath($path, &$rel)
 	{
         $path = explode('>',$path);	
 		foreach($path as $way)
@@ -1928,7 +1928,7 @@ class Relation extends Join
                     '_def'=>$relation,
                     '_model'=>$target
                 );
-                extract($this->__prepare($rel['_model'], $relation));
+                extract($this->_prepare($rel['_model'], $relation));
                 $this->addJoin($target, $on, $join_type);
             }
             //else
@@ -1945,7 +1945,7 @@ class Relation extends Join
     * Prepares a join for the relation
     * @param $relation defninition of the relation to follow.
     */
-    protected function __prepare($base, $relation)
+    protected function _prepare($base, $relation)
     {
         $join_type = 'left';
         switch($relation['type'])
@@ -1992,7 +1992,7 @@ class Relation extends Join
     * 
     * 
     */
-	protected function __getArraySql( &$el, &$counter, $ident='')
+	protected function _getArraySql( &$el, &$counter, $ident='')
     {
         $model = &$el['_model'];
         $foreign_key = array();
@@ -2027,13 +2027,13 @@ class Relation extends Join
             $end = "\n$ident        '}'\n$ident      ) ||\n$ident    '}' as ser";
         }
         
-		$sql .= $this->_modelArray($model, $ident);
+		$sql .= $this->__modelArray($model, $ident);
 
         $from_sql = "\n{$ident}FROM ".$model->generator();
         foreach($rels as $name => $val)
         {
             $cnt = ++$counter;
-            $from_sql .= "\n{$ident}LEFT JOIN (".$this->__getArraySql($val,$counter,$ident.'    ')."\n$ident) tab$cnt ";
+            $from_sql .= "\n{$ident}LEFT JOIN (".$this->_getArraySql($val,$counter,$ident.'    ')."\n$ident) tab$cnt ";
             //var_dump($val['_def']);
             $from_sql .= "ON (".
                 "$alias".implode(", $alias",array($val['_def']['foreign_key'])).
@@ -2053,7 +2053,7 @@ class Relation extends Join
         return($sql.$from_sql);
     }
     
-    private function _modelArray(Model $model, $ident)
+    private function __modelArray(Model $model, $ident)
     {
         //$fields = $model->getFields();
         $whitelist = $model->whiteList();

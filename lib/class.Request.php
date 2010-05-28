@@ -236,7 +236,7 @@ class Request extends HgBase
         }
 		
         $this->_diminishURL($this->_url_path);
-        $this->__buildTree($this->_url_path);
+        $this->_buildTree($this->_url_path);
     }
 
 
@@ -556,7 +556,7 @@ class Request extends HgBase
     public function emerge()
     {
         $this->_current = array_pop($this->_path_to_rtree);
-        $this->_updateRtree();
+        $this->__updateRTree();
         return true;
     }
     
@@ -729,7 +729,7 @@ class Request extends HgBase
      * @return mixed found element's value
      *               or false, it it does not exist
      */
-    private function _seekTo($key, array &$arr = null)
+    private function __seekTo($key, array &$arr = null)
     {
         if (null === $arr)
             $arr = & $this->_rtree['children'];
@@ -743,7 +743,7 @@ class Request extends HgBase
      *
      * @return void
      */
-    private function _updateRtree()
+    private function __updateRTree()
     {
         // ustawia rtree
         $this->_rtree = & $this->_tree;
@@ -752,7 +752,7 @@ class Request extends HgBase
         {
             $this->_rtree = & $this->_rtree['children'][$k];
         }
-        $this->_seekTo($this->_current);
+        $this->__seekTo($this->_current);
     }
 
 
@@ -762,7 +762,7 @@ class Request extends HgBase
      * @param string $fn function name to use (next or prev)
      * @return false|string false if no prev|next, key name on success
      */
-    private function _prevOrNext($fn)
+    private function __prevOrNext($fn)
     {
         if ('prev'!==$fn && 'next'!==$fn)
             throw new HgException('Incorrect method call.');
@@ -774,7 +774,7 @@ class Request extends HgBase
         }
         else
         {
-            $this->_seekTo($this->_current);
+            $this->__seekTo($this->_current);
             $fn($this->_rtree['children']);
             $this->_current = key($this->_rtree['children']);
         }
@@ -793,7 +793,7 @@ class Request extends HgBase
      * @param string $path path to parse into the tree
      * @return void
      */
-    protected function __buildTree($path='')
+    protected function _buildTree($path='')
     {
         $tree = array('children'=>array());
         $paths = array_filter(explode(';', $path));
@@ -834,7 +834,7 @@ class Request extends HgBase
     }
 
     /**
-     * Callback to diminish local text URLs, called before __buildTree()
+     * Callback to diminish local text URLs, called before _buildTree()
      * e.g. remove some prefix or suffix that is being added by enhanceURL()
      * @author m.augustynowicz
      *

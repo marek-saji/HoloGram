@@ -22,7 +22,7 @@ class Debug extends HgBase
 
     public function whoAmI()
     {
-        $this->dump($this->__getCaller());
+        $this->dump($this->_getCaller());
     }
 
     /**
@@ -59,7 +59,7 @@ class Debug extends HgBase
                 return true;
             case is_object($target) : // will get parsed
             case null === $target : // will get from debug_backtrace
-                list($target,$type,$attr) = $this->__getCaller($target);
+                list($target,$type,$attr) = $this->_getCaller($target);
                 break;
         }
         return $this->get($target, $type, $attr);
@@ -119,7 +119,7 @@ class Debug extends HgBase
                 break;
         }
 
-        $this->__translate($path[0], $path[1], $path[2]);
+        $this->_translate($path[0], $path[1], $path[2]);
 
         $prev_value = $this->get($path[0], $path[1], $path[2]);
 
@@ -152,7 +152,7 @@ class Debug extends HgBase
      */
     public function get($target=null, $type=null, $attr=null)
     {
-        $this->__translate($target, $type, $attr);
+        $this->_translate($target, $type, $attr);
 
         if (!isset($this->_session[$target]))
             $target = null;
@@ -192,7 +192,7 @@ class Debug extends HgBase
             $show = $this->allowed();
         else
         {
-            $caller = $this->__getCaller();
+            $caller = $this->_getCaller();
             $show = call_user_func_array(array($this,'on'), $caller);
         }
 
@@ -416,7 +416,7 @@ JS;
      *        from debug_backtrace, you can specify additional offset
      * @return array array(caller name, caller type, additional attributes)
      */
-    protected function __getCaller($caller=null, $backtrace_offset=0)
+    protected function _getCaller($caller=null, $backtrace_offset=0)
     {
         // @fixme
         if (null === $caller)
@@ -473,7 +473,7 @@ JS;
      * @param mixed $attr
      * @return void works on given parameters via reverences
      */
-    protected function __translate(&$target, &$type, &$attr)
+    protected function _translate(&$target, &$type, &$attr)
     {
         switch ($target)
         {
