@@ -249,7 +249,8 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             {
                 $field = $column[0];
                 $aggregate = $column[1];
-                $alias = null;
+                if (is_int($alias))
+                    $alias = $aggregate.' '.str_replace('"','',$field);
             }
             else
             {
@@ -261,10 +262,10 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             if(isset($fields[$field]))
             {
                 if($aggregate)
-                    $new_whitelist[$aggregate.' '.str_replace('"','',$field)] = new FoFunc($aggregate,$fields[$field]);                
+                    $new_whitelist[$alias] = new FoFunc($aggregate,$fields[$field]);
                 else
                 {
-                    if(is_numeric($alias))
+                    if(is_int($alias))
                         $new_whitelist[] = $fields[$field];
                     else
                         $new_whitelist[$alias] = $fields[$field];
@@ -735,7 +736,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         $res = array();
         foreach ($this->_whitelist as $f=>$c)
         {
-            if($c instanceOf FoFunc || !is_numeric($f))
+            if($c instanceOf FoFunc || !is_int($f))
                 $res[] = $c->generator()." AS \"$f\"";
             else
                 $res[] = $c->generator();
