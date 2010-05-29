@@ -29,13 +29,12 @@ class UploadController extends PagesController
         if(empty($data))
     		$this->redirect();
 
-   		$upload_dir = $model->getUploadDir();
-   		$fullpath = $upload_dir . $data['model'] . '/' . $data['id'];
+   		$fullpath = $model->getPath();
 
         if(!is_file($fullpath))
     		$this->redirect();
 
-        header("Content-Type: " . $data['mime']);
+        header("Content-Type: " . $data['original_mime']);
         header('Content-Disposition: attachment; filename="' . $data['original_name'] . '"');
         header("Content-Length: " . filesize($fullpath));
 

@@ -2,7 +2,7 @@
 g()->load('DataSets', null);
 
 /**
- * Model for uploaded files.
+ * Model for uploaded images.
  * @author m.jutkiewicz
  * 
  * WARNING: if you are using transaction's rollback, you have to
@@ -78,7 +78,7 @@ class ImagesUploadModel extends Model
 
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
-        elseif(mkdir($folder))
+        elseif(mkdir($folder, 0700, true))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s created', $name));
         else
             throw new HgException($this->trans('%s is not created!', $folder));
@@ -213,9 +213,12 @@ class ImagesUploadModel extends Model
                     $im = $func($this->_file['tmp_name']);
                     $f($im, $this->_file['tmp_name']);
                     imagedestroy($im);
-                    $path = $this->__upload_dir . $data['model'] . '/' . $hash . '/' . 'original' . '.' . $data['extension'];
-                    if (g()->debug->allowed())
+                    $path = $this->__upload_dir . $data['model'] . '/' . $hash . '/original' . '.' . $data['extension'];
+
+                    if(g()->debug->allowed())
                         printf('<p class="debug">creating <code>%s</code>', $path);
+
+                    mkdir($this->__upload_dir . $data['model'] . '/' . $hash, 0700, true);
                     move_uploaded_file($this->_file['tmp_name'], $path);
                 }
                 elseif(is_uploaded_file($this->_file['tmp_name']))
@@ -269,7 +272,7 @@ class ImagesUploadModel extends Model
 
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
-        elseif(mkdir($folder))
+        elseif(mkdir($folder, 0700, true))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s created', $name));
         else
             throw new HgException($this->trans('%s is not created!', $folder));
@@ -285,7 +288,7 @@ class ImagesUploadModel extends Model
                     $info = 'Błąd - %s - Zbyt duży plik';
                     break;
                 case 3:
-                    $info = 'Błąd - %s - Nie udana próba wysłania pliku. Prosze spróbować jeszcze raz.';
+                    $info = 'Błąd - %s - Nieudana próba wysłania pliku. Prosze spróbować jeszcze raz.';
                     break;
                 case 4:
                     $info = 'Błąd - %s - Brak pliku.';
@@ -321,8 +324,10 @@ class ImagesUploadModel extends Model
         if(is_file($this->__upload_dir . 'tmp' . $hash))
         {
             $path = $folder . $width . 'x' . $height . '.' . $extension;
-            if (g()->debug->allowed())
+
+            if(g()->debug->allowed())
                 printf('<p class="debug">creating <code>%s</code>', $path);
+
             if(!copy($this->__upload_dir . 'tmp' . $hash, $path))
             {
                 g()->addInfo(null, 'error', $this->trans('File has not been sent.'));
