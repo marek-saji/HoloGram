@@ -2,6 +2,9 @@
  # checkout app:
    svn clone .../hg-app/.../src src/
 
+ # edit src/app/htdocs/index.php
+   # update local, dev and test IPs/hostnames
+
  # checkout hologram:
    git clone .../hg/... src/hg/
 
@@ -21,6 +24,7 @@
    # create vhost pointing to $PWD/src/app/htdocs/
    # create alias 'hg/' poining to $PWD/src/hg/htdocs/
    # allow .htaccess magic tricks
+   # make sure mod_rewrite is on
 
  # http://host.name/, enable favourite debugs
 
