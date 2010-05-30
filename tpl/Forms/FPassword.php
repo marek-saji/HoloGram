@@ -32,7 +32,7 @@ $attr0 = $t->inc('Forms/FPassword_single', $____local_variables);
 $____local_variables = array_merge($____local_variables, array(
     'id'            => ($id1 = $id . '_1'),
     'input'         => ($input . '][1'), // dirty
-    'class'         => ($____local_variables['class'] . ' repetition'),
+    'class'         => @$____local_variables['class'] . ' repetition',
     'err_handling'  => true
 ));
 $attr1 = $t->inc('Forms/FPassword_single', $____local_variables);
