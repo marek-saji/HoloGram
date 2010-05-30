@@ -1,7 +1,7 @@
 <?php
 
 if (!defined('INCORRECT_LOGIN_COUNT'))
-    define('INCORRECT_LOGIN_COUNT',5);
+    define('INCORRECT_LOGIN_COUNT', NULL);
 
 class Auth extends HgBase implements IAuth
 {
