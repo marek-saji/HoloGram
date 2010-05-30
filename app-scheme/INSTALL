@@ -1,0 +1,35 @@
+
+ # checkout app:
+   svn clone .../hg-app/.../src src/
+
+ # checkout hologram:
+   git clone .../hg/... src/hg/
+
+ # prepare upload directory:
+   mkdir -m 0700 upload/
+   chown www-data:www-data upload/
+
+ # local configuration
+   # database credentials
+   cp src/app/conf/conf.db.php conf/
+   edit conf/conf.db.php
+
+ # configure apache
+   # create vhost pointing to $PWD/src/app/htdocs/
+   # create alias 'hg/' poining to $PWD/src/hg/htdocs/
+   # allow .htaccess magic tricks
+
+ # http://host.name/, enable favourite debugs
+
+ # head to /DataSet/list and create these models:
+   # Lang
+   EXAMPLES:
+   # Foo
+   # Bar, updated 1985-06-21
+
+ # head to /Dev and launch these actions:
+   #
+   EXAMPLES:
+   # populateFoo, updated 1666-12-24
+   # fixBar:v=1.3.42
+
