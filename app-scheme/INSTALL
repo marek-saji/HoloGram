@@ -11,8 +11,11 @@
 
  # local configuration
    # database credentials
-   cp src/app/conf/conf.db.php conf/
-   edit conf/conf.db.php
+     cp src/app/conf/conf.db.php conf/
+     edit conf/conf.db.php
+   # API keys
+     cp src/app/conf/conf.keys.php conf/
+     edit conf/conf.keys.php
 
  # configure apache
    # create vhost pointing to $PWD/src/app/htdocs/
