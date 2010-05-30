@@ -1235,8 +1235,11 @@ abstract class Controller extends HgBase implements IController
         $parent_class = get_class($this);
         for ( ; $parent_class && $parent_class != 'Controller' ; $parent_class = get_parent_class($parent_class))
         {
-            if (preg_match('/(.+)Controller$/', $parent_class, $matches))
+            if (preg_match('/(.+)(?:Controller|Component|Model|View|ME)$/',
+                           $parent_class, $matches ))
+            {
                 $this->_trans_sources[] = $matches[1];
+            }
             $this->_trans_sources[] = $parent_class;
         }
         parent::__construct();
