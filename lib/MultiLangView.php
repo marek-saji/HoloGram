@@ -120,7 +120,7 @@ class MultiLangView extends Join
                     . print_r($k,true).'=&gt;'.print_r($v,true)
                 );
             }
-            if ('lang_id' == $filter_name)
+            if ('lang_id' == $field_name)
             {
                 $this->_guess_lang = false;
                 break;
@@ -239,15 +239,11 @@ class MultiLangView extends Join
      */
     protected function _getGeneratedPrimaryKeys()
     {
-        static $cache = null;
-//        if (null !== $cache)
-//            return $cache;
-
         $pks = $this->_first->getPrimaryKeys();
         foreach ($pks as &$pk)
             $pk = $this->_first[$pk];
         $pks = join(', ', $pks);
-        return $cache = $pks;
+        return $pks;
     }
 
     /**
@@ -258,7 +254,6 @@ class MultiLangView extends Join
 	    if (NULL !== $this->_count)
 		    return($this->_count);
         $gen = $this->_ident($this->generator());
-        $sql = 
         $sql = sprintf("SELECT\n%s\n%s\nFROM\n%s",
                 $this->_ident($this->_distinctionSQL()),
                 $this->_ident('COUNT(1)'),
@@ -269,7 +264,7 @@ class MultiLangView extends Join
             $sql .= "\nWHERE\n".$gen;
         }
         $sql .= "\nGROUP BY ".$this->_getGeneratedPrimaryKeys();
-        $sql = sprintf("SELECT COUNT(1)\nFROM (\n%s\n) AS thisisborken",
+        $sql = sprintf("SELECT COUNT(1)\nFROM (\n%s\n) AS ObjViewSubQuery",
                 $this->_ident($sql) );
 		$this->_count = g()->db->getOne($sql);
 		return($this->_count);
