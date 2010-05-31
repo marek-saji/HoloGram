@@ -25,6 +25,7 @@ extract(array_merge(
             'disabled'    => false,
             'class'       => '', // overrides attrs[class] !
             'err_handling'=> true,
+            'name_suffix' => '',
         ),
         (array) $____local_variables
     ));
@@ -34,6 +35,8 @@ if ($disabled)
 
 $attrs['id'] = $id;
 $attrs['name'] = $ident.'['.$input.']';
+
+$attrs['name'] .= $name_suffix;
 
 $attrs_html = '';
 foreach ($attrs as $name=>$value)

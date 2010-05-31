@@ -240,8 +240,8 @@ class MultiLangView extends Join
     protected function _getGeneratedPrimaryKeys()
     {
         static $cache = null;
-        if (null !== $cache)
-            return $cache;
+//        if (null !== $cache)
+//            return $cache;
 
         $pks = $this->_first->getPrimaryKeys();
         foreach ($pks as &$pk)
