@@ -239,15 +239,11 @@ class MultiLangView extends Join
      */
     protected function _getGeneratedPrimaryKeys()
     {
-        static $cache = null;
-//        if (null !== $cache)
-//            return $cache;
-
         $pks = $this->_first->getPrimaryKeys();
         foreach ($pks as &$pk)
             $pk = $this->_first[$pk];
         $pks = join(', ', $pks);
-        return $cache = $pks;
+        return $pks;
     }
 
     /**
