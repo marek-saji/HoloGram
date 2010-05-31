@@ -736,10 +736,10 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         $res = array();
         foreach ($this->_whitelist as $f=>$c)
         {
-            if($c instanceOf FoFunc || !is_int($f))
-                $res[] = $c->generator()." AS \"$f\"";
-            else
-                $res[] = $c->generator();
+            $sql = $c->generator();
+            if ($sql != $f && ($c instanceOf FoFunc || !is_int($f)))
+                $sql .= " AS \"$f\"";
+            $res[] = $sql;
         }
         if (!$res)
             return "NULL";
