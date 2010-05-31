@@ -11,6 +11,10 @@
  * @param boolean $disabled
  * @param string $class
  * @param boolean $err_handling add div.field error, bind events (if $ajax)
+ * @param string $name_suffix e.g. "[en]" (note that name has to have
+ *        arrayish value, use at your own risk)
+ * @param string $name_suffix e.g. "[42][]" (note that name has to have
+ *        arrayish value, use at your own risk)
  */
 if (!$____local_variables['values'])
 {
@@ -25,6 +29,7 @@ extract(array_merge(
             'disabled'    => false,
             'class'       => '', // overrides attrs[class] !
             'err_handling'=> true,
+            'name_prefix' => '',
             'name_suffix' => '',
         ),
         (array) $____local_variables
@@ -34,9 +39,7 @@ if ($disabled)
 @$attrs['class'] .= ' hg '.$class;
 
 $attrs['id'] = $id;
-$attrs['name'] = $ident.'['.$input.']';
-
-$attrs['name'] .= $name_suffix;
+$attrs['name'] = $ident.$name_prefix.'['.$input.']'.$name_suffix;
 
 $attrs_html = '';
 foreach ($attrs as $name=>$value)
