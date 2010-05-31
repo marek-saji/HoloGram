@@ -52,7 +52,7 @@ if (isset($select_array))
 ?>
 
 <select <?=$attrs_html?>>
-    <?php if ($empty_value_label) : ?>
+    <?php if ($empty_value_label !== null) : ?>
     <option class="empty" value=""><?=$empty_value_label?></option>
     <?php endif; ?>
     <?php foreach($values as $value => $name) { ?>
