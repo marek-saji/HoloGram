@@ -17,7 +17,7 @@ $v->addCss($this->file('debug','css'));
           else
           {
               echo $this->l2a('permit','On') . '; ';
-              printf('<small><em>World Health Organization warns: <q>developing with debug-mode disabled is <strong>un<a target="_blank" href="http://www.youtube.com/watch?v=eex8x_-y38E">awesome</a></strong>!</q></em></small>');
+              printf('<small><em>World Health Organization warns: <q>developing with debug-mode disabled is <strong>un<a target="_blank" href="http://42.pl/u/2juC">awesome</a></strong>!</q></em></small>');
           }
 
           if (g()->debug->allowed())

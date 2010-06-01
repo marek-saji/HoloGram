@@ -663,7 +663,7 @@ abstract class Field implements IModelField
 /**
  * A string field.
  */
-class FString extends Field
+abstract class FStringBase extends Field
 {
     /**
      * Field constructor
@@ -744,12 +744,43 @@ class FString extends Field
 
 
 /**
- * Field that accepts HTML
- * @todo added 2009-12-15. Fstring should be changed to strip/entity all HTML!
+ * Generic, one-line text
+ * @todo strip/entity tags
+ * @todo strip new lines
  * @author m.augustynowicz
  */
-class FRich extends FString
+class FString extends FStringBase
 {
+    public function invalid(&$value)
+    {
+        $value = htmlspecialchars($value);
+        $value = strtr($value, array("\n"=>'', "\r"=>''));
+        return parent::invalid($value);
+    }
+}
+
+
+/**
+ * Multiline HTML
+ * @author m.augustynowicz
+ */
+class FRich extends FStringBase
+{
+}
+
+
+/**
+ * Multiline text
+ * @todo strip/entity tags
+ * @author m.augustynowicz
+ */
+class FMultilineString extends FStringBase
+{
+    public function invalid(&$value)
+    {
+        $value = htmlspecialchars($value);
+        return parent::invalid($value);
+    }
 }
 
 
