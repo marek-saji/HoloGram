@@ -1,6 +1,9 @@
 <?php
 /**
  * Common code for all plain <input /> form fields
+ *
+ * WARNING: fields with name_{pre,suf}fix does not get validated properly
+ *
  * @author m.augustynowicz
  *
  * (params passed as variables) 
@@ -10,6 +13,8 @@
  *
  * (params passed as local variables) 
  * @param string|false $id uniqe id. pass false to skip id attr
+ * @param string $name_suffix e.g. "[en]" (note that name has to have
+ *        arrayish value, use at your own risk)
  * @param string $name_suffix e.g. "[42][]" (note that name has to have
  *        arrayish value, use at your own risk)
  * @param array $attrs
@@ -23,6 +28,7 @@ extract(array_merge(
         array(
             'attrs'       => array(),
             'id'          => null,
+            'name_prefix' => '',
             'name_suffix' => '',
             'disabled'    => false,
             'class'       => '',
@@ -41,9 +47,7 @@ if ($disabled)
 
 if (false !== $id)
     $attrs['id'] = $id;
-$attrs['name'] = $ident.'['.$input.']';
-
-$attrs['name'] .= $name_suffix;
+$attrs['name'] = $ident.$name_prefix.'['.$input.']'.$name_suffix;
 
 $attrs['value'] = $data;
 if (false === $autocomplete)
