@@ -148,7 +148,7 @@ class Forms extends HgBase
                 }
             }
             if (null === $has_files)
-                $has_files = true;
+                $has_files = false;
         }
         unset($field);
         unset($model);
