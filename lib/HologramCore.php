@@ -2783,13 +2783,14 @@ abstract class Component extends Controller
                     $form['inputs'][$input_name]['tpl'] = $tpl;
             }
 
-            if (!isset($form['inputs']['_backlink']))
-            {
-                $form['inputs']['_backlink'] = array(
-                        'models' => null,
-                        'tpl'   => 'Forms/FBackLink',
-                    );
-            }
+            $form['inputs']['_backlink'] = array(
+                    'models' => null,
+                    'tpl'    => 'Forms/FBackLink',
+                );
+            $form['inputs']['_timestamp'] = array(
+                    'models' => null,
+                    'tpl'    => 'Forms/FRenderTimestamp',
+                );
         }
 
         $this->forms = $fixed;

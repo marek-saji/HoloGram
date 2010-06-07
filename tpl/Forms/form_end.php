@@ -16,8 +16,9 @@ extract(array_merge(
     ), EXTR_REFS|EXTR_PREFIX_INVALID, 'param');
 ?>
 
-    <fieldset class="hidden backlink">
+    <fieldset class="hidden hg">
         <?php $form->input('_backlink'); ?>
+        <?php $form->input('_timestamp'); ?>
     </fieldset>
 </form> <!-- #<?=$ident?> -->
 
