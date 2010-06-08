@@ -1,4 +1,12 @@
 <?php
+/**
+ * Display and flush site infos
+ *
+ * @author m.augustynowicz
+ */
+
+$v->addCss($t->file('infos','css'));
+
 $classy_infos = & g()->infos;
 
 if (!g()->debug->allowed())
