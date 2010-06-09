@@ -28,7 +28,8 @@ class Functions extends HgBase
      */
     static protected $_unique_id_offset = 0;
 
-
+    protected $_email_reg_exp = "![a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}!";
+    protected $_email_obfuscate_key = "someDummyKey_foo_bar";
 
     /**
      * Find links in given text and create anchors for them.
@@ -1357,5 +1358,84 @@ class Functions extends HgBase
         return $last_line;
     }
 
+    /**
+     * obfuscates all e-mails in given text
+     * @author b.matuszewski
+     * @param string $text - text to obfuscate e-mails in
+     *
+     * USEGE
+     * $f->obfuscateEmails($text);
+     * echo $text;
+     *
+     * DECODING OBFUSCATED EMAILS
+     * if you want to know how to decode such an e-mail have a quick look at
+     *      main_common.php
+     *      ObfuscateController.php
+     *      in project POP
+     */
+    public function obfuscateEmails(& $text)
+    {
+        preg_match_all($this->_email_reg_exp, $text, $matches);
+        foreach($matches[0] as $email)
+        {
+            $coded = $this->rc4Encrypt($this->_email_obfuscate_key, $email);
+            $coded2 = '';
+            for($i = 0; $i < strlen($coded); $i++)
+            {
+                $tmp_str = dechex(ord($coded[$i]));
+                while(strlen($tmp_str) < 2)
+                    $tmp_str = '0'.$tmp_str;
+                $coded2 .= $tmp_str;
+            }
+
+            $user_name = explode('@', $email);
+            $user_name = $user_name[0];
+            $text = str_replace($email, sprintf('<span id="%s" class="obfuscated" name="%s">%s@...</span><noscript>%s</noscript>', $this->uniqueId('obfuscate'), $coded2, $user_name, $this->trans('To see this e-mail enable JavaScript!')), $text);
+        }
+    }
+    
+    public function getEmailObfuscateKey()
+    {
+        return $this->_email_obfuscate_key;
+    }
+
+    /**
+     * codes/decodes given string using rc4 algorithm (symetrical encrypion)
+     * @author b.matuszewski
+     *
+     * @param string $key - encrypion key
+     * @param string $pt - string to encrypt/decrypt
+     *
+     * @returns string - encrypted/decrypted string
+     */
+    public function rc4Encrypt($key, $pt)
+    {
+        $s = array();
+        for ($i=0; $i<256; $i++)
+            $s[$i] = $i;
+        $j = 0;
+        $x;
+        for ($i=0; $i<256; $i++)
+        {
+            $j = ($j + $s[$i] + ord($key[$i % strlen($key)])) % 256;
+            $x = $s[$i];
+            $s[$i] = $s[$j];
+            $s[$j] = $x;
+        }
+        $i = 0;
+        $j = 0;
+        $ct = '';
+        $y;
+        for ($y=0; $y<strlen($pt); $y++)
+        {
+            $i = ($i + 1) % 256;
+            $j = ($j + $s[$i]) % 256;
+            $x = $s[$i];
+            $s[$i] = $s[$j];
+            $s[$j] = $x;
+            $ct .= $pt[$y] ^ chr($s[($s[$i] + $s[$j]) % 256]);
+        }
+        return $ct;
+    }
 }
 
