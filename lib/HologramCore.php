@@ -649,6 +649,7 @@ class DataBase
                         if (typeof val2 == 'undefined') val2 = 'block';
                         o = t.parentNode.parentNode.getElementsByTagName(tag)[i];
                         o.style[css] = (o.style[css]==val1?val2:val1);
+                        return false;
                     }
                     // ]]>
                     </script>
