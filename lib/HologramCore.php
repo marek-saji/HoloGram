@@ -174,18 +174,16 @@ interface IAuth
     public function loggedIn();
 
     /**
-     * @return mixed logged-in user's id
+     * @return bool|int logged-in user's id
      *         or false when no user is logged in
      */
     public function id();
 
     /**
-     * DEPRECATED in favour of id().
-     * Will get deleted as soon as all applications get rid of it.
-     * @return array|boolean associative array with logged-in user's ids (PKs in database)
+     * @return bool|mixed logged-in users's display name
      *         or false when no user is logged in
      */
-    public function ids();
+    public function displayName();
 
     /**
      * @return boolean
