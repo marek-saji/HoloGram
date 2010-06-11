@@ -11,6 +11,8 @@ $conf['users'] = array(
     ),
     // field used when displaying user's identity
     'display_name_field' => 'login',
+    // field used to identify user (has to be URL safe!)
+    'ident_field' => 'login',
 );
 
 // enumerate for [type] field
