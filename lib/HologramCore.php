@@ -1161,7 +1161,10 @@ class HgBase
                 $argv_key = $argv;
                 do
                 {
-                    $key = join("\t", $argv_key);
+                    if (1 == sizeof($argv_key))
+                        list($key) = $argv_key;
+                    else
+                        $key = join("\t", $argv_key);
                     if (isset($trans[$key]))
                     {
                         $msg = $trans[$key];
