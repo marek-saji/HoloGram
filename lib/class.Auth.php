@@ -231,8 +231,8 @@ class Auth extends HgBase implements IAuth
             // case 'SthElse' :
                 if ('actionEdit'===$action)
                 {
-                    $target = $this->__parseTarget($target);
-                    return $this->__isHg20Owner($target, $user);
+                    $target = $this->_parseTarget($target);
+                    return $this->_isHg20Owner($target, $user);
                 }
                 return true;
         }
@@ -319,7 +319,7 @@ class Auth extends HgBase implements IAuth
     }
 
 
-    protected function __isHg20Owner($target, $user)
+    protected function _isHg20Owner($target, $user)
     {
         if ('user' === $target->model)
             return $target->fields['object_id'] == @$this->get('object_id');
@@ -334,7 +334,7 @@ class Auth extends HgBase implements IAuth
     /**
      * @todo fix it.
      */
-    protected function __parseTarget($t)
+    protected function _parseTarget($t)
     {
         $target = new stdClass();
         switch (true)

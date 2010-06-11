@@ -17,7 +17,7 @@ $v->addCss($this->file('debug','css'));
           else
           {
               echo $this->l2a('permit','On') . '; ';
-              printf('<small><em>World Health Organization warns: <q>developing with debug-mode disabled is <strong>un<a target="_blank" href="http://www.youtube.com/watch?v=eex8x_-y38E">awesome</a></strong>!</q></em></small>');
+              printf('<small><em>World Health Organization warns: <q>developing with debug-mode disabled is <strong>un<a target="_blank" href="http://42.pl/u/2juC">awesome</a></strong>!</q></em></small>');
           }
 
           if (g()->debug->allowed())
@@ -41,7 +41,7 @@ $v->addCss($this->file('debug','css'));
               else
                   printf('nothing enabled');
 
-              printf(' <button onclick="if (x=prompt(\'e.g.\ndb=true,js=0,user,item.controller=1,item.class=0\ndisable.gmaps to disable google maps\nall=0 to reset\')) window.location.href=(\'%s\'.replace(\'__here__\',x))">change</button>', $this->url2a('set',array('__here__')));
+              printf(' <button onclick="if (x=prompt(\'e.g.\ndb=true,js=0,user,item.controller=1,item.class=0\ndisable.gmaps to disable google maps\ndisable.externalcdn to disable external CDNs (jQuery etc)\ntrans.missing to highlight missing translations\nall=0 to reset\')) window.location.href=(\'%s\'.replace(\'__here__\',x))">change</button>', $this->url2a('set',array('__here__')));
               echo '; ';
               print((g()->debug->get()?$this->l2a('disable global',"set",array('global'=>'off')):$this->l2a('enable global','set',array('global'=>'on'))));
           }

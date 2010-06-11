@@ -22,7 +22,7 @@ class PagesController extends Component
 
         while ($current = $req->next())
         {
-            if ($this->__routeAction($current, $req))
+            if ($this->_routeAction($current, $req))
                 continue;
         }
 
@@ -31,10 +31,10 @@ class PagesController extends Component
         while ($current = $req->next())
         {
             /** @todo shouldn't part of this code be shared
-             *        with Controller::__handle()?
+             *        with Controller::_handle()?
              */
 
-            if ($this->__routeAction($current, $req, false))
+            if ($this->_routeAction($current, $req, false))
                 continue;
             //var_dump("did not route with $current");
             $action = ('default'===$current)?'defaultAction':
@@ -50,7 +50,7 @@ class PagesController extends Component
             if ($req->dive(true)) // nie schodzi poziom nizej
                 $this->process($req);
 
-            if (false === $this->__handle($req, $current, false))
+            if (false === $this->_handle($req, $current, false))
             {
                 trigger_error('Method '.get_class($this).'::'.$action.' not found.', E_USER_NOTICE);
                 $this->redirect('HttpErrors/Error404');

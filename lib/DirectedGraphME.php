@@ -160,9 +160,9 @@ class DConnections extends Model
     {
         $this->_table_name = $table_name;
         parent::__construct();
-        $this->__addField( new FInt('from_id',8,true));
-        $this->__addField( new FInt('to_id',8,true));
-        $this->__pk('from_id','to_id');
+        $this->_addField( new FInt('from_id',8,true));
+        $this->_addField( new FInt('to_id',8,true));
+        $this->_pk('from_id','to_id');
         $this->whiteListAll();
     }
 }

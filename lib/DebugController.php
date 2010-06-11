@@ -41,7 +41,7 @@ class DebugController extends TrunkController
                 {
                     while ($current = $req->next())
                     {
-                        if (!$this->__handle($req,$current))
+                        if (!$this->_handle($req,$current))
                             $this->redirect('HttpErrors/Error404');
                         $this->_launched_action = null; // to avoid warnings
                     }

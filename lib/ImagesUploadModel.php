@@ -37,16 +37,16 @@ class ImagesUploadModel extends Model
         $this->__upload_dir = UPLOAD_DIR . 'images/';
         parent::__construct();
 
-        $this->__addField(new FString('id', true, null, 32, 32));
-        $this->__addField(new FInt('id_in_model', 4, true));
-        $this->__addField(new FString('model', true, null, 0, 128));
-        $this->__addField(new FString('extension', false, null, 0, 4));
-        $this->__addField(new FString('original_name', false, null, 0, 256));
-        $this->__addField(new FString('original_mime', false, null, 0, 16));
-        $this->__addField(new FString('title', false, null, 0, 64));
-        $this->__addField(new FString('description', false, null, 0, 512));
+        $this->_addField(new FString('id', true, null, 32, 32));
+        $this->_addField(new FInt('id_in_model', 4, true));
+        $this->_addField(new FString('model', true, null, 0, 128));
+        $this->_addField(new FString('extension', false, null, 0, 4));
+        $this->_addField(new FString('original_name', false, null, 0, 256));
+        $this->_addField(new FString('original_mime', false, null, 0, 16));
+        $this->_addField(new FString('title', false, null, 0, 64));
+        $this->_addField(new FString('description', false, null, 0, 512));
 
-        $this->__pk('id');
+        $this->_pk('id');
         $this->whiteListAll();
     }
 
@@ -72,7 +72,7 @@ class ImagesUploadModel extends Model
         return $this->__upload_dir;
     }
 
-    protected function __syncSingle(&$data, $action, &$error)
+    protected function _syncSingle(&$data, $action, &$error)
     {
         $folder = $this->__upload_dir . $data['model'] . '/';
 
@@ -202,7 +202,7 @@ class ImagesUploadModel extends Model
                         imagedestroy($resized);
                     }
 
-                    if(!$this->__addFile($data['model'], $hash, $data['extension'], $w, $h))
+                    if(!$this->_addFile($data['model'], $hash, $data['extension'], $w, $h))
                         return false;
 
                     unlink($this->__upload_dir . 'tmp' . $hash);
@@ -239,7 +239,7 @@ class ImagesUploadModel extends Model
             break;
         }
 
-        return parent::__syncSingle($data, $action, $error);
+        return parent::_syncSingle($data, $action, $error);
     }
 
     public function delete($execute = false)
@@ -265,7 +265,7 @@ class ImagesUploadModel extends Model
         return parent::delete($execute);
     }
 
-    protected function __addFile($model, $hash, $extension, $width = null, $height = null)
+    protected function _addFile($model, $hash, $extension, $width = null, $height = null)
     {
         $file = $this->_file;
         $folder = $this->__upload_dir . $model . '/' . $hash . '/';
@@ -505,7 +505,7 @@ class ImagesUploadModel extends Model
      * 
      * @return array The array of new and old dimensions.
      */
-    private function _calculateNewDimensions($w, $h)
+    protected function _calculateNewDimensions($w, $h)
     {
         $size = getimagesize($this->_file['tmp_name']);
         $width = $size[0];
