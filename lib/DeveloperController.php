@@ -8,17 +8,17 @@ abstract class DeveloperController extends PagesController
     private $__file = __FILE__;
     protected $_title = null;
 
-    public function __construct($args)
+
+    public function onAction($action, array & $params)
     {
-        if (!g()->conf['allow_debug'])
+        if (!g()->debug->allowed())
         {
-            // redirect to 404.
-            parent::defaultAction(array());
+            $this->redirect(array('HttpErrors', 'error404'));
         }
 
-        g()->db->lastErrorMsg(); // this will initialize database
+        g()->db->lastErrorMsg(); // will initialize db
 
-        parent::__construct($args);
+        return true;
     }
 
 

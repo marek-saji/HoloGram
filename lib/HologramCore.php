@@ -1281,6 +1281,12 @@ abstract class Controller extends HgBase implements IController
         {
             trigger_error('SIC! Launching action from a template?', E_USER_WARNING);
         }
+
+        if (!$this->hasAccess($action, $params, false))
+        {
+            $this->redirect(); // main page
+        }
+
         return true;
     }
 
@@ -2264,31 +2270,32 @@ abstract class Component extends Controller
         if (null !== $this_cache)
             return $this_cache;
 
-        if(!g()->auth->hasAccess($this, $action, $params))
+        if (g()->auth->hasAccess($this, $action, $params))
+        {
+            $ret = 1;
+        }
+        else
         {
             // or maybe we have any callback for checking this?
-            if('default' === $action)
+            if($this->_default_action === $action)
                 $callback = 'hasAccessToDefault';
             else
                 $callback = 'hasAccessTo' . ucfirst($action);
 
             if (!method_exists($this, $callback))
                 $ret = 0;
-            else if (!$this->$callback($params, $just_checking))
-                $ret = false;
-            else
+            else if ($this->$callback($params, $just_checking))
                 $ret = true;
+            else
+                $ret = false;
         }
-        else
-            $ret = 1;
 
         $this_cache = $ret;
-        if (g()->debug->allowed())
+        if (!$ret && g()->debug->allowed())
         {
-            if (0 === $ret)
-                echo '<p class="debug">Permission denied by <em>configuration</em></p>';
-            else if (false === $ret)
-                echo '<p class="debug">Permission denied by <em>callback</em></p>';
+            $by = (0 === $ret) ? 'configuration' : 'callback';
+            printf('<p class="debug">Permission to <em>%s</em>, action <em>%s</em><small>(%s)</small> denied by <em>%s</em></p>',
+                    $this->path(), $action, print_r($params, true), $by );
         }
         return $ret;
     }

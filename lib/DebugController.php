@@ -6,6 +6,16 @@
 
 class DebugController extends TrunkController
 {
+    /**
+     * Parent onAction checks permissions. We don't really want that.
+     * @author m.augustynowicz
+     * @return true allowing access
+     */
+    public function onAction($action, array & $params)
+    {
+        return true;
+    }
+
 
     public function process(Request $req)
     {
