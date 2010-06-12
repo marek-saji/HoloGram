@@ -135,4 +135,30 @@ abstract class DeveloperController extends PagesController
     }
 
 
+    /**
+     * Insert some rows to some model
+     * @author m.augustynowicz
+     *
+     * @param string $model_name
+     * @param array $rows No data validation. You have been warned.
+     */
+    protected function _insertSomething($model_name, array $rows)
+    {
+        $model = g($model_name, 'model');
+        foreach($data as &$row)
+        {
+            $model->filter($row);
+            if (!$model->getCount())
+            {
+                if(true !== $err = $model->sync($row, true, 'insert'))
+                {
+                    g()->addInfo(null, 'error', 'Error while adding ' . $model_name);
+                    g()->debug->dump($err);
+                    return;
+                }
+            }
+        }
+    }
+
 }
+
