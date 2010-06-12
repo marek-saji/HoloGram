@@ -83,41 +83,6 @@ abstract class DeveloperController extends PagesController
 
 
     /**
-     * Displays update_actions file
-     * @author m.augustynowicz
-     *
-     * @param array $params accepts "die" parameter
-     *
-     * @return void
-     */
-    public function actionPrintUpdateActions(array $params)
-    {
-        $this->_devActionBegin($params, __FUNCTION__);
-
-        $fn = APP_DIR . 'update_actions';
-
-        if (!file_exists($fn))
-            echo 'File with update actions does not exist.';
-        else
-        {
-            $f = file($fn);
-            print '<table border="1"><thead><th>rev</th><th>action</th></thead><tbody>';
-            foreach ($f as $row)
-            {
-                list($rev,$action) = preg_split('/\s/', $row, 2);
-                if (!$action)
-                    printf('<tr><td colspan="2"><strong>invalid line:</strong><pre>%s</pre></td></tr>', $rev);
-                else
-                    printf('<tr><td>%s</td><td>%s</td></tr>', $rev, $action);
-            }
-            print '</tbody></table>';
-        }
-
-        $this->_devActionEnd($params, __FUNCTION__);
-    }
-
-
-    /**
      * Set of instructions to be called on the begining of each dev action
      * @author m.augustynowicz
      *
