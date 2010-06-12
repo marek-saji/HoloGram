@@ -55,33 +55,35 @@ abstract class DeveloperController extends PagesController
     }
 
     /**
-     * Launches all create*, and then add* actions.
+     * Will launch actions:
+     *   - create*()
+     *   - populate*()
+     *   - add*()
      * @author m.augustynowicz
-     *
-     * @todo fix it. remove comment in tpl/Dev/default.php when fixed.
      *
      * @param array $params no params accepted
      */
     public function actionSetup(array $params)
     {
-        $db = g()->db;
-        $db->debugOn();
-        echo '<hr /><h2>creating things..</h2>';
-        $methods = preg_grep('/^actionCreate/', get_class_methods($this));
-        foreach ($methods as $method)
-        {
-            printf ('<h3>%s</h3>', $method);
-            call_user_func(array($this, $method), array());
-        }
-        echo '<hr /><h2>adding things..</h2>';
-        $methods = preg_grep('/^actionAdd/', get_class_methods($this));
-        foreach ($methods as $method)
-        {
-            printf ('<h3>%s</h3>', $method);
-            call_user_func(array($this, $method), array());
-        }
-        $db->debugOff();
+        $this->_devActionBegin($params, __FUNCTION__);
 
+        $all_methods = get_class_methods($this);
+        foreach (array('create', 'populate', 'add') as $suffix)
+        {
+            printf('<hr /><h2>%s* actions</h2>', $suffix);
+            $regex = '/^action'.ucfirst($suffix).'/';
+            $methods = preg_grep($regex, $all_methods);
+            foreach ($methods as $method)
+            {
+                printf ('<h3>%s</h3>', $method);
+                call_user_func(array($this, $method), array());
+                echo $this->getAssigned('output');
+                $this->assign('output', null);
+            }
+        }
+        echo '<hr />';
+
+        $this->_devActionEnd($params, __FUNCTION__);
         $this->_title = 'setup';
     }
 
