@@ -4,8 +4,7 @@ g()->load('Pages', 'controller');
 
 abstract class DeveloperController extends PagesController
 {
-    protected $_file = __FILE__;
-    private $__file = __FILE__;
+    protected $_files = array(__FILE__);
     protected $_title = null;
 
 
@@ -38,15 +37,20 @@ abstract class DeveloperController extends PagesController
 
     public function defaultAction(array $params)
     {
-        $methods = get_class_methods($this);
-        $source1 = file_get_contents($this->__file);
-        $source2 = file_get_contents($this->_file);
-        preg_match_all('/[\t ]*\/\*\*((?:\n[\t ]*\*[^\n]*)*)\n[\t ]*\*\/\s*(?:public )function\s+action([[:alpha:]]*)[^[:alpha:]].*[\r\n]/sUmi', $source1, $matches1);
-        preg_match_all('/[\t ]*\/\*\*((?:\n[\t ]*\*[^\n]*)*)\n[\t ]*\*\/\s*(?:public )function\s+action([[:alpha:]]*)[^[:alpha:]].*[\r\n]/sUmi', $source2, $matches2);
-        $actions = array_merge(
-            (array)array_combine($matches1[2], $matches1[1]),
-            (array)array_combine($matches2[2], $matches2[1])
-        );
+        $actions = array();
+        foreach ($this->_files as & $file)
+        {
+            $source = file_get_contents($file);
+            preg_match_all('/[\t ]*\/\*\*((?:\n[\t ]*\*[^\n]*)*)\n[\t ]*\*\/\s*(?:public )function\s+action([[:alpha:]]*)[^[:alpha:]].*[\r\n]/sUmi', $source, $matches);
+            $actions = array_merge(
+                $actions,
+                (array) array_combine($matches[2], $matches[1])
+            );
+        }
+
+        unset($actions['Template']);
+        ksort($actions);
+
         $this->assign(compact('actions'));
     }
 
