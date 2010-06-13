@@ -21,20 +21,11 @@ abstract class DeveloperController extends PagesController
     }
 
 
-    public function render()
-    {
-        if (g()->conf['site_name'])
-            $title = g()->conf['site_name'].' ';
-        else
-            $title = '';
-        $title .= 'Dev';
-        if ($this->_title)
-            $title .= ' : ' . $this->_title;
-        g()->view->setTitle($title);
-
-        return parent::render();
-    }
-
+    /**
+     * Display list of all actions available.
+     *
+     * @param array $params none used
+     */
     public function defaultAction(array $params)
     {
         $actions = array();
@@ -56,11 +47,12 @@ abstract class DeveloperController extends PagesController
             );
         }
 
-        unset($actions['Template']);
+        unset($actions['Template']); // don't include actionTemplate
         ksort($actions);
 
         $this->assign(compact('actions'));
     }
+
 
     /**
      * Will launch actions:
@@ -69,7 +61,7 @@ abstract class DeveloperController extends PagesController
      *   - add*()
      * @author m.augustynowicz
      *
-     * @param array $params no params accepted
+     * @param array $params accepts "die" parameter
      */
     public function actionSetup(array $params)
     {
