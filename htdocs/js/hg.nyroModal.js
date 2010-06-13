@@ -52,9 +52,16 @@ hg['nyroModalInit'].f = function()
         },
         // focus form inputs if any
         endShowContent: function(eltrs,settings){
+            var content = $('#nyroModalContent');
             if (hg['nyroModalInit'].ajax_i)
-                hg('ajaxDOMReady')(hg['nyroModalInit'].ajax_i);
-            $('#nyroModalContent').find(':input:first').focus();
+            {
+                var ajax_i = hg['nyroModalInit'].ajax_i;
+                hg('ajaxDOMReady')(ajax_i);
+                content.addClass(hg['ajax'].data[ajax_i].class);
+            }
+            content
+                .find(':input:first')
+                    .focus();
             hg['nyroModalInit'].ajax_i = null;
         },
         // .. and re-show them afterwards
