@@ -1,9 +1,15 @@
 <?php
 /**
- * @todo Doszczegółowić wyświetlanie włączonych debugów w toolbarze
+ * Debug flavour.
+ *
+ * Enabling and disabling debug modes,
+ * debug toolbar,
+ * pre-render output debug.
+ * Pretty much everything's that debug.
+ * @author m.augustynowicz
+ *
+ * @todo provide more details when displaying enabled debugs in toolbar
  */
-
-
 class DebugController extends TrunkController
 {
     /**
@@ -17,6 +23,16 @@ class DebugController extends TrunkController
     }
 
 
+    /**
+     * Processing request
+     *
+     * Normally trunk controllers don't take part in processing user request.
+     * So we make some dirty hacks to do that.
+     * @author p.piskoski
+     * @author m.augustynowicz
+     *
+     * @param Request $req set to currently handled node (should be root)
+     */
     public function process(Request $req)
     {
         if (g()->conf['allow_debug'] = $this->_session['allow_debug'])
@@ -84,6 +100,10 @@ class DebugController extends TrunkController
     }
     
     
+    /**
+     * Display toolbar, then prerender echoe, then real content
+     * @author m.augustynowicz
+     */
     public function render()
     {
         $this->inc('toolbar');
@@ -107,15 +127,25 @@ class DebugController extends TrunkController
             }
             g()->prerender_echo='';
         }
+
         parent::render();
     }    
     
     
+    /**
+     * Don't do anything by default. Just in case.
+     * @author m.augustynowicz
+     */
     public function defaultAction(array $params)
     {
         
     }
     
+    /**
+     * Enable debug mode
+     * @author p.piskorski
+     * @author m.augustynowicz
+     */
     public function actionOn(array $params)
     {
         g()->conf['allow_debug'] = $this->_session['allow_debug'] = true;
@@ -130,6 +160,11 @@ class DebugController extends TrunkController
     }
 
     
+    /**
+     * Disable debug mode
+     * @author p.piskorski
+     * @author m.augustynowicz
+     */
     public function actionOff(array $params)
     {
         g()->conf['allow_debug'] = $this->_session['allow_debug'] = false;
@@ -137,6 +172,17 @@ class DebugController extends TrunkController
         g()->debug->config();
     }
 
+
+    /**
+     * Enable/disable debug sub-mode
+     *
+     * Later on, when calling debug->on() from, for example FooController,
+     * we check if debug is enabled for "foo", then for "foo.controller".
+     * You can also use custom sub-modes like "disable.captcha" (and check
+     * it by debug->on('disable','captcha');
+     *
+     * @author m.augustynowicz
+     */
     public function actionSet(array $params)
     {
         echo '<pre>';
