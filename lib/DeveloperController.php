@@ -41,7 +41,15 @@ abstract class DeveloperController extends PagesController
         foreach ($this->_files as & $file)
         {
             $source = file_get_contents($file);
-            preg_match_all('/[\t ]*\/\*\*((?:\n[\t ]*\*[^\n]*)*)\n[\t ]*\*\/\s*(?:public )function\s+action([[:alpha:]]*)[^[:alpha:]].*[\r\n]/sUmi', $source, $matches);
+            preg_match_all('!
+                (
+                ^\s*/\*\*\s*$\s*    # /**
+                (?:^\s*\*.*$\s*)*   #  *
+                ^\s*\*/\s*$         #  */
+                )\s*
+                ^\s*public\s+function\s+action([[:alpha:]]*)[^[:alpha:]].*$!mUx',
+                    $source, $matches
+            );
             $actions = array_merge(
                 $actions,
                 (array) array_combine($matches[2], $matches[1])
