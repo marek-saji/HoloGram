@@ -1738,6 +1738,14 @@ class FoFunc extends FAnyType implements IEvalField
             'COUNT($int:FString)',
             'COUNT($int:FTimestamp)'
         ),
+        'count distinct' => array(
+            'res' => 'FString',
+            'COUNT(DISTINCT $int:FId)',
+            'COUNT(DISTINCT $int:FInt)',
+            'COUNT(DISTINCT $int:FBool)',
+            'COUNT(DISTINCT $int:FString)',
+            'COUNT(DISTINCT $int:FTimestamp)'
+        ),
         'sum' => array(
             'res' => 'FInt',
             'SUM($int:FInt)',
