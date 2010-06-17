@@ -1382,7 +1382,7 @@ class FTimestamp extends Field
         if(NULL !== ($av = $this->autoValue()))
             return ($av);
         if (null === $value)
-            return 'NULL'
+            return 'NULL';
         else if (!g('Functions')->isInt($value))
             $value = strtotime($value);
         $value = date('Y-m-d H:i:s', $value);
@@ -1739,6 +1739,14 @@ class FoFunc extends FAnyType implements IEvalField
             'COUNT($int:FBool)',
             'COUNT($int:FString)',
             'COUNT($int:FTimestamp)'
+        ),
+        'count distinct' => array(
+            'res' => 'FString',
+            'COUNT(DISTINCT $int:FId)',
+            'COUNT(DISTINCT $int:FInt)',
+            'COUNT(DISTINCT $int:FBool)',
+            'COUNT(DISTINCT $int:FString)',
+            'COUNT(DISTINCT $int:FTimestamp)'
         ),
         'sum' => array(
             'res' => 'FInt',
