@@ -2772,8 +2772,10 @@ abstract class Component extends Controller
                     if (is_int($input_name))
                     {
                         if (empty($default_model))
+                        {
                             throw new HgException('No default model specified for '.
-                                  "$form_name[$input_def] and no supplied in \$forms!");
+                                  $form_name."[$input_def] and no supplied in \$forms!");
+                        }
                         $form['inputs'][$input_def]['models'][$default_model] =
                             array($input_def);
                         $input_name = $input_def; // so [tpl] got set properly
