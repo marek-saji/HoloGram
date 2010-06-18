@@ -43,7 +43,8 @@ class PagesController extends Component
             $this->_params = (array) $req->getParams();
             $this->_action = $current;
 
-            if (method_exists($this,$callback = "prepare".ucfirst($current)))
+            $callback = "prepareAction".ucfirst($current);
+            if (method_exists($this,$callback))
                 $this->$callback($this->_params);
 
             # For URLs like Controller/Controller'sAction/Controller'sChild..

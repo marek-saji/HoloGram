@@ -54,7 +54,7 @@ function g($name='', $type="class", $args=array())
  *      You can override this using _setTemplate().
  *      @return void
  *
- * prepare{ActionName}(array &$params)
+ * prepareAction{ActionName}(array &$params)
  *      called by PagesController process() before possible diving deeper into
  *      request that would happen if URL would look like this:
  *      Ctrl1/actionName:params/Ctrl1'sChild
