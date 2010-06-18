@@ -1680,11 +1680,11 @@ abstract class Controller extends HgBase implements IController
      */
     public function delegateAction($action, array &$params)
     {
-        $real_action = & $this->_launched_action;
-        unset($this->_launched_action);
+        $real_action = $this->_launched_action;
+        $this->_launched_action = null;
         $this->_template = '';
         $ret = $this->launchAction($action, $params);
-        $this->_launched_action = & $real_action;
+        $this->_launched_action = $real_action;
         return $ret;
     }
 
