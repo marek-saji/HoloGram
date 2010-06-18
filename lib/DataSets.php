@@ -1287,15 +1287,25 @@ abstract class Model extends DataSet implements IModel
     */
     public function tableDefinition()
     {
-        $sql = "DROP TABLE IF EXISTS \"{$this->_table_name}\";\nCREATE TABLE \"{$this->_table_name}\" (\n";
+        $sql0 = '';
+        $sql = "DROP TABLE IF EXISTS \"{$this->_table_name}\";\n";
+        $sql .= "CREATE TABLE \"{$this->_table_name}\" (\n";
         foreach($this->_fields as $f)
+        {
+            if ($pre = $f->columnDefinitionAdditionalQuery())
+            {
+                $sql0 .= $pre . ";\n";
+            }
             $sql .= "    ".$f->columnDefinition().",\n";
+        }
         if (!empty($this->_primary_keys))
             $sql .= "    CONSTRAINT \"{$this->_table_name}_pk\" PRIMARY KEY (".implode(',',$this->_primary_keys)."),\n";
         $sql[strlen($sql)-2]=' ';
         $sql .= ");\n";
         $sql .= "COMMENT ON TABLE \"{$this->_table_name}\" IS 'model:".$this->getName()."';\n";
-        return($sql);
+        if ($sql0)
+            $sql = "$sql0\n$sql";
+        return $sql;
     }
     
     public function delete($execute=false)

@@ -176,6 +176,10 @@ interface IModelField extends IField
      * @return string
      */
     public function dbString($value);
+
+
+    public function columnDefinition();
+    public function columnDefinitionAdditionalQuery();
 }
 
 /**
@@ -606,7 +610,16 @@ abstract class Field implements IModelField
 
     public function columnDefinition()
     {
-        return ('"' . $this->getName() . '" ' . $this->dbType() . ($this->notNull() ? ' NOT NULL' : '') . ('' == $this->defaultValue() ? '' : ' DEFAULT ' . $this->defaultValue()));
+        $def = $this->defaultValue();
+        if (null !== $def)
+        {
+            $def = $this->dbString($def);
+        }
+
+        return '"' . $this->getName() . '" '
+            . $this->dbType()
+            . ($this->notNull() ? ' NOT NULL' : '')
+            . (null === $def ? '' : ' DEFAULT '.$def);
     }
 
     public function invalid(&$value)
@@ -657,6 +670,18 @@ abstract class Field implements IModelField
     protected function _filterNulls($val)
     {
         return ($val !== NULL);
+    }
+
+
+    /**
+     * Additional query that should be run before creating table with this field
+     * @author m.augustynowicz
+     *
+     * @return boolean|string sql query to run or false, when nothing is necesary
+     */
+    public function columnDefinitionAdditionalQuery()
+    {
+        return false;
     }
 }
 
@@ -1091,6 +1116,88 @@ class FInt extends Field
             return (pg_escape_string($value));
     }
 }
+
+
+/**
+ * Enumeration field
+ * @author m.augustynowicz
+ */
+class FEnum extends Field
+{
+    protected $_type_name = null;
+    protected $_values = array();
+
+
+    public function __construct($name, $type_name, $notnull=false, $default_value=null)
+    {
+        $enums = & g()->conf['enum'];
+
+        if (!array_key_exists($type_name, $enums))
+        {
+            throw new HgException('Tried to create '.__CLASS__.' with non-existing enum `'.$type_name.'\'. Create one in conf[db][enum].');
+        }
+
+        parent::__construct($name, $notnull, $default_value);
+
+        $this->_type_name = $type_name;
+        $this->_values = & $enums[$type_name];
+
+        if (empty($this->_values))
+        {
+            throw new HgException('Cannot create enum `'.$type_name.'\' as it has no values');
+        }
+    }
+
+
+    public function invalid(&$value)
+    {
+        $err = array();
+
+        if (!array_key_exists($value, $this->_values))
+        {
+            $err['invalid'] = true;
+        }
+
+        if (empty($err))
+        {
+            return parent::invalid($value);
+        }
+        else
+        {
+            return $this->_errors($err, $value);
+        }
+    }
+
+
+    public function dbString($value)
+    {
+        if (null === $value)
+            return 'NULL';
+        else
+            return "'" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
+    }
+
+
+    public function checkType($def)
+    {
+        return parent::checkType($def);
+    }
+
+
+    public function dbType()
+    {
+        return '"' . $this->_type_name . '"';
+    }
+
+
+    public function columnDefinitionAdditionalQuery()
+    {
+        $sql_values = "'".join("','", $this->_values)."'";
+        return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
+                $this->_type_name, $sql_values );
+    }
+}
+
 
 /**
  * A floating point type.
