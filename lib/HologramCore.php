@@ -1741,10 +1741,48 @@ abstract class Controller extends HgBase implements IController
     }
 
 
+    /**
+     * Gets launched action
+     *
+     * note: It returns action's name even, when permission has been denied.
+     * @author m.augustynowicz
+     *
+     * @return string
+     */
     public function getLaunchedAction()
     {
         return $this->_launched_action;
     }
+
+
+    /**
+     * Gets params of launched action
+     * @see getParam()
+     * @see getLaunchedAction()
+     * @author m.augustynowicz
+     *
+     * @return array
+     */
+    public function getParams()
+    {
+        return $this->_params;
+    }
+
+
+    /**
+     * Gets a param of launched action
+     * @see getParams()
+     * @see getLaunchedAction()
+     * @author m.augustynowicz
+     *
+     * @param string|int $key name or index of a param
+     * @return string param value, null when it's not set
+     */
+    public function getParam($key)
+    {
+        return @$this->_params[$key];
+    }
+
 
     /**
      * @param string $current
