@@ -1563,62 +1563,88 @@ abstract class Model extends DataSet implements IModel
         $values = '';
         foreach($this->_fields as $name=>$field)
         {
-            /** @todo wielki syf w tej if-ownicy. naprawić. uporządkować. przepisać od nowa. */
-            if ($action == 'delete')
+            if (array_key_exists($name, $data))
             {
-                if (!in_array($name,$this->_primary_keys)) //only interested in primary keys when deleting
-                    continue;
-                elseif (!isset($data[$name]))
-                    $data[$name]= NULL; //these will be properly caught during validation
-            }            
-            if (get_class($field) === 'FId' && $action == 'insert' && (!isset($data[$name]) || $data[$name]==='' || $data[$name]===null))
+                $auto_value = & $data[$name];
+            }
+            else
             {
-                $data[$name] = $field->seqValue('next');
-            }            
-            elseif ($action == 'insert') // key not exist or null value
+                $auto_value = null;
+            }
+            $use_auto_value =  $field->autoValue($action, $auto_value);
+
+            if ($use_auto_value)
             {
-                if (!array_key_exists($name, $data))
+                $data[$name] = & $auto_value;
+            }
+            else
+            {
+                /** @todo wielki syf w tej if-ownicy. naprawić. uporządkować. przepisać od nowa. */
+                if ($action == 'delete')
                 {
-                    $null = null;
-                    if($tmp = $field->invalid($null)) //reference to $data[$name] is NULL, 
-                        $error[$name]= $tmp;                     //but the call may fill it with
-                    if (null !== $null)
-                        $data[$name] = $null; 
+                    if (!in_array($name,$this->_primary_keys)) //only interested in primary keys when deleting
+                        continue;
+                    elseif (!isset($data[$name]))
+                        $data[$name]= NULL; //these will be properly caught during validation
+                }
+
+                if ($action == 'insert') // key not exist or null value
+                {
+                    if (!array_key_exists($name, $data))
+                    {
+                        $null = null;
+                        if($tmp = $field->invalid($null)) //reference to $data[$name] is NULL,
+                            $error[$name]= $tmp;                     //but the call may fill it with
+                        if (null !== $null)
+                            $data[$name] = $null;
+                    }
+                    else
+                    {
+                        if($tmp = $field->invalid($data[$name])) //reference to $data[$name] is NULL,
+                            $error[$name]= $tmp;                     //but the call may fill it with some automatic value. @TODO Really?!?.\
+                    }
+
+                }
+                elseif(array_key_exists($name,$data) && !isset($data[$name]) && $action=='update') // key exists and value is null
+                {
+                    if($tmp = $field->invalid($data[$name]))
+                        $error[$name]= $tmp;
+                }
+                elseif(isset($data[$name]) && $tmp = $field->invalid($data[$name]))
+                {
+                    $error[$name] = $tmp;
+                    continue;
+                }
+            }
+
+            if (!isset($error[$name]) && array_key_exists($name,$data)) //so far so good
+            {
+                if ($use_auto_value)
+                {
+                    // Field::autoValue() handles quoting
+                    $value = & $auto_value;
                 }
                 else
                 {
-                    if($tmp = $field->invalid($data[$name])) //reference to $data[$name] is NULL, 
-                        $error[$name]= $tmp;                     //but the call may fill it with some automatic value. @TODO Really?!?.\
+                    $value = $field->dbString($data[$name]);
                 }
-                
-            }
-            elseif(array_key_exists($name,$data) && !isset($data[$name]) && $action=='update') // key exists and value is null
-            {
-                if($tmp = $field->invalid($data[$name]))
-                    $error[$name]= $tmp;
-            }
-            elseif(isset($data[$name]) && $tmp = $field->invalid($data[$name]))
-            {
-                //var_dump(array("$name: '{$data[$name]}' invalid"=>$tmp));
-                $error[$name]= $tmp;
-                continue;
-            }
-			$this->_data = $data;
-            if (!isset($error[$name]) && array_key_exists($name,$data)) //so far so good
-            {
-                $value = $field->dbString($data[$name]);
+
                 if($action == 'insert')
                 {
-                    $sql.= $this->_ident("\n\"$name\",");
+                    $sql .= $this->_ident("\n\"$name\",");
                     $values .= "\n$value,";
                 }
                 elseif($action == 'update')
-                    $sql.= $this->_ident("\n\"$name\"=$value,");
+                {
+                    $sql .= $this->_ident("\n\"$name\"=$value,");
+                }
+                unset($value);
             }
         }
+        $this->_data = $data;
 
         //end local query
-        
+
         if(empty($error))
         {
             if($action != 'delete') $sql = substr($sql,0,-1);
@@ -1682,12 +1708,13 @@ abstract class Model extends DataSet implements IModel
     /**
     * Inserts a new field into a model.
     * @param  IModelField $field A field to insert.
+    * @return IModelField the field itself, for chaining
     */
     protected function _addField(IModelField $field)
     {
         $this->_fields[$field->getName()] = $field;
-        $field->SourceModel($this);
-        return($field);
+        $field->sourceModel($this);
+        return $field;
     }
 
     /**
