@@ -1295,7 +1295,7 @@ abstract class Controller extends HgBase implements IController
 
     public function defaultAction(array $params)
     {
-        $this->redirect('HttpErrors/Error404');
+        $this->redirect('HttpErrors/error404');
     }
     
     public function assign($a, $value=null)
@@ -2541,7 +2541,7 @@ abstract class Component extends Controller
         while ($current = $req->next())
         {
             if (!$this->_handle($req,$current))
-                $this->redirect('HttpErrors/Error404');
+                $this->redirect('HttpErrors/error404');
         }
         $req->emerge();
     }       
