@@ -38,15 +38,22 @@ class DevController extends DeveloperController
     {
         $this->_devActionBegin($params, __FUNCTION__);
 
-        /*
+        /* e.g.
         $this->_insertSomething(
             'User',
             array(
-                'id'     => -1,
-                'login'  => 'admin',
-                'passwd' => 'secret',
-                ..
-            )
+                array(
+                    'login'  => 'admin',
+                    'passwd' => 'secret',
+                    'type'   => 'admins',
+                ),
+                array(
+                    'login'  => 'mod',
+                    'passwd' => 'secret',
+                    'type'   => 'mods',
+                )
+            ),
+            array('login')
         );
          */
 

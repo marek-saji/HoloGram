@@ -141,23 +141,56 @@ abstract class DeveloperController extends PagesController
      *
      * @param string $model_name
      * @param array $rows No data validation. You have been warned.
+     * @param array $filter_fields list of fields that should be used determine
+     *        whether row already exists. Defaults to model's primary keys
      */
-    protected function _insertSomething($model_name, array $rows)
+    protected function _insertSomething($model_name, array $rows, array $filter_fields=array())
     {
+        printf('<h3>inserting into `%s\'</h3>', $model_name);
+
         $model = g($model_name, 'model');
-        foreach($data as &$row)
+        if (empty($filter_fields))
         {
-            $model->filter($row);
-            if (!$model->getCount())
-            {
-                if(true !== $err = $model->sync($row, true, 'insert'))
-                {
-                    g()->addInfo(null, 'error', 'Error while adding ' . $model_name);
-                    g()->debug->dump($err);
-                    return;
-                }
-            }
+            $filter_fields = $model->getPrimaryKeys();
         }
+        $filter_fields = array_flip($filter_fields);
+
+        $ins_count = 0;
+        $upd_count = 0;
+        $succ_count = 0;
+        foreach ($rows as &$row)
+        {
+            $filter = array_intersect_key($row, $filter_fields);
+            if (empty($filter))
+                $filter = $row;
+            $model->filter($filter)->setMargins(1);
+            $existing = $model->exec();
+            if (false === $existing)
+            {
+                $action = 'insert';
+                $count = & $ins_count;
+            }
+            else
+            {
+                $action = 'update';
+                $count = & $upd_count;
+                $row = array_merge(
+                    $row,
+                    array_intersect_key($existing, $filter_fields)
+                );
+            }
+            if (true !== $err = $model->sync($row, true, $action))
+            {
+                g()->addInfo(null, 'error', 'Error while adding ' . $model_name);
+                g()->debug->dump($err);
+                break;
+            }
+            $count++;
+            $succ_count++;
+        }
+
+        printf('<p>inserted %d rows, updated %d. in total: %d/%d</p>',
+                $ins_count, $upd_count, $succ_count, sizeof($rows));
     }
 
 }
