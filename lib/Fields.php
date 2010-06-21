@@ -1381,7 +1381,9 @@ class FTimestamp extends Field
     {
         if(NULL !== ($av = $this->autoValue()))
             return ($av);
-        if(!g('Functions')->isInt($value))
+        if (null === $value)
+            return 'NULL';
+        else if (!g('Functions')->isInt($value))
             $value = strtotime($value);
         $value = date('Y-m-d H:i:s', $value);
         return "'$value'";
