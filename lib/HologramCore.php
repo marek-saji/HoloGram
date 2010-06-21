@@ -1614,7 +1614,7 @@ abstract class Controller extends HgBase implements IController
 
         $this->_params = $params;
 
-        if ($this->_launched_action && g()->debug->allowed())
+        if (@$this->_launched_action && g()->debug->allowed())
         {
             g()->addInfo(null, 'debug',
                     'Launching <em>%s</em> in <em>%s</em> that have already launched <em>%s</em>!',

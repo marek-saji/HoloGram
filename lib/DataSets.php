@@ -149,11 +149,23 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     
     public function getCount()
     {
-	    if (NULL !== $this->_count)
+        if (NULL !== $this->_count)
 		    return $this->_count;
-        $sql = "SELECT\n  COUNT(1)";
-        $sql .= $this->_queryFrom();
-        $sql .= $this->_queryWhere();
+		if(empty($this->_groupby))
+		{
+            $sql = "SELECT\n  COUNT(1)";
+            $sql .= $this->_queryFrom();
+            $sql .= $this->_queryWhere();
+        }
+        else
+        {
+            $sql = "SELECT\n COUNT(1) FROM (";
+            $sql .= "SELECT\n  1";
+            $sql .= $this->_queryFrom();
+            $sql .= $this->_queryWhere();
+            $sql .= $this->_queryGroupBy();
+            $sql .= ") AS tab";
+        }
 		$this->_count = g()->db->getOne($sql);
 		return($this->_count);
     }
