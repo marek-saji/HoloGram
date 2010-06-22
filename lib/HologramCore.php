@@ -1408,6 +1408,7 @@ abstract class Controller extends HgBase implements IController
         {
             case 'js' :
             case 'css':
+            case 'swf':
                 $file .= '.'.$type;
                 $base_bases = array('htdocs/'.$type.'/%s');
                 break;

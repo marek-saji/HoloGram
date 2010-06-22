@@ -3,7 +3,7 @@ RewriteEngine on
 # don't go anywhere.
 RewriteRule ^hg/ - [L]
 # to avoid unnecessary file existence checks
-RewriteRule ^(js|css|gfx)/ - [L]
+RewriteRule ^(js|css|gfx|swf)/ - [L]
 RewriteRule ^[a-z]+\.php - [L]
 
 RewriteCond %{IS_SUBREQ} false
