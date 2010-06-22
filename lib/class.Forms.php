@@ -131,7 +131,7 @@ class Forms extends HgBase
             'ajax'=>isset($this->__form['ajax'])?$this->__form['ajax']:USE_AJAX_BY_DEFAULT,
             'errors' => $this->getErrors(),
             'action'=>$action,
-            'has_files' => $this->__form['upload']
+            'has_files' => @$this->__form['upload']
         ), $additional_params);
         return $this->__ctrl->inc('Forms/form_create',$params);
     }
