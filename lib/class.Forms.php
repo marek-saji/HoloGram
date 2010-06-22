@@ -125,41 +125,13 @@ class Forms extends HgBase
     {
         $f = g('Functions');
 
-        $has_files = & $this->__form['upload'];
-
-        if (null === $has_files) // autodetect
-        {
-            foreach ($this->__form['inputs'] as &$input)
-            {
-                if (!is_array(@$input['models']))
-                    continue;
-                foreach ($input['models'] as &$model)
-                {
-                    if (!is_array(@$model['fields']))
-                        continue;
-                    foreach ($model['fields'] as &$field)
-                    {
-                        if (is_a($field, 'FFile'))
-                        {
-                            $has_files = true;
-                            break(3); // no need to continue
-                        }
-                    }
-                }
-            }
-            if (null === $has_files)
-                $has_files = false;
-        }
-        unset($field);
-        unset($model);
-    
         $params = array_merge(array(
             'id' => $f->uniqueId($this->__ident),
             'ident'=>$f->ASCIIfyText($this->__ident),
             'ajax'=>isset($this->__form['ajax'])?$this->__form['ajax']:USE_AJAX_BY_DEFAULT,
             'errors' => $this->getErrors(),
             'action'=>$action,
-            'has_files' => $has_files
+            'has_files' => $this->__form['upload']
         ), $additional_params);
         return $this->__ctrl->inc('Forms/form_create',$params);
     }
