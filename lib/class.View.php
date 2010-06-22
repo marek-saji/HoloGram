@@ -305,17 +305,27 @@ class View extends HgBase implements IView
 
     /**
      * Registers HTTP header.
-     * It should be sent in {@see present()}
-     * and adequate <meta http-equiv="".. will be displayed.
      *
-     * @param string $type header type, e.g. 'Content-type'
-     * @param string $value header value, e.g. text/html; charset=utf-16
+     * If $value is specified, then apart from sending "$header: $value" value,
+     * adequate <meta http-equiv="".. will be added to <head />.
+     * If $value is ommited, only "$header" header will be sent.
+     * @author m.augustynowicz
+     *
+     * @param string $header header text
+     * @param null|string $value header value, e.g. text/html; charset=utf-16
      * @return void
      */
-    public function addHeader($type, $value)
+    public function addHeader($type, $value=null)
     {
-        $type = strtolower($type);
-        $this->_headers[$type] = $value;
+        if (func_num_args()==1)
+        {
+            $this->_headers[] = $type;
+        }
+        else
+        {
+            $type = strtolower($type);
+            $this->_headers[$type] = $value;
+        }
     }
     
     /**
@@ -583,11 +593,18 @@ class View extends HgBase implements IView
         $meta = array();
         foreach ($this->_headers as $type => &$value)
         {
-            header($type.': '.$value);
-            $meta['http-equiv='.$type] = array(
-                    'http-equiv' => & $type,
-                    'content'    => & $value,
-                );
+            if (is_int($type))
+            {
+                header($value);
+            }
+            else
+            {
+                header($type.': '.$value);
+                $meta['http-equiv='.$type] = array(
+                        'http-equiv' => $type,
+                        'content'    => $value,
+                    );
+            }
         }
         $this->_metas = array_merge($meta, $this->_metas);
     }

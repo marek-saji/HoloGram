@@ -332,14 +332,17 @@ interface IView
 
     /**
      * Registers HTTP header.
-     * It should be sent in {@see present()}
-     * and adequate <meta http-equiv="".. will be displayed.
      *
-     * @param string $type header type, e.g. 'Content-type'
-     * @param string $value header value, e.g. text/html; charset=utf-16
+     * If $value is specified, then apart from sending "$header: $value" value,
+     * adequate <meta http-equiv="".. will be added to <head />.
+     * If $value is ommited, only "$header" header will be sent.
+     * @author m.augustynowicz
+     *
+     * @param string $header header text
+     * @param null|string $value header value, e.g. text/html; charset=utf-16
      * @return void
      */
-    public function addHeader($type, $value);
+    public function addHeader($header, $value=null);
     
     /**
      * Add code between <head></head> signs
