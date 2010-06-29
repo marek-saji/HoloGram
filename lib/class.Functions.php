@@ -647,10 +647,17 @@ class Functions extends HgBase
      * @return string - ciag znakow w UTF-8 z podmienionymi znakami
      *
      * @author m.izewski
+     * @author m.augustynowicz
      * @version 1.0
      */
     public function diacreticsToPlain($string)
     {
+        static $win = null;
+        if (null === $win)
+        {
+            $win = DIRECTORY_SEPARATOR == '\\';
+        }
+
         //locale musza byc obslugiwane przez serwer!!
         setlocale(LC_CTYPE, 'pl_PL.UTF8');
 
@@ -666,8 +673,10 @@ class Functions extends HgBase
         }
 
         //win32 hack - usuniecie "zmiekczen"...
-        if(strpos($_SERVER['SERVER_SOFTWARE'],'(Win32)'))
+        if ($win)
+        {
             $string = str_replace(array("'","\""),"",$string);
+        }
 
         return $string;
     }

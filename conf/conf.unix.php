@@ -48,3 +48,10 @@ $conf['unix']['ffmpeg-jpeg'] = array(
     )
 );
 
+
+// figlet(1), with fallbacks
+$conf['unix']['figlet'] = array(
+    // first try figlet(1), then toilet(1) and fall back to plain echo
+    'path' => '$(which figlet || which toilet || echo echo)'
+);
+

@@ -100,6 +100,12 @@ class Request extends HgBase
     protected $_is_ajax = false;
 
     /**
+     * Whether request came through command line interface
+     * @var boolean
+     */
+    protected $_is_cli = false;
+
+    /**
      * Is request got from $_SERVER?
      * @var boolean
      */
@@ -197,45 +203,91 @@ class Request extends HgBase
                          $_SERVER['REQUEST_URI']; // request_uri starts with slash
 
             $this->_is_ajax = @'xmlhttprequest' === strtolower(@$_SERVER['HTTP_X_REQUESTED_WITH']);
+            $this->_is_cli = 'cli' === PHP_SAPI;
 
             if (!$base_uri)
+            {
                 $base_uri = dirname($_SERVER['SCRIPT_NAME']);
+            }
         }
         else
         {
             $this->_is_ajax = false;
+            $this->_is_cli = false;
             $this->_from_server = false; // was not generated from $_SERVER
         }
 
         $this->_given_url = $text_url;
         if ('/' != DIRECTORY_SEPARATOR)
+        {
             /** @todo is there a possibility that this will cause errors? */
             $base_uri = str_replace(DIRECTORY_SEPARATOR, '/', $base_uri);
+        }
         $base_uri = rtrim($base_uri, '/');
         $this->_base_uri = $base_uri.'/';
 
         if (g()->conf['link_split'] == urlencode(g()->conf['link_split']))
+        {
             $this->_link_split_encoded =
                             '%'.strtoupper(dechex(ord(g()->conf['link_split'])));
-
-        $url = parse_url($this->_given_url);
-        $this->_protocol = @$url['scheme'];
-        $this->_host = @$url['host'];
-        if (@$url['port'])
-            $this->_port = $url['port'];
-        $this->_query = @$url['query']; // w sumie to jest w $_GET
-
-        $this->_url_path = '/'.trim($url['path'], '/');
-        if ($base_uri)
-        {
-            $this->_url_path = '/' . trim(preg_replace(
-                    '/^'.preg_quote($base_uri,'/').'/',
-                    '',
-                    $this->_url_path
-                ), '/');
         }
-		
-        $this->_diminishURL($this->_url_path);
+
+        if ($this->isCli())
+        {
+            $this->_protocol = 'cli';
+            $this->_host = 'cli';
+            $this->_port = 'cli';
+            $argv = $_SERVER['argv'];
+            array_shift($argv);
+            $arg = array_shift($argv);
+            if ('--debug' == $arg)
+            {
+                $_SESSION[g()->conf['SID']]['debug']['allow_debug'] = true; // nasty!
+                var_dump(g()->debug->allowed());
+                $arg = array_shift($argv);
+            }
+            if (!$arg)
+            {
+                echo "Hologram\n";
+                echo "USAGE: php index.php [--debug] PATH [POST [GET]]\n";
+                echo "       PATH -- part usually seen after host name\n";
+                echo "       POST -- simulate POST request, in GET format\n";
+                die();
+            }
+            else
+            {
+                $this->_url_path = $arg;
+            }
+            $arg = array_shift($argv);
+            if ($arg)
+            {
+                parse_str($arg, $_POST);
+            }
+            $arg = array_shift($argv);
+            $this->_query = @$argv[2];
+        }
+        else
+        {
+            $url = parse_url($this->_given_url);
+            $this->_protocol = @$url['scheme'];
+            $this->_host = @$url['host'];
+            if (@$url['port'])
+                $this->_port = $url['port'];
+            $this->_query = @$url['query']; // w sumie to jest w $_GET
+
+            $this->_url_path = '/'.trim($url['path'], '/');
+            if ($base_uri)
+            {
+                $this->_url_path = '/' . trim(preg_replace(
+                        '/^'.preg_quote($base_uri,'/').'/',
+                        '',
+                        $this->_url_path
+                    ), '/');
+            }
+
+            $this->_diminishURL($this->_url_path);
+        }
+
         $this->_buildTree($this->_url_path);
     }
 
@@ -411,6 +463,16 @@ class Request extends HgBase
     public function isAjax()
     {
         return $this->_is_ajax;
+    }
+
+
+    /**
+     * Getter for {@uses $_is_cli}.
+     * @return boolean
+     */
+    public function isCli()
+    {
+        return $this->_is_cli;
     }
 
 
