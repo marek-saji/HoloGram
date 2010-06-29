@@ -788,10 +788,17 @@ class Kernel
             $this->_rendering = true;
             if (!$this->view) // could have been set in progress
             {
-                if ($this->req->isAjax())
-                    $this->view = $this->get('AjaxView');
-                else
-                    $this->view = $this->get('View');
+                switch (true)
+                {
+                    case $this->req->isAjax() :
+                        $this->view = $this->get('AjaxView');
+                        break;
+                    case $this->req->isCli() :
+                        $this->view = $this->get('TextView');
+                        break;
+                    default :
+                        $this->view = $this->get('View');
+                }
             }
             register_shutdown_function(array($this, 'possiblyDisplayPrerendererEcho'));
             $this->prerender_echo = ob_get_clean();

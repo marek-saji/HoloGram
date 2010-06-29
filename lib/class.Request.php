@@ -100,6 +100,11 @@ class Request extends HgBase
     protected $_is_ajax = false;
 
     /**
+     * Whether request came through command line interface
+     * @var boolean
+     */
+    protected $_is_cli = false;
+    /**
      * Is request got from $_SERVER?
      * @var boolean
      */
@@ -197,13 +202,17 @@ class Request extends HgBase
                          $_SERVER['REQUEST_URI']; // request_uri starts with slash
 
             $this->_is_ajax = @'xmlhttprequest' === strtolower(@$_SERVER['HTTP_X_REQUESTED_WITH']);
+            $this->_is_cli = 'cli' === PHP_SAPI;
 
             if (!$base_uri)
+            {
                 $base_uri = dirname($_SERVER['SCRIPT_NAME']);
+            }
         }
         else
         {
             $this->_is_ajax = false;
+            $this->_is_cli = false;
             $this->_from_server = false; // was not generated from $_SERVER
         }
 
@@ -218,24 +227,48 @@ class Request extends HgBase
             $this->_link_split_encoded =
                             '%'.strtoupper(dechex(ord(g()->conf['link_split'])));
 
-        $url = parse_url($this->_given_url);
-        $this->_protocol = @$url['scheme'];
-        $this->_host = @$url['host'];
-        if (@$url['port'])
-            $this->_port = $url['port'];
-        $this->_query = @$url['query']; // w sumie to jest w $_GET
-
-        $this->_url_path = '/'.trim($url['path'], '/');
-        if ($base_uri)
+        if ($this->isCli())
         {
-            $this->_url_path = '/' . trim(preg_replace(
-                    '/^'.preg_quote($base_uri,'/').'/',
-                    '',
-                    $this->_url_path
-                ), '/');
+            $this->_protocol = 'cli';
+            $this->_host = 'cli';
+            $this->_port = 'cli';
+            if (!isset($_SERVER['argv'][1]))
+            {
+                echo "Hologram\n";
+                echo "USAGE: php index.php PATH [POST] [GET]\n";
+                echo "       PATH -- part usually seen after host name\n";
+                echo "       POST -- simulate POST request, in GET format\n";
+                die();
+            }
+            $this->_url_path = @$_SERVER['argv'][1];
+            if (@$_SERVER['argv'][2])
+            {
+                parse_str($_SERVER['argv'][2], $_POST);
+            }
+            $this->_query = @$_SERVER['argv'][3];
         }
-		
-        $this->_diminishURL($this->_url_path);
+        else
+        {
+            $url = parse_url($this->_given_url);
+            $this->_protocol = @$url['scheme'];
+            $this->_host = @$url['host'];
+            if (@$url['port'])
+                $this->_port = $url['port'];
+            $this->_query = @$url['query']; // w sumie to jest w $_GET
+
+            $this->_url_path = '/'.trim($url['path'], '/');
+            if ($base_uri)
+            {
+                $this->_url_path = '/' . trim(preg_replace(
+                        '/^'.preg_quote($base_uri,'/').'/',
+                        '',
+                        $this->_url_path
+                    ), '/');
+            }
+
+            $this->_diminishURL($this->_url_path);
+        }
+
         $this->_buildTree($this->_url_path);
     }
 
@@ -411,6 +444,16 @@ class Request extends HgBase
     public function isAjax()
     {
         return $this->_is_ajax;
+    }
+
+
+    /**
+     * Getter for {@uses $_is_cli}.
+     * @return boolean
+     */
+    public function isCli()
+    {
+        return $this->_is_cli;
     }
 
 
