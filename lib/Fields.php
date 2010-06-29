@@ -1088,7 +1088,7 @@ class FInt extends Field
         if($value === null || $value === '')
             return "NULL";
         else
-            return (pg_escape_string($value));
+            return (pg_escape_string((int)$value));
     }
 }
 
