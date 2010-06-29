@@ -242,6 +242,7 @@ class MediaUploadModel extends UploadModel
         $f = g('Functions');
 
         $path_mp4 = escapeshellarg($path . '.mp4');
+        $path_ogv = escapeshellarg($path . '.ogv');
         $path_jpeg_unesc = $path . '.frame.jpg';
         $path_jpeg = escapeshellarg($path_jpeg_unesc);
         $path_thumb_unesc = $path . '.%dx%d.png';
@@ -267,8 +268,24 @@ class MediaUploadModel extends UploadModel
         if (0 != $return_value)
             return false;
 
-        // frame
 
+        /*
+        // ogv video
+        $f->exec(
+                'ffmpeg2theora',
+                    $path
+                    . ' --audiobitrate='.$ab
+                    . ' --videobitrate='.$vb
+                    . ' --max_size='.$vs
+                    . ' --output='.$path_ogv,
+                $output, $return_value
+            );
+        if (0 != $return_value)
+            return false;
+         */
+
+
+        // frame
         $f->exec(
                 'ffmpeg-jpeg',
                     '-i '.$path

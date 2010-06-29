@@ -35,6 +35,10 @@ $conf['unix']['ffmpeg-mp4'] = array(
         '-f mp4 -vcodec libx264 -me_method hex -me_range 18 -subq 7 -qmin 20 -qmax 51 -qcomp 0.7 -acodec libfaac -ab 80kb -ar 48000 -ac 2'
     )
 );
+// video/* to ogv
+$conf['unix']['ffmpeg2theora'] = array(
+    'path' => 'ffmpeg2theora'
+);
 // video/* to jpeg (one frame)
 $conf['unix']['ffmpeg-jpeg'] = array(
     'path' => 'ffmpeg',
