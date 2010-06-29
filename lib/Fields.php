@@ -1651,6 +1651,75 @@ class FFile extends FString
                 return isset($this->_conf[$property][$value]);
         }
     }
+
+
+    /**
+     * Get max file size
+     *
+     * Honours php settings.
+     * @author m.augustynowicz
+     *
+     * @return int max file size, in bytes
+     */
+    public function getMaxSize()
+    {
+        $post_limit = $this->_humanSizeToBytes(ini_get('post_max_size'));
+        $file_limit = $this->_humanSizeToBytes(ini_get('upload_max_filesize'));
+        $mem_limit = $this->_humanSizeToBytes(ini_get('memory_limit'));
+        $field_limit = $this->getConf('max size') * 1024;
+
+        $limit = min($post_limit, $file_limit);
+
+        if (-1 != $mem_limit)
+        {
+            $limit = min($limit, $mem_limit);
+        }
+
+        if (0 != $field_limit)
+        {
+            $limit = min($limit, $field_limit);
+        }
+
+        return $limit;
+    }
+
+
+    /**
+     * Parse strings with M, G etc suffixes to integers.
+     * @author m.augustynowicz
+     *
+     * @param string $size
+     * @return bool|int false on any error
+     */
+    protected function _humanSizeToBytes($size)
+    {
+        if (!preg_match('/^\s*(-?[0-9]+)\s*(.*)?$/', $size, $matches))
+        {
+            return false;
+        }
+
+        $size = $matches[1];
+        $unit = @$matches[2];
+        switch (strtoupper($unit))
+        {
+            case 'PB' :
+            case 'P' :
+                $size *= 1024;
+            case 'TB' :
+            case 'T' :
+                $size *= 1024;
+            case 'GB' :
+            case 'G' :
+                $size *= 1024;
+            case 'MB' :
+            case 'M' :
+                $size *= 1024;
+            case 'KB' :
+            case 'K' :
+                $size *= 1024;
+        }
+        return $size;
+    }
 }
 
 /**

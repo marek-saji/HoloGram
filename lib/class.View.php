@@ -110,8 +110,9 @@ class View extends HgBase implements IView
         // this should make IE behave a litte better
         // IE8.js is for CSS in general
         // html5.js is for, well.. html5
+        $ie7js_version = '2.1(beta4)';
         $attrs = array('type' => 'text/javascript');
-        $attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/2.1(beta3)/IE8.js';
+        $attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/'.$ie7js_version.'/IE9.js';
         $this->addInHead(sprintf("<!--[if lt IE 9]>\n%s<![endif]-->",
             $this->_tag('script', $attrs)
         ));
@@ -304,17 +305,27 @@ class View extends HgBase implements IView
 
     /**
      * Registers HTTP header.
-     * It should be sent in {@see present()}
-     * and adequate <meta http-equiv="".. will be displayed.
      *
-     * @param string $type header type, e.g. 'Content-type'
-     * @param string $value header value, e.g. text/html; charset=utf-16
+     * If $value is specified, then apart from sending "$header: $value" value,
+     * adequate <meta http-equiv="".. will be added to <head />.
+     * If $value is ommited, only "$header" header will be sent.
+     * @author m.augustynowicz
+     *
+     * @param string $header header text
+     * @param null|string $value header value, e.g. text/html; charset=utf-16
      * @return void
      */
-    public function addHeader($type, $value)
+    public function addHeader($type, $value=null)
     {
-        $type = strtolower($type);
-        $this->_headers[$type] = $value;
+        if (func_num_args()==1)
+        {
+            $this->_headers[] = $type;
+        }
+        else
+        {
+            $type = strtolower($type);
+            $this->_headers[$type] = $value;
+        }
     }
     
     /**
@@ -582,11 +593,18 @@ class View extends HgBase implements IView
         $meta = array();
         foreach ($this->_headers as $type => &$value)
         {
-            header($type.': '.$value);
-            $meta['http-equiv='.$type] = array(
-                    'http-equiv' => & $type,
-                    'content'    => & $value,
-                );
+            if (is_int($type))
+            {
+                header($value);
+            }
+            else
+            {
+                header($type.': '.$value);
+                $meta['http-equiv='.$type] = array(
+                        'http-equiv' => $type,
+                        'content'    => $value,
+                    );
+            }
         }
         $this->_metas = array_merge($meta, $this->_metas);
     }
