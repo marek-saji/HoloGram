@@ -110,12 +110,14 @@ class View extends HgBase implements IView
         // this should make IE behave a litte better
         // IE8.js is for CSS in general
         // html5.js is for, well.. html5
+        /*
         $ie7js_version = '2.1(beta4)';
         $attrs = array('type' => 'text/javascript');
         $attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/'.$ie7js_version.'/IE9.js';
         $this->addInHead(sprintf("<!--[if lt IE 9]>\n%s<![endif]-->",
             $this->_tag('script', $attrs)
         ));
+        */
         if ($this->_is_html5)
         {
             $attrs['src'] = 'http://html5shiv.googlecode.com/svn/trunk/html5.js';
