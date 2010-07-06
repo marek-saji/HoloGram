@@ -30,12 +30,12 @@ body.js .nojs
 {
     min-height:             18px; /* space for loader gif */
     background-color:       black;
-    border-radius:          .75em;
+/*    border-radius:          .75em;
     -moz-border-radius:     .75em;
     -khtml-border-radius:   .75em;
     -webkit-border-radius:  .75em;
-    -ie-border-radius:      expression(DD_roundies('.map-panel.map .map_messages', '16px'));
-    opacity:                .7;
+    -ie-border-radius:      expression(DD_roundies('.map-panel.map .map_messages', '16'));
+*/    opacity:                .7;
 }
 
 .gmap_messages .ajax_loading, /* legacy */
