@@ -15,6 +15,7 @@ $conf['locale'] = array(
                     32 => '32 days ago',
                 ),
                  */
+
                 // strftime() format
                 //'human time' => 'H:M',
                 //'sq' => DATE_ATOM
