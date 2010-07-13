@@ -117,7 +117,8 @@ class View extends HgBase implements IView
         ));
         if ($this->_is_html5)
         {
-            $attrs['src'] = 'http://html5shiv.googlecode.com/svn/trunk/html5.js';
+            //$attrs['src'] = 'http://html5shiv.googlecode.com/svn/trunk/html5.js';
+            $attrs['src'] = '/js/html5.js';
             $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
                 $this->_tag('script', $attrs)
             ));
