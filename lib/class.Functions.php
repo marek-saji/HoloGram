@@ -324,7 +324,7 @@ class Functions extends HgBase
      */
     function tidyHTML($string, $config=false)
     {
-        // if Tidy is not avaliable for us.
+        // if Tidy is not available for us.
         // (let's just hope it's not production environment)
         if (!class_exists('tidy',false))
         {
