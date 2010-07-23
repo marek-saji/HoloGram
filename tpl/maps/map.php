@@ -6,7 +6,7 @@
  * are passed to JavaScript! Escape!
  * @author m.augustynowicz
  *
- * @uses maps/init template should be avaliable at this location
+ * @uses maps/init template should be available at this location
  *
  * (parameters passed as assigned variables)
  * @param string $id id of the div to embed map to, if none given,
@@ -31,12 +31,12 @@
  * @param integer $update_delay delay to use when updating on move/zoom event
  * @param null|array $map_events hg function names to bind as map events,
  *        event names in keys (e.g. array('click'=>'fooMapOnClick'));
- *        functions have to be avaliable through hg();
+ *        functions have to be available through hg();
  *        in addition to Google's event there are special ones:
  *        beforechange, change and afterchange with params: map, event_type, 
  * @param null|array $marker_events hg function names to bind as marker events,
  *        event names in keys (e.g. array('click'=>'fooMarkerOnClick'));
- *        functions have to be avaliable through hg();
+ *        functions have to be available through hg();
  *
  * @return string|boolean false on error, js variable name with gmap on success.
  */

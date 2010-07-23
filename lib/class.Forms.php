@@ -33,7 +33,7 @@ class Forms extends HgBase
  *                          'ajax' => false, // use fancy ajax validation? (default: true)
  *                          'upload' => true, // files will get uploaded by this form
  *                          'model' => 'User', // default model for fields if none supplied
- *                          // declarations of avaliable input fields
+ *                          // declarations of available input fields
  *                          'inputs' => array(
  *                              // login from default model
  *                              'login',
