@@ -788,7 +788,8 @@ jQuery(function($) {
 	// Used for the escape key or the arrow in the gallery type
 	function keyHandler(e) {
         if (e.keyCode == 13) {
-            var form = e.getElementsByName('User_login');
+            var form = $("input[name='User_login']");
+            // var form = e.getElementsByName('User_login');
             if(form)
                 form.submit();
         }
