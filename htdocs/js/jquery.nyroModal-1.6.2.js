@@ -787,6 +787,11 @@ jQuery(function($) {
 	
 	// Used for the escape key or the arrow in the gallery type
 	function keyHandler(e) {
+        if (e.keyCode == 13) {
+            var form = e.getElementsByName('User_login');
+            if(form)
+                form.submit();
+        }
 		if (e.keyCode == 27) {
 			if (!currentSettings.modal)
 				removeModal();
