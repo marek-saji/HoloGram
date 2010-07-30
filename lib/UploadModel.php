@@ -119,6 +119,28 @@ class UploadModel extends Model
     }
 
     /**
+     * @author m.jutkiewicz
+     * Sets the upload directory.
+     *
+     * @param string $dir
+     */
+    public function setUploadDir($dir)
+    {
+        $this->_upload_dir = $dir;
+    }
+
+    /**
+     * @author m.jutkiewicz
+     * Gets the upload directory
+     *
+     * @return string
+     */
+    public function getUploadDir()
+    {
+        return $this->_upload_dir;
+    }
+
+    /**
      * Gets path to a given file
      * @author m.augustynowicz
      *
