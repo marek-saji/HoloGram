@@ -45,6 +45,7 @@ class View extends HgBase implements IView
         $app_ver = @ g()->conf['version'];
         $this->_inl_jses['hg_base'] = sprintf("/**\n * hg settings\n */\nvar hg_base = '%s'",
                 g()->req->getBaseUri());
+        $this->_inl_jses['hg_lang'] = "var hg_lang = '" . g()->lang->get() . "'";
         $this->_inl_jses['hg_include_path'] = "var hg_include_path = hg_base+'js/'";
         $this->_inl_jses['hg_app_ver'] = sprintf("var hg_app_ver = '%s'", @ g()->conf['version']);
         $this->_inl_jses['hg_id_offset'] = ''; // will be set in _renderHeadJSCode
