@@ -39,7 +39,7 @@ class MediaUploadModel extends UploadModel
      * @val int maximul file size to upload [MB] (false for ini settings)
      *      field config "max size"
      */
-    protected $_max_size = 100;
+    protected $_max_size = 25;
 
 
     // this model's settings
