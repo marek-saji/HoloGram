@@ -665,15 +665,18 @@ abstract class Field implements IModelField
  */
 abstract class FStringBase extends Field
 {
+    protected $_entity_tags = true;
+
     /**
      * Field constructor
      * @param $name Fields name.
      * @param $notnull Null/not null property.
      * @param $def_value Default value of the field.
      */
-    public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null)
+    public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null, $entity_tags = true)
     {
         parent::__construct($name, $notnull, $def_val);
+        $this->_entity_tags = $entity_tags;
         $this->_rules['min_length'] = $min_length;
         $this->_rules['max_length'] = $max_length;
         $this->mess(array(
@@ -753,7 +756,8 @@ class FString extends FStringBase
 {
     public function invalid(&$value)
     {
-        $value = htmlspecialchars($value);
+        if($this->_entity_tags)
+            $value = htmlspecialchars($value);
         $value = strtr($value, array("\n"=>'', "\r"=>''));
         return parent::invalid($value);
     }
@@ -778,7 +782,8 @@ class FMultilineString extends FStringBase
 {
     public function invalid(&$value)
     {
-        $value = htmlspecialchars($value);
+        if($this->_entity_tags)
+            $value = htmlspecialchars($value);
         return parent::invalid($value);
     }
 }
