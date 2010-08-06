@@ -1133,6 +1133,19 @@ class HgBase
         //$args = func_get_args();
         return($this);
     }
+    
+    /**
+     * sets lang to be used in translations
+     * @author b.matuszewski
+     */
+    public function setTransLang($lang)
+    {
+        if(g()->lang->available($lang))
+        {
+            unset(g()->conf['translations']);
+            g()->readConfigFiles('lang/'.$lang);
+        }
+    }
 
     /**
      * Translating strings.
