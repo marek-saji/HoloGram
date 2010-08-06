@@ -61,7 +61,7 @@ if (isset($select_array))
 </select>
 
 <?php
-$t->inc('Forms/errors', compact('id', 'ajax', 'err_handling'));
+$t->inc('Forms/errors', compact('id', 'ajax', 'err_handling', 'errors'));
 
 return $attrs;
 
