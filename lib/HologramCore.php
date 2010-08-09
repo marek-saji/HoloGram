@@ -2444,8 +2444,8 @@ abstract class Component extends Controller
                                 . $f->camelify($input);
                     if (method_exists($this,$callback))
                     {
-                        $variable_to_pass_by_reference = @$post[$input];
-                        $new_errors = $this->$callback($variable_to_pass_by_reference);
+                        //$variable_to_pass_by_reference = @$post[$input];
+                        $new_errors = $this->$callback($post[$input]);
                         if (!empty($new_errors))
                         {
                             $errors[$ident][$input] = array_merge(
