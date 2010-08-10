@@ -505,7 +505,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     if ($value_given)
                         $value = $field->dbString($value);
                 }
-                $cond[] = $field . $operator . $value;
+                $cond[] = '(' . $field . $operator . $value . ')';
             }
             $condition = join("\nAND ", $cond);
         }
