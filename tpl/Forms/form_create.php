@@ -66,7 +66,13 @@ if ($err_handling) :
 
 <?php
 if($ajax)
-    g()->view->addOnLoad('$(\'#'.$id.'\').submit(function(){return hg(\'form_validate\')(\''.$id.'\');})');
+    g()->view->addOnLoad(<<< JS
+    $('#{$id}').submit(function()
+    {
+        return hg('form_validate')('{$ident}');
+    });
+JS
+    );
 
 endif; // handle errors
 
