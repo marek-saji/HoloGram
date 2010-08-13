@@ -1055,7 +1055,7 @@ class Kernel
                     if (!is_file($configFile))
                         continue;
                     unset($conf);
-                    include_once $configFile;
+                    include $configFile;
                     if (@is_array($conf))
                         $confAll = array_merge($confAll,$conf);
                 }
