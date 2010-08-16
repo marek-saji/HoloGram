@@ -61,11 +61,12 @@ class View extends HgBase implements IView
         // jQuery itself
         $jquery_version = '1.4.2';
         $min = $js_debug ? '.min' : '';
-        if (g()->debug->on('disable','externalcdn') || ENVIRONMENT == PROD_ENV)
+        if (g()->debug->on('disable','externalcdn'))
             $this->addJs($this->_renderer->file('jquery-'.$jquery_version.$min,'js'));
         else
         {
-            $this->addJs('http://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
+            $protocol = g()->req->isSSL() ? 'https' : 'http';
+            $this->addJs($protocol.'://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
         }
         // make jquery more verbal about errors and warnings
         /*
@@ -117,13 +118,14 @@ class View extends HgBase implements IView
         //));
         if ($this->_is_html5)
         {
-            if (g()->debug->on('disable','externalcdn') || ENVIRONMENT == PROD_ENV)
+            if (g()->debug->on('disable','externalcdn'))
             {
                 $attrs['src'] = $this->_renderer->file('html5','js');
             }
             else
             {
-                $attrs['src'] = 'http://html5shiv.googlecode.com/svn/trunk/html5.js';
+            $protocol = g()->req->isSSL() ? 'https' : 'http';
+                $attrs['src'] = $protocol.'://html5shiv.googlecode.com/svn/trunk/html5.js';
             }
             $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
                 $this->_tag('script', $attrs)
