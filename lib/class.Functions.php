@@ -324,14 +324,14 @@ class Functions extends HgBase
      */
     function tidyHTML($string, $config=false)
     {
-        // if Tidy is not avaliable for us.
+        // if Tidy is not available for us.
         // (let's just hope it's not production environment)
         if (!class_exists('tidy',false))
         {
             if (g()->debug->allowed())
                 g()->debug->addInfo('messy HTML',
                              '<a href="http://pl.php.net/tidy">Tidy</a> is ' .
-                             'avaliable, HTML may be messy.' );
+                             'available, HTML may be messy.' );
             return $string;
         }
 
@@ -394,7 +394,7 @@ class Functions extends HgBase
     /**
      * Truncates HTML to requested length.
      *
-     * If {@uses Tidy} is not avaliable it will use {@uses truncateHTMLUgly}.
+     * If {@uses Tidy} is not available it will use {@uses truncateHTMLUgly}.
      * @author m.augustynowicz
      *
      * @todo it would be really smashy if someone make it so $length would
@@ -739,7 +739,7 @@ class Functions extends HgBase
             $auth = array($auth);
         }
 
-        if (!isset($auth)) // svn not avaliable or failed
+        if (!isset($auth)) // svn not available or failed
         {
             $auth = $this->author($file, $line);
         }

@@ -29,7 +29,7 @@ if (!defined('FALLBACK_LOCALE'))
  */
 class Lang extends HgBase implements ILang
 {
-    private $__avaliable = null;
+    private $__available = null;
     protected $_current = FALLBACK_LANG;
     protected $_locale = null;
 
@@ -64,7 +64,7 @@ class Lang extends HgBase implements ILang
 
     public function set($lang)
     {
-        if (!$this->avaliable($lang))
+        if (!$this->available($lang))
             return false;
         else
         {
@@ -87,31 +87,31 @@ class Lang extends HgBase implements ILang
      *                         if true: array('pl'=>array('name'=>,'code'=> etc.)
      * @return boolean|array
      */
-    public function avaliable($lang=null, $getinfo=false)
+    public function available($lang=null, $getinfo=false)
     {
         static $cache = array();
-        if (null === $this->__avaliable)
+        if (null === $this->__available)
         {
-            $this->__avaliable = (array) g('Lang','model')->exec();
-            g('Functions')->changeKeys($this->__avaliable, 'code');
+            $this->__available = (array) g('Lang','model')->exec();
+            g('Functions')->changeKeys($this->__available, 'code');
         }
 
         if (null === $lang)
         {
             if ($getinfo)
-                return $this->__avaliable;
+                return $this->__available;
             else
-                return array_keys($this->__avaliable);
+                return array_keys($this->__available);
         }
         else
         {
-            $avaliable = isset($this->__avaliable[strtolower($lang)]);
+            $available = isset($this->__available[strtolower($lang)]);
             if (!$getinfo)
-                return $avaliable;
+                return $available;
             else
             {
-                if ($avaliable)
-                    return $this->__avaliable[strtolower($lang)];
+                if ($available)
+                    return $this->__available[strtolower($lang)];
                 else
                     return false;
             }
@@ -129,19 +129,19 @@ class Lang extends HgBase implements ILang
      *         Some classes implementing this interface can provide other keys
      *         (e.g. 'id'), but you have to remember that they can be absent.
      *         or string with specific attribute.
-     *         false if $lang or $attr is not avaliable.
+     *         false if $lang or $attr is not available.
      */
     public function info($lang=null, $attr=null)
     {
         if (true === $lang)
             $lang = $this->get();
 
-        $avaliable = $this->avaliable($lang, true);
+        $available = $this->available($lang, true);
 
         if (null === $attr)
-            return $avaliable;
+            return $available;
         else
-            return @$avaliable[$attr];
+            return @$available[$attr];
     }
 
     public function detect()
