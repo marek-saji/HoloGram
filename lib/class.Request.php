@@ -392,8 +392,17 @@ class Request extends HgBase
         else
         {
             $host = $this->_host;
-            if ('http' == $this->_protocol && 80 != $this->_port)
+            $services = array(
+                80  => 'http',
+                443 => 'https',
+                20  => 'ftp',
+                21  => 'ftp',
+                70  => 'gopher',
+            );
+            if (@$services[$this->_port] != $this->_protocol)
+            {
                 $host .= ':' . $this->_port;
+            }
             return sprintf('%s://%s%s%s', $this->_protocol, $host, $this->_base_uri, $ctrl);
         }
     }
