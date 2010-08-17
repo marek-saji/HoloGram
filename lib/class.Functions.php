@@ -29,7 +29,20 @@ class Functions extends HgBase
     static protected $_unique_id_offset = 0;
 
     protected $_email_reg_exp = "![a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}!";
-    protected $_email_obfuscate_key = "someDummyKey_foo_bar";
+    protected $_email_obfuscate_key = '';
+
+
+    /**
+     * Filling in some fields
+     */
+    public function __construct()
+    {
+        // initiate email obfuscating key
+        $this->_email_obfuscate_key = g()->conf['site_name']
+                . ' '
+                . g()->conf['version'];
+    }
+
 
     /**
      * Find links in given text and create anchors for them.
@@ -1370,21 +1383,26 @@ class Functions extends HgBase
     /**
      * obfuscates all e-mails in given text
      * @author b.matuszewski
-     * @param string $text - text to obfuscate e-mails in
+     * @param string $html text to obfuscate e-mails in
      *
      * USEGE
-     * $f->obfuscateEmails($text);
-     * echo $text;
+     *   to obfuscate e-mails in html string use this method
      *
-     * DECODING OBFUSCATED EMAILS
-     * if you want to know how to decode such an e-mail have a quick look at
-     *      main_common.php
-     *      ObfuscateController.php
-     *      in project POP
+     *   if you want to automagically decode obfuscated e-mails in javascript,
+     *   make sute this is eval'd at every page load:
+     *     $('.obfuscated').mouseover(function()
+     *     {
+     *         var me = $(this);
+     *         hg('ajax')({
+     *             url: '{$t->url2c('Obfuscate', 'ajaxDecode')}',
+     *             data: {0: me.attr('id'), 1: me.attr('name')}
+     *         });
+     *     });
+     *
      */
-    public function obfuscateEmails(& $text)
+    public function obfuscateEmails(& $html)
     {
-        preg_match_all($this->_email_reg_exp, $text, $matches);
+        preg_match_all($this->_email_reg_exp, $html, $matches);
         foreach($matches[0] as $email)
         {
             $coded = $this->rc4Encrypt($this->_email_obfuscate_key, $email);
@@ -1397,9 +1415,8 @@ class Functions extends HgBase
                 $coded2 .= $tmp_str;
             }
 
-            $user_name = explode('@', $email);
-            $user_name = $user_name[0];
-            $text = str_replace($email, sprintf('<span id="%s" class="obfuscated" name="%s">%s@...</span><noscript>%s</noscript>', $this->uniqueId('obfuscate'), $coded2, $user_name, $this->trans('To see this e-mail enable JavaScript!')), $text);
+            list($user_name) = explode('@', $email);
+            $html = str_replace($email, sprintf('<span id="%s" class="obfuscated" name="%s">%s@...</span><noscript>%s</noscript>', $this->uniqueId('obfuscate'), $coded2, $user_name, $this->trans('To see this e-mail enable JavaScript!')), $html);
         }
     }
     
