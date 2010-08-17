@@ -1255,7 +1255,6 @@ class FDouble extends FFloat
  */
 class FDate extends Field
 {
-
     public function checkType($def)
     {
         if(false === ($res = parent::checkType($def)))
@@ -1297,6 +1296,21 @@ class FDate extends Field
         if(!g('Functions')->isInt($value))
             $value = strtotime($value);
         $value = date('Y-m-d', $value);
+        return "'$value'";
+    }
+}
+
+class FMonthYear extends FDate
+{
+    public function dbString($value)
+    {
+        if(NULL !== ($av = $this->autoValue()))
+            return ($av);
+        if($value === null || $value === '')
+            return 'NULL';
+        if(!g('Functions')->isInt($value))
+            $value = strtotime($value);
+        $value = date('Y-m-01', $value);
         return "'$value'";
     }
 }

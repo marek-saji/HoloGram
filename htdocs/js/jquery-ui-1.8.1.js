@@ -6815,7 +6815,8 @@ function Datepicker() {
 		altFormat: '', // The date format to use for the alternate field
 		constrainInput: true, // The input is constrained by the current date format
 		showButtonPanel: false, // True to show button panel, false to not show it
-		autoSize: false // True to size the input for the date format, false to leave as is
+		autoSize: false, // True to size the input for the date format, false to leave as is
+		calendarClass: null
 	};
 	$.extend(this._defaults, this.regional['']);
 	this.dpDiv = $('<div id="' + this._mainDivId + '" class="ui-datepicker ui-widget ui-widget-content ui-helper-clearfix ui-corner-all ui-helper-hidden-accessible"></div>');
@@ -8156,7 +8157,7 @@ $.extend(Datepicker.prototype, {
 					(/all|right/.test(cornerClass) && row == 0 ? (isRTL ? prev : next) : '') +
 					this._generateMonthYearHeader(inst, drawMonth, drawYear, minDate, maxDate,
 					row > 0 || col > 0, monthNames, monthNamesShort) + // draw month headers
-					'</div><table class="ui-datepicker-calendar"><thead>' +
+					'</div><table class="ui-datepicker-calendar ' + this._get(inst, 'calendarClass') + '"><thead>' +
 					'<tr>';
 				var thead = (showWeek ? '<th class="ui-datepicker-week-col">' + this._get(inst, 'weekHeader') + '</th>' : '');
 				for (var dow = 0; dow < 7; dow++) { // days of the week

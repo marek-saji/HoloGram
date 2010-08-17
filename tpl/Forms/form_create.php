@@ -69,7 +69,17 @@ if($ajax)
     g()->view->addOnLoad(<<< JS
     $('#{$id}').submit(function()
     {
-        return hg('form_validate')('{$ident}');
+        var ret = hg('form_validate')('{$ident}');
+
+        if(!ret)
+        {
+        	var pos = $('.invalid:first').offset().top;
+        	if(pos - 10 >= 0)
+        		pos -= 10;
+        	$('html, body').animate({scrollTop: pos}, 'slow');
+    	}
+
+        return ret;
     });
 JS
     );
