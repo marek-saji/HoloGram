@@ -69,16 +69,17 @@ if($ajax)
     g()->view->addOnLoad(<<< JS
     $('#{$id}').submit(function()
     {
-        $(this).find('.sending-form-message').hide();
+        $(this).find('.sending-form-message').show()
         var ret = hg('form_validate')('{$ident}');
 
         if(!ret)
         {
-        	var pos = $('.invalid:first').offset().top;
-        	if(pos - 10 >= 0)
-        		pos -= 10;
-        	$('html, body').animate({scrollTop: pos}, 'slow');
-    	}
+            $(this).find('.sending-form-message').hide();
+            var pos = $('.invalid:first').offset().top;
+            if(pos - 10 >= 0)
+                pos -= 10;
+            $('html, body').animate({scrollTop: pos}, 'slow');
+        }
 
         return ret;
     });
