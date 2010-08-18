@@ -370,6 +370,7 @@ class UploadModel extends Model
         return true;
     }
 
+
     /**
      * Delete path
      * @author m.augustynowicz
@@ -451,6 +452,7 @@ class UploadModel extends Model
         return $file;
     }
 
+
     /**
      * Callback launched before deleting file from UPLOAD_DIR
      *
@@ -467,6 +469,7 @@ class UploadModel extends Model
     {
         return true;
     }
+
 
     /**
      * Callback launched after deleting file from UPLOAD_DIR
@@ -485,6 +488,7 @@ class UploadModel extends Model
         return true;
     }
 
+
     /**
      * Callback launched before storing file in UPLOAD_DIR
      *
@@ -502,6 +506,7 @@ class UploadModel extends Model
     {
         return true;
     }
+
 
     /**
      * Callback launched after storing file in UPLOAD_DIR
@@ -556,18 +561,6 @@ class UploadModel extends Model
         }
     }
 
-    /**
-     * Returns true when the file exists and is not a directory.
-     *      
-     * @param string $file_name - contains file's name
-     *      
-     * @author D. Wegner
-     * @author m.jutkiewicz     
-     */
-    public function fileExists($filename)
-    {
-        return file_exists($filename);// && is_file($filename) && !is_dir($filename);
-    }
 
     /**
      * Uses file(1) do determine file's MIME type
