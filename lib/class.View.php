@@ -80,7 +80,8 @@ class View extends HgBase implements IView
         global $DIRS;
         $base_uri = g()->req->getBaseUri();
         $base_uri_regex = preg_quote($base_uri, '!');
-        foreach ($DIRS as &$dir)
+        $dirs = array_reverse($DIRS);
+        foreach ($dirs as &$dir)
         {
             $uri = $this->_renderer->file('hg.definitions', 'js');
             if ($dir)

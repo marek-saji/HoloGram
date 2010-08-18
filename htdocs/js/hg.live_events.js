@@ -137,7 +137,7 @@ function bindMonthYearSelector()
                 var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
                 $(this).datepicker('setDate', new Date(year, month, 1));
             },
-            calendarClass: 'work_exp_calendar'
+            calendarClass: ''
         };
         var lang = $('html').attr('lang');
         $.datepicker.regional['en'] = $.datepicker.regional['en-GB'];
