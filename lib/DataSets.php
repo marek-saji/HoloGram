@@ -458,7 +458,18 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                         }
                     }
                 }
-                $cond[] = $field . ' ' . $operator . ' ' . $value;
+                $this_cond = sprintf('%s %s %s', $field, $operator, $value);
+                switch ($operator)
+                {
+                    case 'IN' :
+                        if ('()'===$value)
+                        {
+                            $cond[] = sprintf('/* %s */ false', $this_cond);
+                            break;
+                        }
+                    default :
+                        $cond[] = $this_cond;
+                }
             }
             $condition = join("\nAND ", $cond);
         }
