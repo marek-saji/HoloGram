@@ -264,6 +264,8 @@ class Functions extends HgBase
      * Funkcja laczaca dwie tablice rekursywnie. Duzo fajniejsza, niz array_merge()
      *  jezeli w b sa puste galezie to usetuje je w a
      * Wynik laduje w pierwszej tablicy
+     *
+     * It is static because Kernel uses it in it's constructor.
      * @author m.augustynowicz
      *
      * @param array $a referencja do pierwszej tablicy
@@ -272,7 +274,7 @@ class Functions extends HgBase
      *             empty strings as values (NULL values will always be ignored)
      * @return void
      */
-    function arrayMergeRecursive(&$a,$b, $ignore_empty_strings=true)
+    public static function arrayMergeRecursive(&$a,$b, $ignore_empty_strings=true)
     {
         if (!is_array($a) || !is_array($b))
         {
@@ -284,7 +286,7 @@ class Functions extends HgBase
             if(array_key_exists($k,$b))
             {
                 if(((!$ignore_empty_strings) || $b[$k]!=='') && $b[$k]!==NULL)
-                    $this->arrayMergeRecursive($a[$k],$b[$k], $ignore_empty_strings);
+                    self::arrayMergeRecursive($a[$k],$b[$k], $ignore_empty_strings);
                 else
                     unset($a[$k]);
             }
