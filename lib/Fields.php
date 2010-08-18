@@ -1838,19 +1838,7 @@ class FoFunc extends FAnyType implements IEvalField
         'avg' => array(
             'res' => 'FInt',
             'AVG($int:FInt)',
-        ),
-        /**
-         * USER WARNING
-         * if you want to use distinct it MUST be first in the white list
-         */
-        'distinct' => array(
-            'res' => 'FString',
-            'DISTINCT $int:FId',
-            'DISTINCT $int:FInt',
-            'DISTINCT $int:FBool',
-            'DISTINCT $int:FString',
-            'DISTINCT $int:FTimestamp'
-        ),
+        ),        
         
     );
 
