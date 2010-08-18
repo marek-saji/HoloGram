@@ -54,7 +54,19 @@ hg['nyroModalInit'].f = function()
         endShowContent: function(eltrs,settings){
             if (hg['nyroModalInit'].ajax_i)
                 hg('ajaxDOMReady')(hg['nyroModalInit'].ajax_i);
-            $('#nyroModalContent').find(':input:first').focus();
+            $('#nyroModalContent')
+                .find('form')
+                    // make sure form is sent when pressing enter
+                    // (apparently it did not on IE8)
+                    .keydown(function(e){
+                        if (13 == e.keyCode)
+                        {
+                            $(this).submit();
+                        }
+                    })
+                .end()
+                .find(':input:first')
+                    .focus();
             hg['nyroModalInit'].ajax_i = null;
         },
         // .. and re-show them afterwards

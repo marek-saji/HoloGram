@@ -665,18 +665,15 @@ abstract class Field implements IModelField
  */
 abstract class FStringBase extends Field
 {
-    protected $_entity_tags = true;
-
     /**
      * Field constructor
      * @param $name Fields name.
      * @param $notnull Null/not null property.
      * @param $def_value Default value of the field.
      */
-    public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null, $entity_tags = true)
+    public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null)
     {
         parent::__construct($name, $notnull, $def_val);
-        $this->_entity_tags = $entity_tags;
         $this->_rules['min_length'] = $min_length;
         $this->_rules['max_length'] = $max_length;
         $this->mess(array(
@@ -756,8 +753,7 @@ class FString extends FStringBase
 {
     public function dbString($value)
     {
-        if($this->_entity_tags)
-            $value = htmlspecialchars($value);
+        $value = htmlspecialchars($value);
         $value = strtr($value, array("\n"=>'', "\r"=>''));
         return parent::dbString($value);
     }
@@ -782,8 +778,7 @@ class FMultilineString extends FStringBase
 {
     public function dbString($value)
     {
-        if($this->_entity_tags)
-            $value = htmlspecialchars($value);
+        $value = htmlspecialchars($value);
         return parent::dbString($value);
     }
 }
@@ -891,7 +886,7 @@ class FURL extends FString
             else if (!isset($this->_allowed_protocols[$matches[1]]))
                 $err['unsupported protocol'] = true;
 
-            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9\.-]+(?:\.[a-zA-Z0-9]+)+)(?:\/|$)!', $value, $matches))
+            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9]+)+)(?:\/|$)!', $value, $matches))
                 $err['syntax error'] = true;
 
             if (!function_exists('checkdnsrr'))
@@ -1843,19 +1838,7 @@ class FoFunc extends FAnyType implements IEvalField
         'avg' => array(
             'res' => 'FInt',
             'AVG($int:FInt)',
-        ),
-        /**
-         * USER WARNING
-         * if you want to use distinct it MUST be first in the white list
-         */
-        'distinct' => array(
-            'res' => 'FString',
-            'DISTINCT $int:FId',
-            'DISTINCT $int:FInt',
-            'DISTINCT $int:FBool',
-            'DISTINCT $int:FString',
-            'DISTINCT $int:FTimestamp'
-        ),
+        ),        
         
     );
 

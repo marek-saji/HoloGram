@@ -249,9 +249,12 @@ class Request extends HgBase
             if (!$arg)
             {
                 echo "Hologram\n";
-                echo "USAGE: php index.php [--debug] PATH [POST [GET]]\n";
+                echo "USAGE:\n";
+                echo "php index.php [--debug] PATH [POST [GET]]\n";
+                echo "       --debug -- allow debug\n";
                 echo "       PATH -- part usually seen after host name\n";
                 echo "       POST -- simulate POST request, in GET format\n";
+                echo "       POST -- simulate GET request\n";
                 die();
             }
             else

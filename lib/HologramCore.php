@@ -1061,7 +1061,8 @@ class Kernel
                 }
             }
 
-            $this->get('Functions')->arrayMergeRecursive($this->conf, $confAll, false);
+            $this->load('Functions');
+            Functions::arrayMergeRecursive($this->conf, $confAll, false);
         }
     }    
 
