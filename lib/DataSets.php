@@ -403,6 +403,8 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *                  array('','MAX(date) >',$date) -- only semi-cool
      *             first element gets quoted as table field,
      *             third one as field value (only if first one was given)
+     *             special operators:
+     *                  'IN' -- 3rd operator is expected to be array of values
      * @return $this
      */
     public function filter($condition)
@@ -424,7 +426,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     if (is_array($value))
                     {
                         $field_name  = @$value[0];
-                        $operator    = @" {$value[1]} ";
+                        $operator    = strtoupper(@$value[1]);
                         $value_given = array_key_exists(2,$value);
                         $value       = @$value[2];
                     }
@@ -442,9 +444,21 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     if (!$field)
                         throw new HgException("Trying to filter ".get_class($this)." with unknown field $field_name");
                     if ($value_given)
-                        $value = $field->dbString($value);
+                    {
+                        switch ($operator)
+                        {
+                            case 'IN' :
+                                foreach ($value as &$v)
+                                    $v = $field->dbString($v);
+                                unset($v);
+                                $value = '('.join(', ',$value).')';
+                                break;
+                            default :
+                                $value = $field->dbString($value);
+                        }
+                    }
                 }
-                $cond[] = $field . $operator . $value;
+                $cond[] = $field . ' ' . $operator . ' ' . $value;
             }
             $condition = join("\nAND ", $cond);
         }
