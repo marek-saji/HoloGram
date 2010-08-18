@@ -754,12 +754,12 @@ abstract class FStringBase extends Field
  */
 class FString extends FStringBase
 {
-    public function invalid(&$value)
+    public function dbString($value)
     {
         if($this->_entity_tags)
             $value = htmlspecialchars($value);
         $value = strtr($value, array("\n"=>'', "\r"=>''));
-        return parent::invalid($value);
+        return parent::dbString($value);
     }
 }
 
@@ -780,11 +780,11 @@ class FRich extends FStringBase
  */
 class FMultilineString extends FStringBase
 {
-    public function invalid(&$value)
+    public function dbString($value)
     {
         if($this->_entity_tags)
             $value = htmlspecialchars($value);
-        return parent::invalid($value);
+        return parent::dbString($value);
     }
 }
 
