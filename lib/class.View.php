@@ -722,13 +722,12 @@ class View extends HgBase implements IView
         {
             echo '  <style type="text/css">';
             echo "\n  /* <![CDATA[ */";
-            foreach ($this->_inl_csses as $selector => &$def)
-                echo "$selector {\n$def\n}\n";
+            foreach($this->_inl_csses as $arr)
+                foreach($arr as $selector => &$def)
+                    echo "{$selector} {\n{$def}\n}\n";
             echo "\n  /* ]]> */";
             echo ' </style>';
             echo "\n";
         }
     }
-
 }
-

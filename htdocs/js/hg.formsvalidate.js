@@ -17,7 +17,7 @@
  *        or only part of it (CURRENTLY DOES NOT WORK!)
  * @return boolean validation success
  */
-hg['input_validate'].f = function(input, err, form, whole_form,no_id)
+hg['input_validate'].f = function(input, err, form, whole_form, no_id)
 {
     if (typeof whole_form == 'undefined')
         whole_form = false;
@@ -125,7 +125,7 @@ hg['form_validate'].f = function(ident)
 {
     /**
      * @todo this is really a terrible way to validate the whole form..
-     *        not all validation events are bond to "blur", and it takes ages
+     *        not all validation events are bound to "blur", and it takes ages
      *        and way too many ajax requests.. 
      */
     return !$(':input[name^="'+ident+'["]').not(':disabled').blur().hasClass('invalid');
