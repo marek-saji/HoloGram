@@ -36,6 +36,7 @@ $attrs_html = '';
 foreach ($attrs as $name=>$value)
     $attrs_html .= sprintf(' %s="%s"', $name, htmlentities($value));
 
+$data = html_entity_decode(@$data);
 $err_id = $attrs['id'] . '__err';
 if ((@$errors) && is_array($errors))
     $errors = implode(', ', $errors);
