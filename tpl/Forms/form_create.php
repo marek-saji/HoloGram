@@ -69,6 +69,7 @@ if($ajax)
     g()->view->addOnLoad(<<< JS
     $('#{$id}').submit(function()
     {
+        $(this).find('.sending-form-message').hide();
         var ret = hg('form_validate')('{$ident}');
 
         if(!ret)
