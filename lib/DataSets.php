@@ -259,14 +259,14 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         {
             if(is_array($column))
             {
-                $field = $column[0];
+                $field = (string) $column[0];
                 $aggregate = $column[1];
                 if (is_int($alias))
                     $alias = $aggregate.' '.str_replace('"','',$field);
             }
             else
             {
-                $field = $column;
+                $field = (string) $column;
                 $aggregate = false;
             }
             if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','count distinct','avg','sum','distinct')))
