@@ -52,7 +52,8 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
         else
             data[t.attr('name')] = t.val();
         data_is_empty = false;
-        input_sel.push('#'+t.attr('id'));
+        if(t.attr('id') != '')
+            input_sel.push('#'+t.attr('id'));
     });
     if(no_id != true)
         input = $(input_sel.join(', '));
@@ -70,17 +71,20 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
     else
         err = $(err);
 
-    if (!hg.isset(form))
-        form = $(input.get(0).form);
-    else
-        form = $(form);
-    var url = form.attr('action');
-    form = form.attr('name');
+    if(!form)
+    {
+        if (!hg.isset(form))
+            form = $(input.get(0).form);
+        else
+            form = $(form);
+        var url = form.attr('action');
+        form = form.attr('name');
+    }
 
     var error_count = 0;
 
     var opts = {
-        async: false,
+        async: !whole_form,
         data: data,
         success : function(json_data){
             if (json_data.errors && json_data.errors[form])
@@ -90,13 +94,18 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                     $.each(this, function(i, val) {
                         values.push(val);
                         error_count++;
+                        if(whole_form)
+                        {
+                            err = $(':input[name^="'+form+'['+field+'"]').attr('id')+'__err';
+                            err = $('#' + err);
+                        }
+                        err.html(values.join(', '));
+                        err.fadeIn('fast');
+                        $(':input[name^="'+form+'['+field+'"]').add(input.closest('.validatables_container'))
+                                .addClass('invalid').removeClass('valid');
                     });
                     if (0 < error_count)
                     {
-                        err.html(values.join(', '));
-                        err.fadeIn('fast');
-                        input.add(input.closest('.validatables_container'))
-                                .addClass('invalid').removeClass('valid');
                     }
                 });
             }
@@ -121,15 +130,16 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
 }
 
 
-hg['form_validate'].f = function(ident)
+hg['form_validate'].f = function(ident, err)
 {
     /**
      * @todo this is really a terrible way to validate the whole form..
      *        not all validation events are bound to "blur", and it takes ages
      *        and way too many ajax requests.. 
      */
-    return !$(':input[name^="'+ident+'["]').not(':disabled').blur().hasClass('invalid');
-
+    //return !$(':input[name^="'+ident+'["]').not(':disabled').blur().hasClass('invalid');
+    return hg('input_validate')($(':input[name^="'+ident+'["]').not(':disabled'), err, ident, true);
+    
     /*
     var err = '#'+ident+'__err';
     try{

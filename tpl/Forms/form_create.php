@@ -67,11 +67,10 @@ if ($err_handling) :
 <?php
 if($ajax)
     g()->view->addOnLoad(<<< JS
-    $('#{$id}').submit(function()
+    $('#{$id}').submit(function(e)
     {
-        $(this).find('.sending-form-message').show()
+        $(this).find('.sending-form-message').show();
         var ret = hg('form_validate')('{$ident}');
-
         if(!ret)
         {
             $(this).find('.sending-form-message').hide();
@@ -80,7 +79,6 @@ if($ajax)
                 pos -= 10;
             $('html, body').animate({scrollTop: pos}, 'slow');
         }
-
         return ret;
     });
 JS
