@@ -1280,7 +1280,7 @@ class FDate extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        if(!preg_match('/^([0-9]{4}\-[0-9]{2}\-[0-9]{2}&|^$)/', $value))
+        if(!preg_match('/([0-9]{4}\-[0-9]{2}\-[0-9]{2}|^$)/', $value))
             $err['invalid_format'] = true;
         return ($this->_errors($err, $value));
     }
