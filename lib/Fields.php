@@ -1250,6 +1250,12 @@ class FDouble extends FFloat
  */
 class FDate extends Field
 {
+    public function __construct($name, $notnull = false, $def_val = null)
+    {
+        parent::__construct($name, $notnull, $def_val);
+        $this->mess(array('invalid_format' => 'Invalid date format (yyyy-mm-dd)'));
+    }
+
     public function checkType($def)
     {
         if(false === ($res = parent::checkType($def)))
@@ -1274,6 +1280,8 @@ class FDate extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
+        if(!preg_match('/^([0-9]{4}\-[0-9]{2}\-[0-9]{2}&|^$)/', $value))
+            $err['invalid_format'] = true;
         return ($this->_errors($err, $value));
     }
 
@@ -1307,6 +1315,22 @@ class FMonthYear extends FDate
             $value = strtotime($value);
         $value = date('Y-m-01', $value);
         return "'$value'";
+    }
+
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(NULL != $value)
+        {
+            if (!is_int($value)) // we allow to pass timestamp
+            {
+                if(false === strtotime($value))
+                    $err['invalid'] = true;
+            }
+        }
+        elseif(!$this->checkAutoValue($value))
+            $err['notnull'] = true;
+        return ($this->_errors($err, $value));
     }
 }
 
