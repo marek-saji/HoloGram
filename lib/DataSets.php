@@ -549,7 +549,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         else
         {
             $dir = $action = $dir_or_action;
-            if (strtoupper($dir)==='DESC')
+            if (strtoupper($dir) === 'DESC' || $dir === 'd')
                 $dir = 'DESC';
             else // all non-DESC values
                 $dir = 'ASC';
