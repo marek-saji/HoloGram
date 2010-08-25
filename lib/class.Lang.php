@@ -89,7 +89,6 @@ class Lang extends HgBase implements ILang
      */
     public function available($lang=null, $getinfo=false)
     {
-        static $cache = array();
         if (null === $this->__available)
         {
             $this->__available = (array) g('Lang','model')->exec();

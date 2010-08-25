@@ -3,10 +3,12 @@
  *
  * @author w.bojanowski
  * @author a.augustynowicz support for multiple inputs, code cleanup
+ * @author b.matuszewski first working version of whole_form validation
  *
  * @param jQuery|DOM|Array|String input input(s) to validate
  *        (as jQuery object(s), String with jQuery selector,
  *        DOM element or array of DOM elements)
+ *        You can also pass jQuery with form here to validate all it's inputs
  * @param jQuery|DOM|String (optional) node to place error messages
  *        (as jQuery object(s), String with jQuery selector
  *        or DOM element)
@@ -21,6 +23,15 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
 {
     if (typeof whole_form == 'undefined')
         whole_form = false;
+
+    // are there only forms in input?
+    if (input instanceof jQuery && input.is('form') && !input.is(':not(form)'))
+    {
+        form = input;
+        whole_form = true;
+        err = null;
+        input = form.find('.hg:input[id]:not(:disabled)');
+    }
 
     var data = {
         validate_me: whole_form?'pretty please':'please'
@@ -66,59 +77,94 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
         return true;
     }
 
-    if (!hg.isset(err))
-        err = $('#'+input.attr('id')+'__err');
+    if (!hg.isset(form))
+        form = $(input.get(0).form);
     else
-        err = $(err);
-
-    if(!form)
-    {
-        if (!hg.isset(form))
-            form = $(input.get(0).form);
-        else
-            form = $(form);
-        var url = form.attr('action');
-        form = form.attr('name');
-    }
-
-    var error_count = 0;
+        form = hg.j(form);
+    var url = form.attr('action');
+    var form_name = form.attr('name');
+    var all_errors_count = 0;
 
     var opts = {
         async: !whole_form,
         data: data,
         success : function(json_data){
-            if (json_data.errors && json_data.errors[form])
+            var invalid_fields = $();
+            if (json_data.errors && json_data.errors[form_name])
             {
-                $.each(json_data.errors[form], function(field){
+                // errors[form_name] : {field: {error, ..}, field:{}, ...}
+                $.each(json_data.errors[form_name], function(field){
                     var values = new Array();
-                    $.each(this, function(i, val) {
+                    var errors_count = 0;
+                    // collect error messages
+                    $.each(this, function(i, val){
                         values.push(val);
-                        error_count++;
-                        if(whole_form)
-                        {
-                            err = $(':input[name^="'+form+'['+field+'"]').attr('id')+'__err';
-                            err = $('#' + err);
-                        }
-                        err.html(values.join(', '));
-                        err.fadeIn('fast');
-                        $(':input[name^="'+form+'['+field+'"]').add(input.closest('.validatables_container'))
-                                .addClass('invalid').removeClass('valid');
+                        errors_count++;
                     });
-                    if (0 < error_count)
+                    if ('0' == field)
                     {
+                        // general form errors
+                        var field_input = $();
+                        var err = $('#' + form.attr('id') + '__err');
                     }
+                    else
+                    {
+                        // field specific errors
+                        var field_input = $(':input[name^="'+form_name+'['+field+']"]');
+                        var err = $('#' + field_input.eq(-1).attr('id') + '__err');
+                        console.log(field_input, err);
+                    }
+                    if (0 >= errors_count)
+                    {
+                        err
+                            .html('')
+                            .fadeOut('fast');
+                        field_input
+                            .removeClass('invalid')
+                            .addClass('valid');
+                    }
+                    else
+                    {
+                        invalid_fields = invalid_fields.add(field_input);
+                        err
+                            .html(values.join(', '))
+                            .fadeIn('fast');
+                        field_input
+                            .addClass('invalid')
+                            .removeClass('valid');
+                    }
+                    all_errors_count += errors_count;
                 });
             }
-            if (0 != error_count)
-                console.debug(error_count,'error(s)');
-            else
+
+            if (0 != all_errors_count)
             {
-                input.add(input.closest('.validatables_container'))
-                        .removeClass('invalid').addClass('valid');
-                err.text('');
-                err.hide();
+                console.debug(all_errors_count, 'error(s) in',
+                        invalid_fields.length, 'fields');
             }
-        }
+
+            // mark rest of fields as valid
+            input
+                .not(invalid_fields)
+                    .removeClass('invalid')
+                    .addClass('valid')
+                    .each(function(){
+                        $('#' + $(this).attr('id') + '__err')
+                            .html('')
+                            .fadeOut('fast');
+                    });
+
+            // handle .validatables_container class
+            form
+                .find('.validatables_container')
+                    .each(function(){
+                        var me = $(this);
+                        var invalid = me.find('.invalid').length;
+                        me.toggleClass('invalid', invalid)
+                          .toggleClass('valid',  !invalid);
+                    });
+
+        } // opts.success
     };
     
     if (url)
@@ -126,7 +172,7 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
     
     hg('ajax')(opts);
 
-    return error_count == 0;
+    return all_errors_count == 0;
 }
 
 
@@ -138,7 +184,12 @@ hg['form_validate'].f = function(ident, err)
      *        and way too many ajax requests.. 
      */
     //return !$(':input[name^="'+ident+'["]').not(':disabled').blur().hasClass('invalid');
-    return hg('input_validate')($(':input[name^="'+ident+'["]').not(':disabled'), err, ident, true);
+    return hg('input_validate')($('form[name="'+ident+'"]'));
+    return hg('input_validate')($(':input[id][name^="'+ident+'["]').not(':disabled'),
+                err,
+                'form[name="'+ident+'"]',
+                true
+            );
     
     /*
     var err = '#'+ident+'__err';

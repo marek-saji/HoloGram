@@ -71,13 +71,16 @@ if($ajax)
     {
         $(this).find('.sending-form-message').show();
         var ret = hg('form_validate')('{$ident}');
-        if(!ret)
+        if (!ret)
         {
             $(this).find('.sending-form-message').hide();
-            var pos = $('.invalid:first').offset().top;
-            if(pos - 10 >= 0)
-                pos -= 10;
-            $('html, body').animate({scrollTop: pos}, 'slow');
+            var first_invalid = $('.invalid:input:first');
+            if (0 < first_invalid.length)
+            {
+                var pos = first_invalid.offset().top - 10;
+                (pos < 0) && (pos = 0);
+                $('body').animate({scrollTop: pos}, 'slow');
+            }
         }
         return ret;
     });
