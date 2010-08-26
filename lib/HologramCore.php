@@ -1081,7 +1081,7 @@ class Kernel
             // add host part if $url starts with a slash
             if($with_base_uri)
                 $url = g()->req->getBaseUri(false).ltrim($url,'/');
-        if ($this->debug->on())
+        if ($this->conf['allow_debug'] && $_SESSION[g()->conf['SID']]['debug']['allow_debug'])
         {
             $this->debug->trace('redirect happens.');
             //printf("I'd like to redirect to %s, may I? <strong style=\"font-size: 2em\"><a href=\"%s\">yes</a></strong>, <a href=\"#\" onclick=\"alert('tought!');window.location.href='%s';return false;\">no</a>\n", $url, $url, $url);
