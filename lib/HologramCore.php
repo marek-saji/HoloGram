@@ -497,6 +497,8 @@ class DataBase
     public function completeTrans()
     {
         $this->_printInDebugPre(__FUNCTION__, array());
+        if ($this->__trans_counter == 0)
+            trigger_error('Used completeTrans() outside transaction!', E_USER_WARNING);
         if ($this->__trans_counter>0)
             $this->__trans_counter--;
         if ($this->__trans_failed)

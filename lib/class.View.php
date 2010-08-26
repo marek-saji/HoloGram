@@ -65,7 +65,8 @@ class View extends HgBase implements IView
             $this->addJs($this->_renderer->file('jquery-'.$jquery_version.$min,'js'));
         else
         {
-            $this->addJs('http://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
+            $protocol = g()->req->isSSL() ? 'https' : 'http';
+            $this->addJs($protocol.'://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
         }
         // make jquery more verbal about errors and warnings
         /*
@@ -110,15 +111,22 @@ class View extends HgBase implements IView
         // this should make IE behave a litte better
         // IE8.js is for CSS in general
         // html5.js is for, well.. html5
-        $ie7js_version = '2.1(beta4)';
-        $attrs = array('type' => 'text/javascript');
-        $attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/'.$ie7js_version.'/IE9.js';
-        $this->addInHead(sprintf("<!--[if lt IE 9]>\n%s<![endif]-->",
-            $this->_tag('script', $attrs)
-        ));
+        //$attrs = array('type' => 'text/javascript');
+        //$attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/2.1(beta4)/IE9.js';
+        //$this->addInHead(sprintf("<!--[if lt IE 9]>\n%s<![endif]-->",
+        //    $this->_tag('script', $attrs)
+        //));
         if ($this->_is_html5)
         {
-            $attrs['src'] = 'http://html5shiv.googlecode.com/svn/trunk/html5.js';
+            if (g()->debug->on('disable','externalcdn'))
+            {
+                $attrs['src'] = $this->_renderer->file('html5','js');
+            }
+            else
+            {
+            $protocol = g()->req->isSSL() ? 'https' : 'http';
+                $attrs['src'] = $protocol.'://html5shiv.googlecode.com/svn/trunk/html5.js';
+            }
             $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
                 $this->_tag('script', $attrs)
             ));

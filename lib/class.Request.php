@@ -219,7 +219,7 @@ class Request extends HgBase
                             '%'.strtoupper(dechex(ord(g()->conf['link_split'])));
 
         $url = parse_url($this->_given_url);
-        $this->_protocol = @$url['scheme'];
+        $this->_protocol = strtolower(@$url['scheme']);
         $this->_host = @$url['host'];
         if (@$url['port'])
             $this->_port = $url['port'];
@@ -392,8 +392,17 @@ class Request extends HgBase
         else
         {
             $host = $this->_host;
-            if ('http' == $this->_protocol && 80 != $this->_port)
+            $services = array(
+                80  => 'http',
+                443 => 'https',
+                20  => 'ftp',
+                21  => 'ftp',
+                70  => 'gopher',
+            );
+            if (@$services[$this->_port] != $this->_protocol)
+            {
                 $host .= ':' . $this->_port;
+            }
             return sprintf('%s://%s%s%s', $this->_protocol, $host, $this->_base_uri, $ctrl);
         }
     }
@@ -411,6 +420,16 @@ class Request extends HgBase
     public function isAjax()
     {
         return $this->_is_ajax;
+    }
+
+
+    /**
+     * Check whether request is made via SSL
+     * @return boolean
+     */
+    public function isSSL()
+    {
+        return 'https' === $this->_protocol;
     }
 
 
