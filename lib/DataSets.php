@@ -101,6 +101,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
 {
     static $singleton = false;
 
+    protected $_distincts = null;
     protected $_whitelist = array(); //!< tablica z kluczami okreslajacymi wyciagane fieldy
     protected $_groupby = array();
     protected $_limit = null;
@@ -191,12 +192,51 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         else
             return($this->_alias);
     }
+
+
+    /**
+     * Set distinct on some fields.
+     *
+     * Limitations:
+     *  - one can set distinct only on fields, not on expressions
+     * @author m.augustynowicz
+     *
+     * @param IField|array $field field(s) to set distinct on.
+     *        when $fields == false, unset all distincts.
+     *        when $fields is IField, one can pass more fields as rest
+     *        of function's arguments.
+     * @return void
+     */
+    public function distinct($fields=true)
+    {
+        // cancel distinction
+        if (!$fields)
+        {
+            $this->_distincts = array();
+            return;
+        }
+
+        // distinct on all fields
+        if (true === $fields)
+        {
+        }
+
+        // distinct(a,b) ==== distinct(array(a,b))
+        if (is_a($fields,'IField'))
+        {
+            $fields = func_get_args();
+        }
+
+
+        $this->_distincts = $fields;
+    }
     
     public function whiteListAll()
     {
         $this->_whitelist = $this->getFields();
         return $this;
     }
+
     
     /**
     * Sets the whitelist
@@ -259,14 +299,14 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         {
             if(is_array($column))
             {
-                $field = $column[0];
+                $field = (string) $column[0];
                 $aggregate = $column[1];
                 if (is_int($alias))
                     $alias = $aggregate.' '.str_replace('"','',$field);
             }
             else
             {
-                $field = $column;
+                $field = (string) $column;
                 $aggregate = false;
             }
             if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','count distinct','avg','sum')))
@@ -337,7 +377,24 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      */
     protected function _querySelect()
     {
-        return "SELECT\n".$this->_ident($this->_getWhitelistedFields());
+        $sql = "SELECT\n";
+        if (!empty($this->_distincts))
+        {
+            if (true === $this->_distincts)
+            {
+                $sql .= $this->_ident('DISTINCT')."\n";
+            }
+            else
+            {
+                $sql .= $this->_ident(
+                    "DISTINCT ON (\n"
+                    . $this->_ident(implode(",\n", $this->_distincts))
+                    . "\n)"
+                )."\n";
+            }
+        }
+        $sql .= $this->_ident($this->_getWhitelistedFields());
+        return $sql;
     }
 
     /**
@@ -529,7 +586,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                             break;
                         }
                     default :
-                        $cond[] = $this_cond;
+                        $cond[] = '(' . $this_cond . ')';
                 }
             }
             $condition = join("\nAND ", $cond);

@@ -238,11 +238,11 @@ interface ILang
     public function set($lang);
 
     /**
-     * Gets all avaliable languages or checks if given is valid.
+     * Gets all available languages or checks if given is valid.
      * @param null|string $lang language code to check or null to get all
-     * @return boolean|array returns array of avaliable languages when none given
+     * @return boolean|array returns array of available languages when none given
      */
-    public function avaliable($lang=null);
+    public function available($lang=null);
 
     /**
      * Gets array with info about languages
@@ -255,7 +255,7 @@ interface ILang
      *         Some classes implementing this interface can provide other keys
      *         (e.g. 'id'), but you have to remember that they can be absent.
      *         or string with specific attribute.
-     *         false if $lang or $attr is not avaliable.
+     *         false if $lang or $attr is not available.
      */
     public function info($lang=null, $attr=null);
 
@@ -773,7 +773,7 @@ class Kernel
             $this->req = $this->get('Request');
             $this->auth = $this->get('Auth');
 
-            $this->lang->avaliable(); // fill the cache
+            $this->lang->available(); // fill the cache
             
             if ($lang = $this->lang->get())
                 $this->readConfigFiles('lang/'.$lang);
@@ -790,10 +790,17 @@ class Kernel
             $this->_rendering = true;
             if (!$this->view) // could have been set in progress
             {
-                if ($this->req->isAjax())
-                    $this->view = $this->get('AjaxView');
-                else
-                    $this->view = $this->get('View');
+                switch (true)
+                {
+                    case $this->req->isAjax() :
+                        $this->view = $this->get('AjaxView');
+                        break;
+                    case $this->req->isCli() :
+                        $this->view = $this->get('TextView');
+                        break;
+                    default :
+                        $this->view = $this->get('View');
+                }
             }
             register_shutdown_function(array($this, 'possiblyDisplayPrerendererEcho'));
             $this->prerender_echo = ob_get_clean();
@@ -1050,13 +1057,14 @@ class Kernel
                     if (!is_file($configFile))
                         continue;
                     unset($conf);
-                    include_once $configFile;
+                    include $configFile;
                     if (@is_array($conf))
                         $confAll = array_merge($confAll,$conf);
                 }
             }
 
-            $this->get('Functions')->arrayMergeRecursive($this->conf, $confAll, false);
+            $this->load('Functions');
+            Functions::arrayMergeRecursive($this->conf, $confAll, false);
         }
     }    
 
@@ -1075,7 +1083,7 @@ class Kernel
             // add host part if $url starts with a slash
             if($with_base_uri)
                 $url = g()->req->getBaseUri(false).ltrim($url,'/');
-        if ($this->conf['allow_debug'])
+        if ($this->conf['allow_debug'] && $_SESSION[g()->conf['SID']]['debug']['allow_debug'])
         {
             $this->debug->trace('redirect happens.');
             //printf("I'd like to redirect to %s, may I? <strong style=\"font-size: 2em\"><a href=\"%s\">yes</a></strong>, <a href=\"#\" onclick=\"alert('tought!');window.location.href='%s';return false;\">no</a>\n", $url, $url, $url);
@@ -1127,6 +1135,19 @@ class HgBase
     {
         //$args = func_get_args();
         return($this);
+    }
+    
+    /**
+     * sets lang to be used in translations
+     * @author b.matuszewski
+     */
+    public function setTransLang($lang)
+    {
+        if(g()->lang->available($lang))
+        {
+            unset(g()->conf['translations']);
+            g()->readConfigFiles('lang/'.$lang);
+        }
     }
 
     /**
@@ -2426,6 +2447,7 @@ abstract class Component extends Controller
                                 . $f->camelify($input);
                     if (method_exists($this,$callback))
                     {
+                        //$variable_to_pass_by_reference = @$post[$input];
                         $new_errors = $this->$callback($post[$input]);
                         if (!empty($new_errors))
                         {

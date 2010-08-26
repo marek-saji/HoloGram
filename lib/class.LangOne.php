@@ -43,10 +43,10 @@ class LangOne extends HgBase implements ILang
 
     public function set($lang)
     {
-        return $this->avaliable($lang);
+        return $this->available($lang);
     }
 
-    public function avaliable($lang=null)
+    public function available($lang=null)
     {
         if (null===$lang)
             return array($this->get());

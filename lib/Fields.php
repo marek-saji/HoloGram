@@ -751,11 +751,11 @@ abstract class FStringBase extends Field
  */
 class FString extends FStringBase
 {
-    public function invalid(&$value)
+    public function dbString($value)
     {
         $value = htmlspecialchars($value);
         $value = strtr($value, array("\n"=>'', "\r"=>''));
-        return parent::invalid($value);
+        return parent::dbString($value);
     }
 }
 
@@ -776,10 +776,10 @@ class FRich extends FStringBase
  */
 class FMultilineString extends FStringBase
 {
-    public function invalid(&$value)
+    public function dbString($value)
     {
         $value = htmlspecialchars($value);
-        return parent::invalid($value);
+        return parent::dbString($value);
     }
 }
 
@@ -1088,7 +1088,7 @@ class FInt extends Field
         if($value === null || $value === '')
             return "NULL";
         else
-            return (pg_escape_string($value));
+            return (pg_escape_string((int)$value));
     }
 }
 
@@ -1250,6 +1250,11 @@ class FDouble extends FFloat
  */
 class FDate extends Field
 {
+    public function __construct($name, $notnull = false, $def_val = null)
+    {
+        parent::__construct($name, $notnull, $def_val);
+        $this->mess(array('invalid_format' => 'Invalid date format'));
+    }
 
     public function checkType($def)
     {
@@ -1262,6 +1267,11 @@ class FDate extends Field
         return (empty($res) ? false : $res);
     }
 
+
+    /**
+     *
+     * @uses conf[locale][accepted date formats]
+     */
     public function invalid(&$value)
     {
         $err = array();
@@ -1275,7 +1285,20 @@ class FDate extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        return ($this->_errors($err, $value));
+
+        if ($value)
+        {
+            foreach (g()->conf['locale']['accepted date formats'] as $regex)
+            {
+                if (!preg_match($regex, $value))
+                {
+                    $err['invalid_format'] = true;
+                    break;
+                }
+            }
+        }
+
+        return $this->_errors($err, $value);
     }
 
     public function dbType()
@@ -1293,6 +1316,37 @@ class FDate extends Field
             $value = strtotime($value);
         $value = date('Y-m-d', $value);
         return "'$value'";
+    }
+}
+
+class FMonthYear extends FDate
+{
+    public function dbString($value)
+    {
+        if(NULL !== ($av = $this->autoValue()))
+            return ($av);
+        if($value === null || $value === '')
+            return 'NULL';
+        if(!g('Functions')->isInt($value))
+            $value = strtotime($value);
+        $value = date('Y-m-01', $value);
+        return "'$value'";
+    }
+
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(NULL != $value)
+        {
+            if (!is_int($value)) // we allow to pass timestamp
+            {
+                if(false === strtotime($value))
+                    $err['invalid'] = true;
+            }
+        }
+        elseif(!$this->checkAutoValue($value))
+            $err['notnull'] = true;
+        return ($this->_errors($err, $value));
     }
 }
 
