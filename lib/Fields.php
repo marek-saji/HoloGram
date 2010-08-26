@@ -1253,7 +1253,7 @@ class FDate extends Field
     public function __construct($name, $notnull = false, $def_val = null)
     {
         parent::__construct($name, $notnull, $def_val);
-        $this->mess(array('invalid_format' => 'Invalid date format (yyyy-mm-dd)'));
+        $this->mess(array('invalid_format' => 'Invalid date format'));
     }
 
     public function checkType($def)
@@ -1267,6 +1267,11 @@ class FDate extends Field
         return (empty($res) ? false : $res);
     }
 
+
+    /**
+     *
+     * @uses conf[locale][accepted date formats]
+     */
     public function invalid(&$value)
     {
         $err = array();
@@ -1280,9 +1285,20 @@ class FDate extends Field
         }
         elseif(!$this->checkAutoValue($value))
             $err['notnull'] = true;
-        if(!preg_match('/([0-9]{4}\-[0-9]{2}\-[0-9]{2}|^$)/', $value))
-            $err['invalid_format'] = true;
-        return ($this->_errors($err, $value));
+
+        if ($value)
+        {
+            foreach (g()->conf['locale']['accepted date formats'] as $regex)
+            {
+                if (!preg_match($regex, $value))
+                {
+                    $err['invalid_format'] = true;
+                    break;
+                }
+            }
+        }
+
+        return $this->_errors($err, $value);
     }
 
     public function dbType()
