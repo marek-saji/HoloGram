@@ -150,9 +150,10 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     
     public function getCount()
     {
-        if (NULL !== $this->_count)
+        if(NULL !== $this->_count)
 		    return $this->_count;
-		if(empty($this->_groupby))
+
+		if(empty($this->_distincts) && empty($this->_groupby))
 		{
             $sql = "SELECT\n  COUNT(1)";
             $sql .= $this->_queryFrom();
@@ -160,13 +161,33 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         }
         else
         {
-            $sql = "SELECT\n COUNT(1) FROM (";
-            $sql .= "SELECT\n  1";
+    	    $sql_tmp = '';
+
+            if(!empty($this->_distincts))
+            {
+                if(true === $this->_distincts)
+                {
+                    $sql_tmp .= $this->_ident('DISTINCT')."\n";
+                }
+                else
+                {
+                    $sql_tmp .= $this->_ident(
+                        "DISTINCT ON (\n"
+                        . $this->_ident(implode(",\n", $this->_distincts))
+                        . "\n)"
+                    )."\n";
+                }
+            }
+
+            $dist = !empty($this->_whitelist) ? reset($this->_whitelist) : '1';
+            $sql = "SELECT\n  COUNT(1) FROM (";
+            $sql .= "SELECT\n {$sql_tmp} " . $dist;
             $sql .= $this->_queryFrom();
             $sql .= $this->_queryWhere();
             $sql .= $this->_queryGroupBy();
             $sql .= ") AS tab";
         }
+
 		$this->_count = g()->db->getOne($sql);
 		return($this->_count);
     }
