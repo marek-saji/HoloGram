@@ -1312,7 +1312,16 @@ abstract class Controller extends HgBase implements IController
             trigger_error('SIC! Launching action from a template?', E_USER_WARNING);
         }
 
-        if (!$this->hasAccess($action, $params, false))
+        $has_access = $this->hasAccess($action, $params, false);
+        if (g()->debug->allowed())
+        {
+            printf('<p class="debug">Permission to <em>%s</em>, action <em>%s</em><small>(%s)</small> %s by <em>%s</em></p>',
+                $this->path(), $action, print_r($params, true),
+                $has_access ? 'granted' : 'denied',
+                is_int($has_access) ? 'configuration' : 'callback'
+            );
+        }
+        if (!$has_access)
         {
             $this->redirect(); // main page
         }
@@ -2366,12 +2375,6 @@ abstract class Component extends Controller
         }
 
         $this_cache = $ret;
-        if (!$ret && g()->debug->allowed())
-        {
-            $by = (0 === $ret) ? 'configuration' : 'callback';
-            printf('<p class="debug">Permission to <em>%s</em>, action <em>%s</em><small>(%s)</small> denied by <em>%s</em></p>',
-                    $this->path(), $action, print_r($params, true), $by );
-        }
         return $ret;
     }
 
