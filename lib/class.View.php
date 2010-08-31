@@ -673,7 +673,7 @@ class View extends HgBase implements IView
     protected function _renderHeadJSCode()
     {
         $this->_inl_jses['hg_id_offset'] = "var hg_id_offset = "
-                . (100+g('Functions')->uniqueId(null));
+                . (100+g('Functions')->uniqueId());
 
         // display
         if ($this->_inl_jses)
