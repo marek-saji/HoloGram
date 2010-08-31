@@ -810,7 +810,9 @@ class Kernel
                 ob_end_flush();
             echo "<h1>Unhandled exception</h1>";
             if ($this->conf['allow_debug'])
+            {
                 echo "<pre>$e</pre>";
+            }
         }
     }
     
@@ -1042,6 +1044,8 @@ class Kernel
         if ($prefix)
             $prefix = trim($prefix,'/') . '/';
 
+        $this->load('Functions');
+
         foreach ($configDirs as $configDir)
         {
             $confDir = rtrim($configDir,'/').'/';
@@ -1057,11 +1061,13 @@ class Kernel
                     unset($conf);
                     include $configFile;
                     if (@is_array($conf))
-                        $confAll = array_merge($confAll,$conf);
+                    {
+                        Functions::arrayMergeRecursive(
+                                $confAll, $conf, false );
+                    }
                 }
             }
 
-            $this->load('Functions');
             Functions::arrayMergeRecursive($this->conf, $confAll, false);
         }
     }    
