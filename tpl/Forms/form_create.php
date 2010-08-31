@@ -66,7 +66,26 @@ if ($err_handling) :
 
 <?php
 if($ajax)
-    g()->view->addOnLoad('$(\'#'.$id.'\').submit(function(){return hg(\'form_validate\')(\''.$id.'\');})');
+    g()->view->addOnLoad(<<< JS
+    $('#{$id}').submit(function(e)
+    {
+        $(this).find('.sending-form-message').show();
+        var ret = hg('form_validate')('{$ident}');
+        if (!ret)
+        {
+            $(this).find('.sending-form-message').hide();
+            var first_invalid = $('.invalid:input:first');
+            if (0 < first_invalid.length)
+            {
+                var pos = first_invalid.offset().top - 10;
+                (pos < 0) && (pos = 0);
+                $('body').animate({scrollTop: pos}, 'slow');
+            }
+        }
+        return ret;
+    });
+JS
+    );
 
 endif; // handle errors
 

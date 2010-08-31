@@ -29,7 +29,20 @@ class Functions extends HgBase
     static protected $_unique_id_offset = 0;
 
     protected $_email_reg_exp = "![a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}!";
-    protected $_email_obfuscate_key = "someDummyKey_foo_bar";
+    protected $_email_obfuscate_key = '';
+
+
+    /**
+     * Filling in some fields
+     */
+    public function __construct()
+    {
+        // initiate email obfuscating key
+        $this->_email_obfuscate_key = g()->conf['site_name']
+                . ' '
+                . g()->conf['version'];
+    }
+
 
     /**
      * Find links in given text and create anchors for them.
@@ -251,6 +264,8 @@ class Functions extends HgBase
      * Funkcja laczaca dwie tablice rekursywnie. Duzo fajniejsza, niz array_merge()
      *  jezeli w b sa puste galezie to usetuje je w a
      * Wynik laduje w pierwszej tablicy
+     *
+     * It is static because Kernel uses it in it's constructor.
      * @author m.augustynowicz
      *
      * @param array $a referencja do pierwszej tablicy
@@ -259,7 +274,7 @@ class Functions extends HgBase
      *             empty strings as values (NULL values will always be ignored)
      * @return void
      */
-    function arrayMergeRecursive(&$a,$b, $ignore_empty_strings=true)
+    public static function arrayMergeRecursive(&$a,$b, $ignore_empty_strings=true)
     {
         if (!is_array($a) || !is_array($b))
         {
@@ -271,7 +286,7 @@ class Functions extends HgBase
             if(array_key_exists($k,$b))
             {
                 if(((!$ignore_empty_strings) || $b[$k]!=='') && $b[$k]!==NULL)
-                    $this->arrayMergeRecursive($a[$k],$b[$k], $ignore_empty_strings);
+                    self::arrayMergeRecursive($a[$k],$b[$k], $ignore_empty_strings);
                 else
                     unset($a[$k]);
             }
@@ -324,14 +339,14 @@ class Functions extends HgBase
      */
     function tidyHTML($string, $config=false)
     {
-        // if Tidy is not avaliable for us.
+        // if Tidy is not available for us.
         // (let's just hope it's not production environment)
         if (!class_exists('tidy',false))
         {
             if (g()->debug->allowed())
                 g()->debug->addInfo('messy HTML',
                              '<a href="http://pl.php.net/tidy">Tidy</a> is ' .
-                             'avaliable, HTML may be messy.' );
+                             'available, HTML may be messy.' );
             return $string;
         }
 
@@ -394,7 +409,7 @@ class Functions extends HgBase
     /**
      * Truncates HTML to requested length.
      *
-     * If {@uses Tidy} is not avaliable it will use {@uses truncateHTMLUgly}.
+     * If {@uses Tidy} is not available it will use {@uses truncateHTMLUgly}.
      * @author m.augustynowicz
      *
      * @todo it would be really smashy if someone make it so $length would
@@ -647,10 +662,17 @@ class Functions extends HgBase
      * @return string - ciag znakow w UTF-8 z podmienionymi znakami
      *
      * @author m.izewski
+     * @author m.augustynowicz
      * @version 1.0
      */
     public function diacreticsToPlain($string)
     {
+        static $win = null;
+        if (null === $win)
+        {
+            $win = DIRECTORY_SEPARATOR == '\\';
+        }
+
         //locale musza byc obslugiwane przez serwer!!
         setlocale(LC_CTYPE, 'pl_PL.UTF8');
 
@@ -666,8 +688,10 @@ class Functions extends HgBase
         }
 
         //win32 hack - usuniecie "zmiekczen"...
-        if(strpos($_SERVER['SERVER_SOFTWARE'],'(Win32)'))
+        if ($win)
+        {
             $string = str_replace(array("'","\""),"",$string);
+        }
 
         return $string;
     }
@@ -730,7 +754,7 @@ class Functions extends HgBase
             $auth = array($auth);
         }
 
-        if (!isset($auth)) // svn not avaliable or failed
+        if (!isset($auth)) // svn not available or failed
         {
             $auth = $this->author($file, $line);
         }
@@ -1361,21 +1385,26 @@ class Functions extends HgBase
     /**
      * obfuscates all e-mails in given text
      * @author b.matuszewski
-     * @param string $text - text to obfuscate e-mails in
+     * @param string $html text to obfuscate e-mails in
      *
      * USEGE
-     * $f->obfuscateEmails($text);
-     * echo $text;
+     *   to obfuscate e-mails in html string use this method
      *
-     * DECODING OBFUSCATED EMAILS
-     * if you want to know how to decode such an e-mail have a quick look at
-     *      main_common.php
-     *      ObfuscateController.php
-     *      in project POP
+     *   if you want to automagically decode obfuscated e-mails in javascript,
+     *   make sute this is eval'd at every page load:
+     *     $('.obfuscated').mouseover(function()
+     *     {
+     *         var me = $(this);
+     *         hg('ajax')({
+     *             url: '{$t->url2c('Obfuscate', 'ajaxDecode')}',
+     *             data: {0: me.attr('id'), 1: me.attr('name')}
+     *         });
+     *     });
+     *
      */
-    public function obfuscateEmails(& $text)
+    public function obfuscateEmails(& $html)
     {
-        preg_match_all($this->_email_reg_exp, $text, $matches);
+        preg_match_all($this->_email_reg_exp, $html, $matches);
         foreach($matches[0] as $email)
         {
             $coded = $this->rc4Encrypt($this->_email_obfuscate_key, $email);
@@ -1388,9 +1417,8 @@ class Functions extends HgBase
                 $coded2 .= $tmp_str;
             }
 
-            $user_name = explode('@', $email);
-            $user_name = $user_name[0];
-            $text = str_replace($email, sprintf('<span id="%s" class="obfuscated" name="%s">%s@...</span><noscript>%s</noscript>', $this->uniqueId('obfuscate'), $coded2, $user_name, $this->trans('To see this e-mail enable JavaScript!')), $text);
+            list($user_name) = explode('@', $email);
+            $html = str_replace($email, sprintf('<span id="%s" class="obfuscated" name="%s">%s@...</span><noscript>%s</noscript>', $this->uniqueId('obfuscate'), $coded2, $user_name, $this->trans('To see this e-mail enable JavaScript!')), $html);
         }
     }
     

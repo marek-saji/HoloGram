@@ -19,6 +19,8 @@ g()->load('DataSets', null);
  * where XX, YY, AA, BB are dimensions in pixels (connected with resizing image),
  * 'store_original' - it is clear - true or false,
  * 'stripes' - a color of stripes, false if transparent stripes, null if no stripes,
+ * 			   also you can define this parameter for each image size separately in array, e.g.:
+ * 			   array('00A8FF', false, null, '000000');
  * 'format' - target format, allowed values: 'png', 'gif', 'jpg'.
  * 
  * All above-mentioned properties are mandatory and must be declared, even if they are empty. 
@@ -104,20 +106,6 @@ class ImagesUploadModel extends Model
 				if(!in_array($image_files['format'], $this->__allowed_extensions))
                     throw new HgException($this->trans('Destination format defined incorrectly: %s.', $image_files['format']));
 
-                $rgb = array();
-                if($image_files['stripes'])
-                {
-                    $rgb['r'] = hexdec(substr($image_files['stripes'], 0, 2));
-                    $rgb['g'] = hexdec(substr($image_files['stripes'], 2, 2));
-                    $rgb['b'] = hexdec(substr($image_files['stripes'], 4, 2));
-                }
-                else
-                {
-                    $rgb['r'] = 0xFF;
-                    $rgb['g'] = 0xFF;
-                    $rgb['b'] = 0xFF;
-                }
-
                 $this->_file = $data['file'];
 
                 if(!($hash = $data['id']))
@@ -167,21 +155,41 @@ class ImagesUploadModel extends Model
                     break;
                 }
 
-                foreach($image_files['sizes'] as $s)
+                foreach($image_files['sizes'] as $i => $s)
                 {
                     if($func)
                     {
                         list($w, $h) = sscanf($s, "%dx%d");
                         //photo uploaded by user is resizing and converting to PNG format
                         $size = $this->_calculateNewDimensions($w, $h);
+                        $rgb = array();
 
-                        if($image_files['stripes'] === null)
+                        if(is_array($image_files['stripes']))
+                            $stripes = @$image_files['stripes'][$i];
+                        else
+                            $stripes = &$image_files['stripes'];
+
+                        if($stripes === null)
                         {
+                            $rgb['r'] = 0xFF;
+                            $rgb['g'] = 0xFF;
+                            $rgb['b'] = 0xFF;
                             $new_w = $size['width'];
                             $new_h = $size['height'];
                         }
+                        elseif($stripes)
+                        {
+                            $rgb['r'] = hexdec(substr($stripes, 0, 2));
+                            $rgb['g'] = hexdec(substr($stripes, 2, 2));
+                            $rgb['b'] = hexdec(substr($stripes, 4, 2));
+                            $new_w = $w;
+                            $new_h = $h;
+                        }
                         else
                         {
+                            $rgb['r'] = 0xFF;
+                            $rgb['g'] = 0xFF;
+                            $rgb['b'] = 0xFF;
                             $new_w = $w;
                             $new_h = $h;
                         }
@@ -190,7 +198,7 @@ class ImagesUploadModel extends Model
                         $resized = @imagecreatetruecolor($new_w, $new_h);
                         $color = imagecolorallocate($resized, $rgb['r'], $rgb['g'], $rgb['b']);
 
-                        if($image_files['stripes'] === false)
+                        if($stripes === false)
                         	imagecolortransparent($resized, $color);
 
                         imagefill($resized, 0, 0, $color);

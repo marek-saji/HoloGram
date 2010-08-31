@@ -48,6 +48,7 @@ if ($disabled)
 
 if (false !== $id)
     $attrs['id'] = $id;
+$id = @$attrs['id']; // keep in sync
 $attrs['name'] = $ident.$name_prefix.'['.$input.']'.$name_suffix;
 
 $attrs['value'] = $data;

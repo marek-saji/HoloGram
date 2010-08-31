@@ -101,6 +101,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
 {
     static $singleton = false;
 
+    protected $_distincts = null;
     protected $_whitelist = array(); //!< tablica z kluczami okreslajacymi wyciagane fieldy
     protected $_groupby = array();
     protected $_limit = null;
@@ -149,11 +150,23 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     
     public function getCount()
     {
-	    if (NULL !== $this->_count)
+        if (NULL !== $this->_count)
 		    return $this->_count;
-        $sql = "SELECT\n  COUNT(1)";
-        $sql .= $this->_queryFrom();
-        $sql .= $this->_queryWhere();
+		if(empty($this->_groupby))
+		{
+            $sql = "SELECT\n  COUNT(1)";
+            $sql .= $this->_queryFrom();
+            $sql .= $this->_queryWhere();
+        }
+        else
+        {
+            $sql = "SELECT\n COUNT(1) FROM (";
+            $sql .= "SELECT\n  1";
+            $sql .= $this->_queryFrom();
+            $sql .= $this->_queryWhere();
+            $sql .= $this->_queryGroupBy();
+            $sql .= ") AS tab";
+        }
 		$this->_count = g()->db->getOne($sql);
 		return($this->_count);
     }
@@ -179,12 +192,51 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         else
             return($this->_alias);
     }
+
+
+    /**
+     * Set distinct on some fields.
+     *
+     * Limitations:
+     *  - one can set distinct only on fields, not on expressions
+     * @author m.augustynowicz
+     *
+     * @param IField|array $field field(s) to set distinct on.
+     *        when $fields == false, unset all distincts.
+     *        when $fields is IField, one can pass more fields as rest
+     *        of function's arguments.
+     * @return void
+     */
+    public function distinct($fields=true)
+    {
+        // cancel distinction
+        if (!$fields)
+        {
+            $this->_distincts = array();
+            return;
+        }
+
+        // distinct on all fields
+        if (true === $fields)
+        {
+        }
+
+        // distinct(a,b) ==== distinct(array(a,b))
+        if (is_a($fields,'IField'))
+        {
+            $fields = func_get_args();
+        }
+
+
+        $this->_distincts = $fields;
+    }
     
     public function whiteListAll()
     {
         $this->_whitelist = $this->getFields();
         return $this;
     }
+
     
     /**
     * Sets the whitelist
@@ -247,17 +299,17 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         {
             if(is_array($column))
             {
-                $field = $column[0];
+                $field = (string) $column[0];
                 $aggregate = $column[1];
                 if (is_int($alias))
                     $alias = $aggregate.' '.str_replace('"','',$field);
             }
             else
             {
-                $field = $column;
+                $field = (string) $column;
                 $aggregate = false;
             }
-            if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','avg','sum')))
+            if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','count distinct','avg','sum')))
                 throw new HgException('Unknown aggregate function: '.$aggregate.' !');
             if(isset($fields[$field]))
             {
@@ -325,7 +377,24 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      */
     protected function _querySelect()
     {
-        return "SELECT\n".$this->_ident($this->_getWhitelistedFields());
+        $sql = "SELECT\n";
+        if (!empty($this->_distincts))
+        {
+            if (true === $this->_distincts)
+            {
+                $sql .= $this->_ident('DISTINCT')."\n";
+            }
+            else
+            {
+                $sql .= $this->_ident(
+                    "DISTINCT ON (\n"
+                    . $this->_ident(implode(",\n", $this->_distincts))
+                    . "\n)"
+                )."\n";
+            }
+        }
+        $sql .= $this->_ident($this->_getWhitelistedFields());
+        return $sql;
     }
 
     /**
@@ -452,6 +521,8 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *                  array('','MAX(date) >',$date) -- only semi-cool
      *             first element gets quoted as table field,
      *             third one as field value (only if first one was given)
+     *             special operators:
+     *                  'IN' -- 3rd operator is expected to be array of values
      * @return $this
      */
     public function filter($condition)
@@ -473,7 +544,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     if (is_array($value))
                     {
                         $field_name  = @$value[0];
-                        $operator    = @" {$value[1]} ";
+                        $operator    = strtoupper(@$value[1]);
                         $value_given = array_key_exists(2,$value);
                         $value       = @$value[2];
                     }
@@ -491,9 +562,32 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     if (!$field)
                         throw new HgException("Trying to filter ".get_class($this)." with unknown field $field_name");
                     if ($value_given)
-                        $value = $field->dbString($value);
+                    {
+                        switch ($operator)
+                        {
+                            case 'IN' :
+                                foreach ($value as &$v)
+                                    $v = $field->dbString($v);
+                                unset($v);
+                                $value = '('.join(', ',$value).')';
+                                break;
+                            default :
+                                $value = $field->dbString($value);
+                        }
+                    }
                 }
-                $cond[] = $field . $operator . $value;
+                $this_cond = sprintf('%s %s %s', $field, $operator, $value);
+                switch ($operator)
+                {
+                    case 'IN' :
+                        if ('()'===$value)
+                        {
+                            $cond[] = sprintf('/* %s */ false', $this_cond);
+                            break;
+                        }
+                    default :
+                        $cond[] = '(' . $this_cond . ')';
+                }
             }
             $condition = join("\nAND ", $cond);
         }

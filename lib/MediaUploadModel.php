@@ -36,7 +36,7 @@ class MediaUploadModel extends UploadModel
         'video/.*',
     );
     /**
-     * @val int maximul file size to upload [MB] (false for ini settings)
+     * @val int maximum file size to upload [MB] (false for ini settings)
      *      field config "max size"
      */
     protected $_max_size = 100;
@@ -242,8 +242,10 @@ class MediaUploadModel extends UploadModel
         $f = g('Functions');
 
         $path_mp4 = escapeshellarg($path . '.mp4');
-        $path_jpeg = escapeshellarg($path . '.frame.jpg');
-        $path_thumb = escapeshellarg($path . '.%dx%d.png');
+        $path_ogv = escapeshellarg($path . '.ogv');
+        $path_jpeg_unesc = $path . '.frame.jpg';
+        $path_jpeg = escapeshellarg($path_jpeg_unesc);
+        $path_thumb_unesc = $path . '.%dx%d.png';
         $path = escapeshellarg($path);
 
         $vb = escapeshellarg($this->_video_br * 1024);
@@ -253,7 +255,6 @@ class MediaUploadModel extends UploadModel
 
 
         // mp4 video
-
         $f->exec(
                 'ffmpeg-mp4',
                     '-i '.$path
@@ -267,8 +268,24 @@ class MediaUploadModel extends UploadModel
         if (0 != $return_value)
             return false;
 
-        // frame
 
+        /*
+        // ogv video
+        $f->exec(
+                'ffmpeg2theora',
+                    $path
+                    . ' --audiobitrate='.$ab
+                    . ' --videobitrate='.$vb
+                    . ' --max_size='.$vs
+                    . ' --output='.$path_ogv,
+                $output, $return_value
+            );
+        if (0 != $return_value)
+            return false;
+         */
+
+
+        // frame
         $f->exec(
                 'ffmpeg-jpeg',
                     '-i '.$path
@@ -282,12 +299,12 @@ class MediaUploadModel extends UploadModel
             return false;
 
         // thumbnails
-        if (!empty($thumbnails))
+        if (!empty($this->_video_thumbs))
         {
-            $im = imagecreatefromjpeg($path_jpeg);
+            $im = imagecreatefromjpeg($path_jpeg_unesc);
             $image_w = imagesx($im);
             $image_h = imagesy($im);
-            foreach ($thumbnails as $thumb_args)
+            foreach ($this->_video_thumbs as $thumb_args)
             {
                 // dimensions:
                 //
@@ -300,7 +317,7 @@ class MediaUploadModel extends UploadModel
                 $height = $thumb_args[1];
                 $mode = $thumb_args[2];
 
-                $th_path = sprintf($path_thumb, $width, $height);
+                $th_path = sprintf($path_thumb_unesc, $width, $height);
 
                 if (IMAGE_RESIZE_STRECH == $mode)
                 {

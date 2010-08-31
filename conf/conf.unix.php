@@ -35,6 +35,10 @@ $conf['unix']['ffmpeg-mp4'] = array(
         '-f mp4 -vcodec libx264 -me_method hex -me_range 18 -subq 7 -qmin 20 -qmax 51 -qcomp 0.7 -acodec libfaac -ab 80kb -ar 48000 -ac 2'
     )
 );
+// video/* to ogv
+$conf['unix']['ffmpeg2theora'] = array(
+    'path' => 'ffmpeg2theora'
+);
 // video/* to jpeg (one frame)
 $conf['unix']['ffmpeg-jpeg'] = array(
     'path' => 'ffmpeg',
@@ -42,5 +46,12 @@ $conf['unix']['ffmpeg-jpeg'] = array(
     'args_args' => array(
         '-f mjpeg'
     )
+);
+
+
+// figlet(1), with fallbacks
+$conf['unix']['figlet'] = array(
+    // first try figlet(1), then toilet(1) and fall back to plain echo
+    'path' => '$(which figlet || which toilet || echo echo)'
 );
 

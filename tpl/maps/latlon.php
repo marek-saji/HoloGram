@@ -4,7 +4,7 @@
  * It embeds into given <div />.
  * @author m.augustynowicz
  *
- * @uses maps/init template should be avaliable at this location
+ * @uses maps/init template should be available at this location
  *
  * (parameters passed as assigned variables)
  * @param string $id (required) id of the div to embed map to

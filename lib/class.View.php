@@ -45,6 +45,7 @@ class View extends HgBase implements IView
         $app_ver = @ g()->conf['version'];
         $this->_inl_jses['hg_base'] = sprintf("/**\n * hg settings\n */\nvar hg_base = '%s'",
                 g()->req->getBaseUri());
+        $this->_inl_jses['hg_lang'] = "var hg_lang = '" . g()->lang->get() . "'";
         $this->_inl_jses['hg_include_path'] = "var hg_include_path = hg_base+'js/'";
         $this->_inl_jses['hg_app_ver'] = sprintf("var hg_app_ver = '%s'", @ g()->conf['version']);
         $this->_inl_jses['hg_id_offset'] = ''; // will be set in _renderHeadJSCode
@@ -65,7 +66,8 @@ class View extends HgBase implements IView
             $this->addJs($this->_renderer->file('jquery-'.$jquery_version.$min,'js'));
         else
         {
-            $this->addJs('http://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
+            $protocol = g()->req->isSSL() ? 'https' : 'http';
+            $this->addJs($protocol.'://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
         }
         // make jquery more verbal about errors and warnings
         /*
@@ -79,7 +81,8 @@ class View extends HgBase implements IView
         global $DIRS;
         $base_uri = g()->req->getBaseUri();
         $base_uri_regex = preg_quote($base_uri, '!');
-        foreach ($DIRS as &$dir)
+        $dirs = array_reverse($DIRS);
+        foreach ($dirs as &$dir)
         {
             $uri = $this->_renderer->file('hg.definitions', 'js');
             if ($dir)
@@ -110,14 +113,25 @@ class View extends HgBase implements IView
         // this should make IE behave a litte better
         // IE8.js is for CSS in general
         // html5.js is for, well.. html5
+        /*
+        $ie7js_version = '2.1(beta4)';
         $attrs = array('type' => 'text/javascript');
-        $attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/2.1(beta3)/IE8.js';
+        $attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/'.$ie7js_version.'/IE9.js';
         $this->addInHead(sprintf("<!--[if lt IE 9]>\n%s<![endif]-->",
             $this->_tag('script', $attrs)
         ));
+        */
         if ($this->_is_html5)
         {
-            $attrs['src'] = 'http://html5shiv.googlecode.com/svn/trunk/html5.js';
+            if (g()->debug->on('disable','externalcdn'))
+            {
+                $attrs['src'] = $this->_renderer->file('html5','js');
+            }
+            else
+            {
+            $protocol = g()->req->isSSL() ? 'https' : 'http';
+                $attrs['src'] = $protocol.'://html5shiv.googlecode.com/svn/trunk/html5.js';
+            }
             $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
                 $this->_tag('script', $attrs)
             ));
@@ -717,13 +731,12 @@ class View extends HgBase implements IView
         {
             echo '  <style type="text/css">';
             echo "\n  /* <![CDATA[ */";
-            foreach ($this->_inl_csses as $selector => &$def)
-                echo "$selector {\n$def\n}\n";
+            foreach($this->_inl_csses as $arr)
+                foreach($arr as $selector => &$def)
+                    echo "{$selector} {\n{$def}\n}\n";
             echo "\n  /* ]]> */";
             echo ' </style>';
             echo "\n";
         }
     }
-
 }
-

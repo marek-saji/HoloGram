@@ -16,8 +16,12 @@ class Debug extends HgBase
     {
         $this->_session = & $_SESSION[g()->conf['SID']]['DEBUG'];
 
-        if ($this->allowed())
-            $old_error_handler = set_error_handler(array($this,'errorHandler'));
+        // we can't use Request::isCli() here as it doesn't exist yet
+        if ($this->allowed() && 'cli' != PHP_SAPI)
+        {
+            $this->_old_error_handler =
+                    set_error_handler(array($this,'errorHandler'));
+        }
     }
 
     public function whoAmI()

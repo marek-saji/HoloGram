@@ -52,14 +52,23 @@ hg['nyroModalInit'].f = function()
         },
         // focus form inputs if any
         endShowContent: function(eltrs,settings){
-            var content = $('#nyroModalContent');
             if (hg['nyroModalInit'].ajax_i)
             {
                 var ajax_i = hg['nyroModalInit'].ajax_i;
                 hg('ajaxDOMReady')(ajax_i);
                 content.addClass(hg['ajax'].data[ajax_i].class);
             }
-            content
+            $('#nyroModalContent')
+                .find('form')
+                    // make sure form is sent when pressing enter
+                    // (apparently it did not on IE8)
+                    .keydown(function(e){
+                        if (13 == e.keyCode)
+                        {
+                            $(this).submit();
+                        }
+                    })
+                .end()
                 .find(':input:first')
                     .focus();
             hg['nyroModalInit'].ajax_i = null;

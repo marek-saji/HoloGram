@@ -63,10 +63,11 @@ $(function(){
  * user settings beats default_hg_opts,
  * default_hg_opts beats regional settings
  */
-$(function(){
+function bindCalendar()
+{
     try
     {
-        if (typeof $.datepicker == 'undefined')
+        if(typeof $.datepicker == 'undefined')
             return;
         var default_hg_opts = {
             dateFormat: 'yy-mm-dd',
@@ -76,27 +77,32 @@ $(function(){
             onClean: function(){}
         };
         var lang = $('html').attr('lang');
+        $.datepicker.regional['en'] = $.datepicker.regional['en-GB'];
         var default_opts = $.extend(
             {},
             $.datepicker.regional[lang],
             default_hg_opts
         );
         
-        $('input.date').each(function(){
+        $('input.date').each(function()
+        {
             var me = $(this);
             var opts = $.extend({}, default_opts); // clone
-            if (typeof hg_datepickers != 'undefined')
-            $.each(hg_datepickers, function(selector){
-                if (me.is(selector))
-                    $.extend(opts, this);
-            });
-            
+
+            if(typeof hg_datepickers != 'undefined')
+                $.each(hg_datepickers, function(selector)
+                {
+                    if(me.is(selector))
+                        $.extend(opts, this);
+                });
+
             me.datepicker(opts);
 
-            if (opts.showClean)
+            if(opts.showClean)
             {
-                me.after('<a class="input-date-cleaner" title="'+opts.cleanLabel+'" href="javascript:void(0)">'+opts.cleanLabel+'</a>');
-                me.next().click(function(){
+                me.after('<a class="input-date-cleaner" title="' + opts.cleanLabel + '" href="javascript:void(0)">' + opts.cleanLabel + '</a>');
+                me.next().click(function()
+                {
                     opts.onClean.apply(this);
                     var input = $(this).prev();
                     input.val('');
@@ -108,8 +114,76 @@ $(function(){
     {
         console.error('failed to initialize datepickers:', e);
     }
-}); // onload, datepicker
+}
 
+function bindMonthYearSelector()
+{
+    try
+    {
+        if(typeof $.datepicker == 'undefined')
+            return;
+        var default_hg_opts = {
+            showOn: 'button',
+            showClean: false,
+            cleanLabel: 'clean',
+            onClean: function(){},
+            changeMonth: true,
+            changeYear: true,
+            showButtonPanel: false,
+            dateFormat: 'yy-mm',
+            onClose: function(dateText, inst)
+            {
+                var month = $("#ui-datepicker-div .ui-datepicker-month :selected").val();
+                var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
+                $(this).datepicker('setDate', new Date(year, month, 1));
+            },
+            calendarClass: ''
+        };
+        var lang = $('html').attr('lang');
+        $.datepicker.regional['en'] = $.datepicker.regional['en-GB'];
+        var default_opts = $.extend(
+            {},
+            $.datepicker.regional[lang],
+            default_hg_opts
+        );
+        
+        $('input.month_year').each(function()
+        {
+            var me = $(this);
+            var opts = $.extend({}, default_opts); // clone
+
+            if(typeof hg_datepickers != 'undefined')
+                $.each(hg_datepickers, function(selector)
+                {
+                    if(me.is(selector))
+                        $.extend(opts, this);
+                });
+
+            me.datepicker(opts);
+
+            if(opts.showClean)
+            {
+                me.after('<a class="input-date-cleaner" title="' + opts.cleanLabel + '" href="javascript:void(0)">' + opts.cleanLabel + '</a>');
+                me.next().click(function()
+                {
+                    opts.onClean.apply(this);
+                    var input = $(this).prev();
+                    input.val('');
+                });
+            }
+        }); // each input.date
+    }
+    catch (e)
+    {
+        console.error('failed to initialize datepickers:', e);
+    }
+}
+
+$(function()
+{
+    bindCalendar();
+    bindMonthYearSelector();
+}); // onload, datepicker
 
 
 /**

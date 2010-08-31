@@ -811,16 +811,16 @@ abstract class FStringBase extends Field
  */
 class FString extends FStringBase
 {
-    public function invalid(&$value)
+    public function dbString($value)
     {
         if (null  !== $value)
         if (false !== $value)
-        if (''    !== $value)
+        if (''     !== $value)
         {
             $value = htmlspecialchars($value);
             $value = strtr($value, array("\n"=>'', "\r"=>''));
         }
-        return parent::invalid($value);
+        return parent::dbString($value);
     }
 }
 
@@ -841,15 +841,16 @@ class FRich extends FStringBase
  */
 class FMultilineString extends FStringBase
 {
-    public function invalid(&$value)
+    public function dbString($value)
     {
         if (null  !== $value)
         if (false !== $value)
         if (''    !== $value)
         {
             $value = htmlspecialchars($value);
+
         }
-        return parent::invalid($value);
+        return parent::dbString($value);
     }
 }
 
@@ -1158,6 +1159,16 @@ class FInt extends Field
         }
     }
 
+    public function dbString($value)
+    {
+        if(NULL !== ($av = $this->autoValue()))
+            return ($av);
+        if($value === null || $value === '')
+            return "NULL";
+        else
+            return (pg_escape_string((int)$value));
+    }
+
 }
 
 
@@ -1443,6 +1454,11 @@ class FDouble extends FFloat
  */
 class FDate extends Field
 {
+    public function __construct($name, $notnull = false, $def_val = null)
+    {
+        parent::__construct($name, $notnull, $def_val);
+        $this->mess(array('invalid_format' => 'Invalid date format'));
+    }
 
     public function checkType($def)
     {
@@ -1455,6 +1471,11 @@ class FDate extends Field
         return (empty($res) ? false : $res);
     }
 
+
+    /**
+     *
+     * @uses conf[locale][accepted date formats]
+     */
     public function invalid(&$value)
     {
         $err = array();
@@ -1473,7 +1494,20 @@ class FDate extends Field
                     $err['invalid'] = true;
             }
         }
-        return ($this->_errors($err, $value));
+
+        if ($value)
+        {
+            foreach (g()->conf['locale']['accepted date formats'] as $regex)
+            {
+                if (!preg_match($regex, $value))
+                {
+                    $err['invalid_format'] = true;
+                    break;
+                }
+            }
+        }
+
+        return $this->_errors($err, $value);
     }
 
     public function dbType()
@@ -1495,6 +1529,37 @@ class FDate extends Field
             $value = date('Y-m-d', $value);
             return "'$value'";
         }
+    }
+}
+
+class FMonthYear extends FDate
+{
+    public function dbString($value)
+    {
+        if(NULL !== ($av = $this->autoValue()))
+            return ($av);
+        if($value === null || $value === '')
+            return 'NULL';
+        if(!g('Functions')->isInt($value))
+            $value = strtotime($value);
+        $value = date('Y-m-01', $value);
+        return "'$value'";
+    }
+
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(NULL != $value)
+        {
+            if (!is_int($value)) // we allow to pass timestamp
+            {
+                if(false === strtotime($value))
+                    $err['invalid'] = true;
+            }
+        }
+        elseif(!$this->checkAutoValue($value))
+            $err['notnull'] = true;
+        return ($this->_errors($err, $value));
     }
 }
 
@@ -1902,6 +1967,75 @@ class FFile extends FString
                 return isset($this->_conf[$property][$value]);
         }
     }
+
+
+    /**
+     * Get max file size
+     *
+     * Honours php settings.
+     * @author m.augustynowicz
+     *
+     * @return int max file size, in bytes
+     */
+    public function getMaxSize()
+    {
+        $post_limit = $this->_humanSizeToBytes(ini_get('post_max_size'));
+        $file_limit = $this->_humanSizeToBytes(ini_get('upload_max_filesize'));
+        $mem_limit = $this->_humanSizeToBytes(ini_get('memory_limit'));
+        $field_limit = $this->getConf('max size') * 1024;
+
+        $limit = min($post_limit, $file_limit);
+
+        if (-1 != $mem_limit)
+        {
+            $limit = min($limit, $mem_limit);
+        }
+
+        if (0 != $field_limit)
+        {
+            $limit = min($limit, $field_limit);
+        }
+
+        return $limit;
+    }
+
+
+    /**
+     * Parse strings with M, G etc suffixes to integers.
+     * @author m.augustynowicz
+     *
+     * @param string $size
+     * @return bool|int false on any error
+     */
+    protected function _humanSizeToBytes($size)
+    {
+        if (!preg_match('/^\s*(-?[0-9]+)\s*(.*)?$/', $size, $matches))
+        {
+            return false;
+        }
+
+        $size = $matches[1];
+        $unit = @$matches[2];
+        switch (strtoupper($unit))
+        {
+            case 'PB' :
+            case 'P' :
+                $size *= 1024;
+            case 'TB' :
+            case 'T' :
+                $size *= 1024;
+            case 'GB' :
+            case 'G' :
+                $size *= 1024;
+            case 'MB' :
+            case 'M' :
+                $size *= 1024;
+            case 'KB' :
+            case 'K' :
+                $size *= 1024;
+        }
+        return $size;
+    }
 }
 
 /**
@@ -1990,6 +2124,14 @@ class FoFunc extends FAnyType implements IEvalField
             'COUNT($int:FBool)',
             'COUNT($int:FString)',
             'COUNT($int:FTimestamp)'
+        ),
+        'count distinct' => array(
+            'res' => 'FString',
+            'COUNT(DISTINCT $int:FId)',
+            'COUNT(DISTINCT $int:FInt)',
+            'COUNT(DISTINCT $int:FBool)',
+            'COUNT(DISTINCT $int:FString)',
+            'COUNT(DISTINCT $int:FTimestamp)'
         ),
         'sum' => array(
             'res' => 'FInt',
