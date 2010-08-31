@@ -60,7 +60,7 @@ class PagesController extends Component
         $req->emerge();
     }
 
-    public function render()
+    public function present()
     {
         $layout = & $this->_views_layouts[get_class(g()->view)];
         if (null === $layout)
@@ -69,56 +69,6 @@ class PagesController extends Component
         $arr[count($arr)-1] = strtolower($arr[count($arr)-1]);
         $this->_layout = implode('/',$arr);
         $this->inc($this->_layout);
-
-        /**
-         * @todo remove this, when sure the above works (created 2010-01)
-         */
-        /*
-        if (g()->req->isAjax())
-            return $this->contents();
-        else
-        {
-            $arr = explode('/',$this->_layout);
-            $arr[count($arr)-1] = strtolower($arr[count($arr)-1]);
-            $this->_layout = implode('/',$arr);
-            $this->inc($this->_layout);
-        }
-         */
     }    
-
-    public function contents()
-    {
-        if (is_array($this->_action))
-            @list($that,$action) = $this->_action;
-        else
-        {
-            $that = $this;
-            $action = $this->_action;
-        }
-
-        if ($action)
-        {
-            // lowercase last in path
-            $arr = explode('/',$action);
-            $arr[count($arr)-1] = strtolower($arr[count($arr)-1]);
-            $action = implode('/',$arr);
-        }
-
-        $this->_action = array($that, $action);
-
-        return parent::render();
-    }
-
-
-    /**
-     * removed by m.augustynowicz, 2009-10-23
-     */
-    /*
-    public function url2a($act='', array $params=array())
-	{
-        if (empty($act))
-            return(parent::url2a($this->_action,$this->_params));
-        return(parent::url2a($act,$params));
-    }
-     */
 }
+

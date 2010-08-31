@@ -104,7 +104,7 @@ class DebugController extends TrunkController
      * Display toolbar, then prerender echoe, then real content
      * @author m.augustynowicz
      */
-    public function render()
+    public function present()
     {
         $this->inc('toolbar');
 
@@ -128,7 +128,7 @@ class DebugController extends TrunkController
             g()->prerender_echo='';
         }
 
-        parent::render();
+        parent::present();
     }    
     
     

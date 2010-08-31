@@ -2259,6 +2259,12 @@ abstract class TrunkController extends Controller
         $this->__child->process($req);
     }
     
+
+    public function present()
+    {
+        $this->__child->present();
+    }
+
     public function render()
     {
         $this->__child->render();
@@ -2703,44 +2709,14 @@ abstract class Component extends Controller
     {
         if (g()->debug->on('view'))
         {
-            printf('<!-- %s: %s::render() -->', 
-                   $this->path(), get_class($this) );
-        }
-        if (is_array($this->_template))
-        {
-            $that = $this->_template[0];
-            $template = $this->_template[1];
-        }
-        else
-        {
-            $that = $this;
-            $template = $this->_template;
+            printf('<!-- %s::render() BEGIN -->', $this->path() );
         }
 
-        if (null === $template)
-            return;
+        $this->inc($this->_template);
 
-        if(!$template)
-        {
-            $tpl = $this->_default_action;
-            if (g()->debug->allowed())
-            {
-                g()->addInfo(null, 'debug', 'Something wrong might have happened. Rendering <em>%s</em>, which does not have any template set. Using default template.', $this->path());
-            }
-        }
-        else
-        {
-            // lowercase last element in path-like template
-            $arr = explode('/',$template);
-            $arr[count($arr)-1] = strtolower($arr[count($arr)-1]);
-            $action = implode('/',$arr);
-            $tpl = $action;
-        }
-        $that->inc($tpl);
         if (g()->debug->on('view'))
         {
-            printf('<!-- (end) %s: %s::render() -->', 
-                   $this->path(), get_class($this) );
+            printf('<!-- %s::render() END -->', $this->path() );
         }
     }
 
