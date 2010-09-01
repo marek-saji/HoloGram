@@ -51,7 +51,7 @@ $v->addCss($this->file('debug','css'));
         <h4>toolbox</h4>
         <ul>
             <?php if (g()->debug->allowed()) : ?>
-            <li><?=$this->l2c('data sets', 'DataSet','',array(),array('title'=>'manage data sets'))?></li>
+            <li><?=$this->l2c('data sets', 'DataSet','list',array(),array('title'=>'manage data sets'))?></li>
             <li><?=$this->l2c('developer controller', 'Dev','',array(),array('title'=>'perform some developer magic'))?></li>
             <?php endif; ?>
             <li><a href="<?=$this->url2c(array('Debug','On'),array('Debug', 'set', array('fav')))?>" title="turn on debugs in in conf[favorite debugs]">enable favorite debugs</a></li>
