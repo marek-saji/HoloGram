@@ -772,9 +772,8 @@ class Kernel
             $this->auth = $this->get('Auth');
 
             $this->lang->available(); // fill the cache
-            
-            if ($lang = $this->lang->get())
-                $this->readConfigFiles('lang/'.$lang);
+
+            $this->_getTranslations($lang);
 
             $this->first_controller = $this->get(
                 $this->conf['first_controller']['type'],'controller',
@@ -1066,6 +1065,43 @@ class Kernel
         }
     }    
 
+
+    /**
+     * Fetch translations from database and merge them into config
+     * @author m.augustynowicz
+     *
+     * @param string $lang language code
+     */
+    protected function _getTranslations($lang)
+    {
+        // get from config files
+
+        $this->readConfigFiles('lang/'.$lang);
+
+
+        // get from database
+
+        $f = g('Functions');
+        $trans = & $this->conf['translations'];
+
+        $db_trans = g('Trans', 'model')
+                ->filter(array(
+                    'lang' => $lang
+                ))
+                ->exec();
+
+        foreach ($db_trans as &$row)
+        {
+            if ($f->anyToBool($row['value_is_complex']))
+            {
+                $row['value'] = json_decode($row['value'], true);
+            }
+
+            $trans[$row['context']][$row['key']] = $row['value'];
+        }
+    }
+
+
     /**
      * Getter for {@see $_rendering}
      * @author m.augustynowicz
@@ -1163,6 +1199,9 @@ class HgBase
         $argv = func_get_args();
         $text = array_shift($argv);
 
+
+        // handle array of texts to translate
+
         if (is_array($text))
         {
             foreach ($text as &$txt)
@@ -1172,6 +1211,9 @@ class HgBase
             }
             return $text;
         }
+
+
+        // get translations from config files
 
         foreach ($this->_trans_sources as $source)
         {
@@ -1197,6 +1239,7 @@ class HgBase
             break;
         }
 
+
         if (!isset($msg))
         {
             $ret = vsprintf($text, $argv);
@@ -1208,6 +1251,9 @@ class HgBase
             $trans = & $ret;
         }
 
+
+        // do debug things
+
         $debug_all = g()->debug->on('trans');
         $debug_missing = g()->debug->on('trans','missing');
 
@@ -1218,6 +1264,7 @@ class HgBase
                     array() === $trans ? 'NO TRANS!' : $trans
                 );
         }
+
 
         return $ret;
 
