@@ -30,6 +30,7 @@ if (!defined('FALLBACK_LOCALE'))
 class Lang extends HgBase implements ILang
 {
     private $__available = null;
+    private $__available_by_id = null;
     protected $_current = FALLBACK_LANG;
     protected $_locale = null;
 
@@ -118,6 +119,24 @@ class Lang extends HgBase implements ILang
     }
 
     /**
+     * Gets language code
+     * 
+     * @author b.matuszewski
+     * @param int $lang_id language id
+     * @return string language code
+     */
+    public function getLangCodeById($lang_id)
+    {
+        if($this->__available_by_id === null)
+        {
+            $this->available();
+            foreach($this->__available as $code => & $lang)
+                $this->__available_by_id[$lang['id']] = $lang;
+        }
+        return $this->__available_by_id[$lang_id]['code'];
+    }
+
+    /**
      * Gets array with info about languages
      * @param null|string|true $lang language code or null to get all
      *        or true to get current language's info
@@ -175,6 +194,4 @@ class Lang extends HgBase implements ILang
 
         return $this->_locale = setlocale(LC_ALL, $locale);
     }
-
 }
-
