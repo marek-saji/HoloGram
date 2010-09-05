@@ -41,9 +41,3 @@ $conf['classes_override'] = array(
     //'Lang'           => 'LangOne',
 );
 
-/*
- * Google Maps API key, domain-specific, generate here:
- * http://code.google.com/intl/pl/apis/maps/signup.html
- */
-$conf['gmaps_api_key'] = '(fill me)';
-

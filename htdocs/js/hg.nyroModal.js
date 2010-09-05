@@ -53,7 +53,11 @@ hg['nyroModalInit'].f = function()
         // focus form inputs if any
         endShowContent: function(eltrs,settings){
             if (hg['nyroModalInit'].ajax_i)
-                hg('ajaxDOMReady')(hg['nyroModalInit'].ajax_i);
+            {
+                var ajax_i = hg['nyroModalInit'].ajax_i;
+                hg('ajaxDOMReady')(ajax_i);
+                content.addClass(hg['ajax'].data[ajax_i].class);
+            }
             $('#nyroModalContent')
                 .find('form')
                     // make sure form is sent when pressing enter

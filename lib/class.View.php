@@ -66,7 +66,8 @@ class View extends HgBase implements IView
             $this->addJs($this->_renderer->file('jquery-'.$jquery_version.$min,'js'));
         else
         {
-            $this->addJs('http://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
+            $protocol = g()->req->isSSL() ? 'https' : 'http';
+            $this->addJs($protocol.'://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
         }
         // make jquery more verbal about errors and warnings
         /*
@@ -122,7 +123,15 @@ class View extends HgBase implements IView
         */
         if ($this->_is_html5)
         {
-            $attrs['src'] = 'http://html5shiv.googlecode.com/svn/trunk/html5.js';
+            if (g()->debug->on('disable','externalcdn'))
+            {
+                $attrs['src'] = $this->_renderer->file('html5','js');
+            }
+            else
+            {
+            $protocol = g()->req->isSSL() ? 'https' : 'http';
+                $attrs['src'] = $protocol.'://html5shiv.googlecode.com/svn/trunk/html5.js';
+            }
             $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
                 $this->_tag('script', $attrs)
             ));
@@ -136,7 +145,7 @@ class View extends HgBase implements IView
     public function present()
     {
         ob_start(NULL);
-        echo g()->first_controller->render();
+        echo g()->first_controller->present();
         $contents = ob_get_clean();
         
         if (!isset($this->_metas['generator']))
@@ -664,7 +673,7 @@ class View extends HgBase implements IView
     protected function _renderHeadJSCode()
     {
         $this->_inl_jses['hg_id_offset'] = "var hg_id_offset = "
-                . (100+g('Functions')->uniqueId(null));
+                . (100+g('Functions')->uniqueId());
 
         // display
         if ($this->_inl_jses)

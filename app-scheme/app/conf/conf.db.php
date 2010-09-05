@@ -1,6 +1,6 @@
 <?php
 $conf['db'] = array(
-    'dbname'   => 'pop',
+    'dbname'   => '(set me locally)',
     'user'     => '(set me locally)',
     'password' => '(set me locally)'
 );

@@ -23,7 +23,7 @@ class TextView extends View
     public function present()
     {
         ob_start(NULL);
-        echo g()->first_controller->displayingCtrl()->contents();
+        echo g()->first_controller->displayingCtrl()->present();
         $contents = ob_get_clean();
 
         $this->setEncoding();

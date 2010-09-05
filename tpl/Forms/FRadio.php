@@ -65,6 +65,20 @@ if (isset($select_array))
         </label>
     <?php endif; /* if empty_value_label */ ?>
 
+    <?php
+    foreach ($values as $value => $label)
+    {
+        $this->inc('Forms/FRadio-single', array(
+            'data' => $data,
+            'value' => $value,
+            'label' => $label,
+            'ident' => $ident,
+            'input' => $input,
+            'err_handling' => false
+        ));
+    }
+    ?>
+
     <?php foreach($values as $value => $name) : ?>
         <label>
             <?php

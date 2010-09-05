@@ -10,6 +10,7 @@
  * @param boolean $ajax use ajax validation
  * @param string $ident form ident
  * @param string $input input ident
+ * @param mixed $data data POSTed by user
  *
  * (params passed as local variables) 
  * @param string|false $id uniqe id. pass false to skip id attr
@@ -27,7 +28,7 @@
 extract(array_merge(
         array(
             'attrs'       => array(),
-            'id'          => null,
+            'id'          => false,
             'name_prefix' => '',
             'name_suffix' => '',
             'disabled'    => false,

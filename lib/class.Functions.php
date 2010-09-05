@@ -647,7 +647,7 @@ class Functions extends HgBase
         $argv = func_get_args();
         foreach ($argv as $arg)
         {
-            if (!is_float($arg) && !preg_match('/[0-9]*\.?[0-9]*/', $arg))
+            if (!is_float($arg) && !preg_match('/[+-]?[0-9]*\.?[0-9]*/', $arg))
                 return false;
         }
         return true;
@@ -1308,26 +1308,34 @@ class Functions extends HgBase
 
 
     /**
-     * Generates and gets unique id (for use in html)
+     * Set offset for generating unique ids
      * @author m.augustynowicz
      *
-     * @param null|string $id id prefix pass null to get current numeric offset
-     * @param null|integer $set_offset if given, sets starting offset for this
-     *        and future ids (in general: do not use!)
+     * @param int $offset
+     * @return int old offset
+     */
+    public function setUniqueIdOffset($offset)
+    {
+        $old = self::$_unique_id_offset;
+        self::$_unique_id_offset = $offset;
+        return $old;
+    }
+
+
+    /**
+     * Generates unique (sequencial) id
+     * @author m.augustynowicz
+     *
+     * @param bool $increment increment interlal id counter after returning
      * @return string
      */
-    public function uniqueId($id, $set_offset=null)
+    public function uniqueId($increment=true)
     {
-        if (null !== $set_offset)
-            self::$_unique_id_offset = $set_offset;
-
-        if (null === $id)
-            return self::$_unique_id_offset;
-        
-        if (!$id)
-            $id = 'hgid';
-        $id = sprintf('%s__%s', $this->ASCIIfyText($id),
-                                ++self::$_unique_id_offset );
+        $id = sprintf('hg%s', self::$_unique_id_offset);
+        if ($increment)
+        {
+            self::$_unique_id_offset++;
+        }
         return $id;
     }
 
@@ -1418,7 +1426,7 @@ class Functions extends HgBase
             }
 
             list($user_name) = explode('@', $email);
-            $html = str_replace($email, sprintf('<span id="%s" class="obfuscated" name="%s">%s@...</span><noscript>%s</noscript>', $this->uniqueId('obfuscate'), $coded2, $user_name, $this->trans('To see this e-mail enable JavaScript!')), $html);
+            $html = str_replace($email, sprintf('<span id="%s" class="obfuscated" name="%s">%s@...</span><noscript>%s</noscript>', $this->uniqueId(), $coded2, $user_name, $this->trans('To see this e-mail enable JavaScript!')), $html);
         }
     }
     

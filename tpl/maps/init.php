@@ -33,7 +33,7 @@ extract(array_merge(
     ));
 
 define('TPL__GMAPS_INITIATED',
-       (bool) $gmaps_api_key = @g()->conf['gmaps_api_key'] );
+       (bool) $gmaps_api_key = @g()->conf['keys']['google maps'] );
 
 if (!TPL__GMAPS_INITIATED)
 {

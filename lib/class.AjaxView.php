@@ -9,7 +9,7 @@ class AjaxView extends View
     public function __construct()
     {
         $id_offset = (int) $_POST['hg+id_offset'];
-        g('Functions')->uniqueId(null, $id_offset);
+        g('Functions')->setUniqueIdOffset($id_offset);
 
         parent::__construct();
     }
@@ -56,7 +56,12 @@ class AjaxView extends View
 
         $ret['html'] = ob_get_clean();
 
-        $this->_inl_jses['hg_id_offset'] = "window.hg_id_offset += 100+".g('Functions')->uniqueId(null);
+        $ret['class'] = sprintf("%s %1\$s__%s",
+                $this->_renderer->getName(),
+                $this->_renderer->getLaunchedAction()
+            );
+
+        $this->_inl_jses['hg_id_offset'] = "window.hg_id_offset += 100+".g('Functions')->uniqueId();
 
         if ($this->_inl_jses)
             $ret['js'] = $this->_inl_jses;
