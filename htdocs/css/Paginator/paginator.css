@@ -1,0 +1,89 @@
+.paginator
+{
+    margin-left: 40%;
+    list-style: none;
+	clear: both;
+}
+.paginator > .page
+{
+    display: block;
+    width: 21px;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+	line-height: 20px;
+    float: left;
+	margin-left: .5em;
+}
+.paginator > .page > *
+{
+	background: url("../../gfx/sprite.png") no-repeat -131px -75px;
+	width: 21px;
+	height: 20px;
+	display: block;
+	padding: 0;
+	overflow: hidden;
+	line-height: 20px;
+	color: #575757;
+	text-align: center;
+}
+
+.paginator > .num.active.page > *
+{
+	color: #fff;
+	background: url("../../gfx/sprite.png") no-repeat -110px -75px;
+}
+.paginator a, .paginator a:visited, .paginator a:focus, .paginator a:active{
+	color: #666;
+	text-decoration: none;
+	font-weight: bold;
+	line-height: 20px;
+}
+.paginator > .page.num > a:hover
+{
+    font-weight: bold;
+	color: #2868a8;
+}
+.paginator > .page > strong, .paginator > .page > a, .paginator > .page > span{
+	line-height: 20px;
+}
+.paginator > .active.page > a
+{
+    font-weight: bold;
+	line-height: 20px;
+}
+.paginator > .active.page > a:hover
+{
+    text-decoration: none !important;
+    background-color: inherit;
+}
+
+.paginator > .page.next a, .paginator > .page.next span, .paginator > .page.prev a, .paginator > .page.prev span{
+	background: url("../../gfx/sprite.png") no-repeat -131px -75px;
+	width: 21px;
+	height: 20px;
+	display: block;
+	padding: 0;
+	overflow: hidden;
+	line-height: 20px;
+	color: #575757;
+}
+.paginator > .disabled.page.next span {
+	background: url("../../gfx/sprite.png") no-repeat -110px -75px;
+	color: #fff;
+}
+.paginator > .active.page.prev a, .paginator > .page.prev a, .paginator > .page.prev span{
+	background: url("../../gfx/sprite.png") no-repeat -131px -75px;
+}
+.paginator > .disabled.page.prev span{
+	background: url("../../gfx/sprite.png") no-repeat -110px -75px;
+	color: #fff;
+}
+div.sort_by{
+	float: left;
+	margin: 7px;
+	font-weight: bold;
+}
+div.sort_by select{
+	margin: 0 1em;
+}
