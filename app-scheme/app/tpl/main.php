@@ -8,7 +8,7 @@
 // render all the components first
 // (they will set page (sub)title etc)
 ob_start();
-$this->contents();
+$this->render();
 $contents = ob_get_clean();
 
 //$v->addCss($this->file('common', 'css'));
