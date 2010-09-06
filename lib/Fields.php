@@ -408,9 +408,8 @@ abstract class Field implements IModelField
     {
         $this->_name = $name;
         $this->_rules['notnull'] = $notnull;
-/*        if($def_val!==null)    TODO: naprawic
+        if($def_val!==null)
             $this->auto('DEFAULT');
-            */
         $this->_rules['defval'] = $def_val;
         $this->mess(array('invalid' => 'Invalid value'));
     }
@@ -521,11 +520,14 @@ abstract class Field implements IModelField
      * @author p.piskorski
      * @author m.augustynowicz passing $value by reference, returning boolean
      *
+     * @param string $action insert or update
      * @param mixed $value original value, may be modified
      * @return boolean whether automatic value has been assigned to $value
      */
-    public function autoValue($action, & $value)
+    public function autoValue($action=null, & $value=null)
     {
+        $value_given = func_num_args() >= 2;
+
         if (isset($this->_rules['auto']))
         {
             $def = & $this->_rules['auto'];
@@ -534,11 +536,19 @@ abstract class Field implements IModelField
             {
                 // DEFAULT
                 case 'DEFAULT' === $def['source'] :
-                    $value = $this->defaultValue();
-                    if (null === $value)
+                    if (null === $action || 'update' === $action)
+                        return false;
+                    if ($this->_rules['notnull'] && null === $value)
                     {
-                        throw new HgException("Automatic uses default value that is not set");
+                        $value = $this->defaultValue();
+                        if (null === $value)
+                        {
+                            throw new HgException("Automatic uses default value that is not set");
+                        }
+                        $value = $this->dbString($value);
                     }
+                    else
+                        return false;
                     break;
 
                 // sync with another field
@@ -546,6 +556,7 @@ abstract class Field implements IModelField
                     $value = $def['source']->generator();
                     break;
 
+                // use callback
                 case is_array($def['source']) :
                     $new_value = call_user_func($def['source'],
                             $action, $this, $value);
@@ -563,6 +574,7 @@ abstract class Field implements IModelField
                     }
                     break;
 
+                // use the literal value
                 default :
                     $value = $def['source'];
                     if ($def['quote'])
@@ -597,7 +609,7 @@ abstract class Field implements IModelField
         if('' !== $def_val)
         {
             $this->_rules['defval'] = $def_val;
-            //$this->auto('DEFAULT'); TODO : autovalues
+            $this->auto('DEFAULT');
         }
         else
             return (isset($this->_rules['defval']) ? $this->_rules['defval'] : '');
@@ -777,14 +789,13 @@ abstract class FStringBase extends Field
 
     public function dbString($value)
     {
-        if (null == $value || '' === $value)
+        if (null === $value || '' === $value)
         {
             return 'NULL';
         }
         else
         {
-            // it's query-safe
-            return "'" . str_replace("\n",'\n',$value) . "'";
+            return "'" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
         }
     }
 
@@ -815,7 +826,7 @@ class FString extends FStringBase
     {
         if (null  !== $value)
         if (false !== $value)
-        if (''     !== $value)
+        if (''    !== $value)
         {
             $value = htmlspecialchars($value);
             $value = strtr($value, array("\n"=>'', "\r"=>''));
@@ -1161,8 +1172,10 @@ class FInt extends Field
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
+        /*
+        if(false !== ($av = @$this->autoValue()))
             return ($av);
+         */
         if($value === null || $value === '')
             return "NULL";
         else
@@ -1364,10 +1377,14 @@ class FFloat extends Field
         {
             case 4:
                 return ('REAL');
-            break;
+                break;
             case 8:
                 return ('DOUBLE PRECISION');
-            break;
+                break;
+            default :
+                throw HgException('Tried to create floating point field with unknow precision: '.
+                            print_r($this->_rules['precision'], true) );
+                break;
         }
     }
 }
@@ -1392,13 +1409,8 @@ class FDouble extends FFloat
      */
     public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = null, $min_val = null, $max_val = null)
     {
-        parent::__construct($name, $notnull, $def_val);
-        if($precision != 4 && $precision != 8)
-            $precison = 8;
-        $this->_rules['precision'] = $precision;
+        parent::__construct($name, $precision, $notnull, $def_val, $min_val, $max_val);
         $this->_rules['decimal_places'] = $decimal_places;
-        $this->_rules['min_val'] = $min_val;
-        $this->_rules['max_val'] = $max_val;
         $this->mess(array('invalid' => 'Invalid floating point value'));
         $this->mess(array('min_val_excided' => 'Number is too small'));
         $this->mess(array('max_val_excided' => 'Number is too big'));
@@ -1536,8 +1548,10 @@ class FMonthYear extends FDate
 {
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
+        /*
+        if(false !== ($av = @$this->autoValue()))
             return ($av);
+         */
         if($value === null || $value === '')
             return 'NULL';
         if(!g('Functions')->isInt($value))
@@ -1557,7 +1571,7 @@ class FMonthYear extends FDate
                     $err['invalid'] = true;
             }
         }
-        elseif(!$this->checkAutoValue($value))
+        elseif(!$this->autoValue($value) && $this->_rules['notnull'])
             $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
@@ -1855,7 +1869,14 @@ class FId extends Field
 
     public function columnDefinition()
     {
-        return ('"' . $this->getName() . '" ' . $this->dbType() . ($this->notNull() ? ' NOT NULL' : '') . ('' == $this->defaultValue(false) ? '' : ' DEFAULT ' . $this->defaultValue()));
+        $sql = '"' . $this->getName() . '" ' . $this->dbType();
+
+        if ($this->notNull())
+        {
+            $sql .= ' NOT NULL';
+        }
+
+        return $sql;
     }
 }
 
