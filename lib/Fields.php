@@ -534,6 +534,10 @@ abstract class Field implements IModelField
             {
                 // DEFAULT
                 case 'DEFAULT' === $def['source'] :
+                    if (null===$action || 'update' === $action)
+                    {
+                        return false;
+                    }
                     $value = $this->defaultValue();
                     if (null === $value)
                     {
@@ -546,6 +550,7 @@ abstract class Field implements IModelField
                     $value = $def['source']->generator();
                     break;
 
+                // use callback
                 case is_array($def['source']) :
                     $new_value = call_user_func($def['source'],
                             $action, $this, $value);
@@ -563,6 +568,7 @@ abstract class Field implements IModelField
                     }
                     break;
 
+                // use the literal value
                 default :
                     $value = $def['source'];
                     if ($def['quote'])
