@@ -1566,7 +1566,7 @@ class FMonthYear extends FDate
                     $err['invalid'] = true;
             }
         }
-        elseif(!$this->autoValue($value))
+        elseif(!$this->autoValue($value) && $this->_rules['notnull'])
             $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
