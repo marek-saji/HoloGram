@@ -408,9 +408,8 @@ abstract class Field implements IModelField
     {
         $this->_name = $name;
         $this->_rules['notnull'] = $notnull;
-/*        if($def_val!==null)    TODO: naprawic
+        if($def_val!==null)
             $this->auto('DEFAULT');
-            */
         $this->_rules['defval'] = $def_val;
         $this->mess(array('invalid' => 'Invalid value'));
     }
@@ -521,10 +520,11 @@ abstract class Field implements IModelField
      * @author p.piskorski
      * @author m.augustynowicz passing $value by reference, returning boolean
      *
+     * @param string $action insert or update
      * @param mixed $value original value, may be modified
      * @return boolean whether automatic value has been assigned to $value
      */
-    public function autoValue($action, & $value)
+    public function autoValue($action=null, & $value=null)
     {
         if (isset($this->_rules['auto']))
         {
@@ -597,7 +597,7 @@ abstract class Field implements IModelField
         if('' !== $def_val)
         {
             $this->_rules['defval'] = $def_val;
-            //$this->auto('DEFAULT'); TODO : autovalues
+            $this->auto('DEFAULT');
         }
         else
             return (isset($this->_rules['defval']) ? $this->_rules['defval'] : '');
