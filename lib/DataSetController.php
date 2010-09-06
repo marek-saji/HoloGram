@@ -28,7 +28,7 @@ class DataSetController extends PagesController
         if($table=$this->getChild('Page'))
             $table->init();
     }
-    
+
     public function defaultAction(array $params)
     {
         $sql  = "SELECT rels.relname, dsc.description\n";
@@ -145,6 +145,8 @@ class DataSetController extends PagesController
                 
             ),
             '1' =>*/
+
+        $this->prepareShow($args);
         $diff = $this->_ds->checkModelInDb();
 		if (true !== $diff && (false === $diff || !empty($diff['not_in_base']) || !empty($diff['def_diff'])))
 		    //$this->assign('model_invalid',true);
@@ -406,7 +408,7 @@ class DataSetController extends PagesController
 	    if (!$valid)
 			$this->redirect('HttpErrors/Error404');
 
-		$this->_ds = g($args[0], 'model');
+        $this->_ds = g($args[0], 'model');
 		return(true);
 	}
 	
