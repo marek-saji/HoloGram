@@ -34,9 +34,9 @@ $conf['translations']['_global'] = array(
     '((default site name format))' => '%s - %s', // default page title format: "page title - site name"
 
     // links in global navigation, account area
-    'Sign in' => 'Sign in',
-    'Sign out' => 'Sign out',
-    'Create an account' => 'Create an account',
+    'Sign In' => 'Zaloguj się',
+    'Sign Out' => 'Wyloguj się',
+    'Create an Account' => 'Załóż konto',
 
     // form input error messages
     'Field required' => 'Pole wymagane',
@@ -49,8 +49,8 @@ $conf['translations']['_global'] = array(
     'Number is to big' => 'Liczba zbyt duża',
 
     // text in the footer
-    'powered by %s' => 'created and powered by %s',
-    'version' => 'version', // as in: application's version
+    'powered by %s' => 'powered by %s',
+    'application version' => 'wersja aplikacji',
 );
 
 $conf['translations']['User'] = array(

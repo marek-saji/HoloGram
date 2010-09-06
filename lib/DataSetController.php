@@ -11,17 +11,17 @@ class DataSetController extends PagesController
 	protected $_relations=array();
 	public $forms = array('models' => true);
 
-    public function __construct(array $args)
+
+    public function onAction($action, array & $params)
     {
-        if (!g()->conf['allow_debug'])
+        if (!g()->debug->allowed())
         {
-            // redirect to 404.
-            parent::defaultAction(array());
+            $this->redirect(array('HttpErrors', 'error404'));
         }
-        parent::__construct($args);
-        $this->assign('dsController',true);
+        return true;
     }
-    
+
+
     public function process(Request $req)
     {
         parent::process($req);

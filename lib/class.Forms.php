@@ -126,7 +126,7 @@ class Forms extends HgBase
         $f = g('Functions');
 
         $params = array_merge(array(
-            'id' => $f->uniqueId($this->__ident),
+            'id' => $f->uniqueId(),
             'ident'=>$f->ASCIIfyText($this->__ident),
             'ajax'=>isset($this->__form['ajax'])?$this->__form['ajax']:USE_AJAX_BY_DEFAULT,
             'errors' => $this->getErrors(),
@@ -177,20 +177,7 @@ class Forms extends HgBase
         $data = @ $this->__ctrl->data[$this->__short_ident][$input];
         $errors = $this->_getErrors($input);
 
-        /*
-        $id0 = $id = g('Functions')->ASCIIfyText();
-        $suffix = '';
-        do
-        {
-            if (!isset(self::$_used_ids[$id]))
-                break;
-            $suffix++;
-            $id = $id0.'__'.$suffix;
-        }
-        while(true);
-        self::$_used_ids[$id] = true;
-         */
-        $id = g('Functions')->uniqueId($this->__ident.'_'.$input);
+        $id = g('Functions')->uniqueId();
             
         $sys_params = array('ident'=>$this->__ident,
                             'input'=>$input,

@@ -367,7 +367,7 @@ JS;
 
             echo '</tr>';
 
-            if (@$call['file'])
+            if (@$call['file'] && $call['file'] != 'Unknown')
             {
                 /**
                  * @todo would be nice if there was option to show blames for each line
