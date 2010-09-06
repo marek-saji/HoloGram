@@ -1364,10 +1364,14 @@ class FFloat extends Field
         {
             case 4:
                 return ('REAL');
-            break;
+                break;
             case 8:
                 return ('DOUBLE PRECISION');
-            break;
+                break;
+            default :
+                throw HgException('Tried to create floating point field with unknow precision: '.
+                            print_r($this->_rules['precision'], true) );
+                break;
         }
     }
 }
@@ -1392,13 +1396,8 @@ class FDouble extends FFloat
      */
     public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = null, $min_val = null, $max_val = null)
     {
-        parent::__construct($name, null, $notnull, $def_val);
-        if($precision != 4 && $precision != 8)
-            $precison = 8;
-        $this->_rules['precision'] = $precision;
+        parent::__construct($name, $precision, $notnull, $def_val, $min_val, $max_val);
         $this->_rules['decimal_places'] = $decimal_places;
-        $this->_rules['min_val'] = $min_val;
-        $this->_rules['max_val'] = $max_val;
         $this->mess(array('invalid' => 'Invalid floating point value'));
         $this->mess(array('min_val_excided' => 'Number is too small'));
         $this->mess(array('max_val_excided' => 'Number is too big'));
