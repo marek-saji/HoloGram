@@ -534,7 +534,7 @@ abstract class Field implements IModelField
             {
                 // DEFAULT
                 case 'DEFAULT' === $def['source'] :
-                    if (null===$action || 'update' === $action)
+                    if (null===$action || 'update' === $action || !empty($value))
                     {
                         return false;
                     }
