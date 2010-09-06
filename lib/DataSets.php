@@ -1680,7 +1680,7 @@ abstract class Model extends DataSet implements IModel
         {
             if (array_key_exists($name, $data))
             {
-                $auto_value = & $data[$name];
+                $auto_value = $data[$name];
             }
             else
             {
