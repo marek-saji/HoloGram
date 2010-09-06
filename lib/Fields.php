@@ -1161,7 +1161,7 @@ class FInt extends Field
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
+        if(false !== ($av = @$this->autoValue()))
             return ($av);
         if($value === null || $value === '')
             return "NULL";
@@ -1536,7 +1536,7 @@ class FMonthYear extends FDate
 {
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
+        if(false !== ($av = @$this->autoValue()))
             return ($av);
         if($value === null || $value === '')
             return 'NULL';
