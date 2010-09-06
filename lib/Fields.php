@@ -1392,7 +1392,7 @@ class FDouble extends FFloat
      */
     public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = null, $min_val = null, $max_val = null)
     {
-        parent::__construct($name, $notnull, $def_val);
+        parent::__construct($name, null, $notnull, $def_val);
         if($precision != 4 && $precision != 8)
             $precison = 8;
         $this->_rules['precision'] = $precision;
