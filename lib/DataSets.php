@@ -1690,7 +1690,7 @@ abstract class Model extends DataSet implements IModel
 
             if ($use_auto_value)
             {
-                $data[$name] = & $auto_value;
+                $data[$name] = $auto_value;
             }
             else
             {
