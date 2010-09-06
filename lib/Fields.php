@@ -1498,23 +1498,23 @@ class FDate extends Field
                 $err['notnull'] = true;
             }
         }
-        else
+        else if ('NOW()' !== strtoupper($value))
         {
             if (!is_int($value)) // we allow to pass timestamp
             {
                 if(false === strtotime($value))
                     $err['invalid'] = true;
             }
-        }
 
-        if ($value)
-        {
-            foreach (g()->conf['locale']['accepted date formats'] as $regex)
+            if ($value && empty($err))
             {
-                if (!preg_match($regex, $value))
+                foreach (g()->conf['locale']['accepted date formats'] as $regex)
                 {
-                    $err['invalid_format'] = true;
-                    break;
+                    if (!preg_match($regex, $value))
+                    {
+                        $err['invalid_format'] = true;
+                        break;
+                    }
                 }
             }
         }
@@ -1532,6 +1532,10 @@ class FDate extends Field
         if (null === $value || '' === $value)
         {
             return 'NULL';
+        }
+        else if ('NOW()' === strtoupper($value))
+        {
+            return 'NOW()';
         }
         else
         {
@@ -1604,10 +1608,13 @@ class FTime extends Field
                 $err['notnull'] = true;
             }
         }
-        else
+        else if ('NOW()' !== strtoupper($value))
         {
-            if(false === strtotime($value))
-                $err['invalid'] = true;
+            if (!is_int($value))
+            {
+                if(false === strtotime($value))
+                    $err['invalid'] = true;
+            }
         }
         return ($this->_errors($err, $value));
     }
@@ -1622,6 +1629,10 @@ class FTime extends Field
         if (null === $value || '' === $value)
         {
             return 'NULL';
+        }
+        else if ('NOW()' === strtoupper($value))
+        {
+            return 'NOW()';
         }
         else
         {
@@ -1661,7 +1672,7 @@ class FTimestamp extends Field
                 $err['notnull'] = true;
             }
         }
-        else
+        else if ('NOW()' !== strtoupper($value))
         {
             $val = $value;
             if(!g('Functions')->isInt($value))
@@ -1679,6 +1690,10 @@ class FTimestamp extends Field
         if (null === $value || '' === $value)
         {
             return 'NULL';
+        }
+        else if ('NOW()' === strtoupper($value))
+        {
+            return 'NOW()';
         }
         else
         {
