@@ -672,8 +672,12 @@ class View extends HgBase implements IView
      */
     protected function _renderHeadJSCode()
     {
-        $this->_inl_jses['hg_id_offset'] = "var hg_id_offset = "
-                . (100+g('Functions')->uniqueId());
+        if (preg_match('/([0-9]*)$/', g('Functions')->uniqueId(), $matches))
+        {
+            $numeric_id = $matches[1];
+            $this->_inl_jses['hg_id_offset'] = "var hg_id_offset = "
+                    . (100+$numeric_id);
+        }
 
         // display
         if ($this->_inl_jses)
