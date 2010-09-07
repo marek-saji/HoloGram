@@ -116,7 +116,11 @@ class TableController extends Component
         $this->first_record = $this->page * $this->page_size;
         $this->last_record = ($this->page+1) * $this->page_size;
         if ($this->last_record > $this->records_count)
-            $this->last_record = $this->records_count;        
+            $this->last_record = $this->records_count;
+
+        foreach($this->_subject->getPrimaryKeys() as $field)
+            $this->_subject->order($field);
+
         $this->_subject->setMargins($this->first_record, $this->last_record);
         $this->_subject->exec();
     }
