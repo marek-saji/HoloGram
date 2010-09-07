@@ -68,14 +68,18 @@ if (isset($select_array))
     <?php
     foreach ($values as $value => $label)
     {
-        $this->inc('Forms/FRadio-single', array(
-            'data' => $data,
-            'value' => $value,
-            'label' => $label,
-            'ident' => $ident,
-            'input' => $input,
-            'err_handling' => false
-        ));
+        $input_vars = array_merge(
+            $____local_variables,
+            array(
+                'data' => $data,
+                'value' => $value,
+                'label' => $label,
+                'ident' => $ident,
+                'input' => $input,
+                'err_handling' => false
+            )
+        );
+        $this->inc('Forms/FRadio-single', $input_vars);
     }
     ?>
 
