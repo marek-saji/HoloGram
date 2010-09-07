@@ -783,14 +783,13 @@ abstract class FStringBase extends Field
 
     public function dbString($value)
     {
-        if (null == $value || '' === $value)
+        if (null === $value || '' === $value)
         {
             return 'NULL';
         }
         else
         {
-            // it's query-safe
-            return "'" . str_replace("\n",'\n',$value) . "'";
+            return "'" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
         }
     }
 
@@ -821,7 +820,7 @@ class FString extends FStringBase
     {
         if (null  !== $value)
         if (false !== $value)
-        if (''     !== $value)
+        if (''    !== $value)
         {
             $value = htmlspecialchars($value);
             $value = strtr($value, array("\n"=>'', "\r"=>''));
