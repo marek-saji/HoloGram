@@ -526,6 +526,8 @@ abstract class Field implements IModelField
      */
     public function autoValue($action=null, & $value=null)
     {
+        $value_given = func_num_args() >= 2;
+
         if (isset($this->_rules['auto']))
         {
             $def = & $this->_rules['auto'];
@@ -534,7 +536,7 @@ abstract class Field implements IModelField
             {
                 // DEFAULT
                 case 'DEFAULT' === $def['source'] :
-                    if (null===$action || 'update' === $action)
+                    if ($value_given || null===$action || 'update' === $action)
                     {
                         return false;
                     }
