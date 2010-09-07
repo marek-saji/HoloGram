@@ -110,7 +110,14 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                     else
                     {
                         // field specific errors
-                        var field_input = $(':input[name^="'+form_name+'['+field+']"]');
+                        if (1 == input.length)
+                        {
+                            var field_input = input;
+                        }
+                        else
+                        {
+                            var field_input = $(':input[name^="'+form_name+'['+field+']"]');
+                        }
                         var err = $('#' + field_input.eq(-1).attr('id') + '__err');
                         console.log(field_input, err);
                     }
