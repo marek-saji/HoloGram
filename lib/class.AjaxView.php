@@ -61,7 +61,12 @@ class AjaxView extends View
                 $this->_renderer->getLaunchedAction()
             );
 
-        $this->_inl_jses['hg_id_offset'] = "window.hg_id_offset += 100+".g('Functions')->uniqueId();
+        if (preg_match('/([0-9]*)$/', g('Functions')->uniqueId(), $matches))
+        {
+            $numeric_id = $matches[1];
+            $this->_inl_jses['hg_id_offset'] = "window.hg_id_offset += "
+                    . (100+$numeric_id);
+        }
 
         if ($this->_inl_jses)
             $ret['js'] = $this->_inl_jses;
