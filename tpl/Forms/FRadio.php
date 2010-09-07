@@ -79,25 +79,6 @@ if (isset($select_array))
     }
     ?>
 
-    <?php foreach($values as $value => $name) : ?>
-        <label>
-            <?php
-            $input_vars = array_merge($____local_variables, array(
-                'data' => $value,
-                'err_handling' => false,
-            ));
-            $input_vars['attrs'] = array_merge((array)@$input_vars['attrs'], array(
-                'type' => 'radio',
-                'class' => 'radio',
-            ));
-            if (isset($data) && (string)$value === (string)$data)
-                $input_vars['attrs']['checked'] = 'checked';
-            $t->inc('Forms/input', $input_vars);
-            echo $name;
-            ?>
-        </label>
-    <?php endforeach; /* foreach $values */ ?>
-
 </fieldset>
 
 <?php
