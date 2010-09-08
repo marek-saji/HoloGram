@@ -527,8 +527,6 @@ abstract class Field implements IModelField
     public function autoValue($action=null, & $value=null)
     {
         $value_given = func_num_args() >= 2;
-        //$value_given = $value !== null;
-        var_dump($value, $value_given);echo "<hr/>";
 
         if (isset($this->_rules['auto']))
         {
@@ -538,7 +536,9 @@ abstract class Field implements IModelField
             {
                 // DEFAULT
                 case 'DEFAULT' === $def['source'] :
-                    if ('insert' === $action && $this->_rules['notnull'] && null === $value)
+                    if (null === $action || 'update' === $action)
+                        return false;
+                    if ($this->_rules['notnull'] && null === $value)
                     {
                         $value = $this->defaultValue();
                         if (null === $value)
@@ -547,7 +547,8 @@ abstract class Field implements IModelField
                         }
                         $value = $this->dbString($value);
                     }
-                    return false;
+                    else
+                        return false;
                     break;
 
                 // sync with another field
