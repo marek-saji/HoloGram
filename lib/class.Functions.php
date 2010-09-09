@@ -610,11 +610,8 @@ class Functions extends HgBase
      */
     public function isInt($var)
     {
-        // trully integer
-        if (is_int($var))
-            return TRUE;
-        // integer in a string
-        return ((string)(int)$var) === $var;
+        // all /[0-9]+/
+        return is_numeric($var) && ((string)(int)$var) === (string)$var;
     }
 
     /**
