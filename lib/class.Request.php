@@ -467,6 +467,14 @@ class Request extends HgBase
         return($this->_url_path);
     }
 
+    /**
+     * Gets whole current URL path.
+     * @return string
+     */
+    public function getFullUrlPath()
+    {
+        return trim($this->getBaseUri(true), '/') . '/' . g()->lang->detect() . '/' . trim($this->getUrlPath(), '/');
+    }
 
     /**
      * Getter for {@uses $_is_ajax}.
