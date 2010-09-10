@@ -473,7 +473,7 @@ class Request extends HgBase
      */
     public function getFullUrlPath()
     {
-        return trim($this->getBaseUri(true), '/') . '/' . g()->lang->detect() . '/' . trim($this->getUrlPath(), '/');
+        return trim(g()->req->getBaseUri(true), '/') . $_SERVER['PATH_INFO'];
     }
 
     /**
