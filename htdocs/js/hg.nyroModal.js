@@ -56,7 +56,7 @@ hg['nyroModalInit'].f = function()
             {
                 var ajax_i = hg['nyroModalInit'].ajax_i;
                 hg('ajaxDOMReady')(ajax_i);
-                content.addClass(hg['ajax'].data[ajax_i].class);
+                //content.addClass(hg['ajax'].data[ajax_i].class); // bad fix...
             }
             $('#nyroModalContent')
                 .find('form')
