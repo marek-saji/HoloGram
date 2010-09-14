@@ -640,9 +640,9 @@ abstract class Field implements IModelField
         }
     }
 
-    public function columndefinition()
+    public function columnDefinition()
     {
-        $sql = '"' . $this->getName() . '"' . $this->dbType();
+        $sql = '"' . $this->getName() . '" ' . $this->dbType();
 
         if ($this->notNull())
         {
@@ -1185,6 +1185,8 @@ class FInt extends Field
 
 /**
  * Enumeration field
+ *
+ * Enumerations are defined in {@uses $conf[enum]}
  * @author m.augustynowicz
  */
 class FEnum extends Field
@@ -1199,7 +1201,7 @@ class FEnum extends Field
 
         if (!array_key_exists($type_name, $enums))
         {
-            throw new HgException('Tried to create '.__CLASS__.' with non-existing enum `'.$type_name.'\'. Create one in conf[db][enum].');
+            throw new HgException('Tried to create '.__CLASS__.' with non-existing enum `'.$type_name.'\'. Create one in conf[enum].');
         }
 
         parent::__construct($name, $notnull, $default_value);
@@ -1915,7 +1917,20 @@ class FId extends Field
 
     public function columnDefinition()
     {
-        return ('"' . $this->getName() . '" ' . $this->dbType() . ($this->notNull() ? ' NOT NULL' : '') . ('' == $this->defaultValue(false) ? '' : ' DEFAULT ' . $this->defaultValue()));
+        $sql = '"' . $this->getName() . '" "' . $this->dbType() . '"';
+
+        if ($this->notNull())
+        {
+            $sql .= ' NOT NULL';
+        }
+
+        $def = $this->defaultValue();
+        if (null !== $def)
+        {
+            $sql .= ' DEFAULT ' . $this->defaultValue();
+        }
+
+        return $sql;
     }
 }
 
