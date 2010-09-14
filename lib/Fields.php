@@ -672,6 +672,20 @@ abstract class Field implements IModelField
     {
         $res = array();
 
+        // column type
+
+        $type = $this->dbType();
+        $type = strtolower($type);
+        $db_type = $def['typename'];
+        $db_type = strtolower($db_type);
+        $db_type_with_size = sprintf('%s(%s)', $db_type, @$this->_rules['max_length']);
+
+        if ($type != $db_type)
+        if ($type != $db_type_with_size)
+        {
+            $res['typename'] = $this->dbType();
+        }
+
         // NOT NULL
 
         $v = 'f';
@@ -687,13 +701,14 @@ abstract class Field implements IModelField
         {
             $v = $this->dbString($v);
         }
+        $ds_type = strtolower($this->dbType());
         // stand alone value
         if ($v !== $def['defval'])
         {
             // casted value
-            if ($v.'::'.$this->dbType() !== $def['defval'])
+            if ($v.'::'.$type !== $def['defval'])
                 // casted value with quoted type
-                if ($v.'::"'.$this->dbType().'"' !== $def['defval'])
+                if ($v.'::"'.$type.'"' !== $def['defval'])
                     $res['defval'] = $v;
         }
 
@@ -817,7 +832,7 @@ abstract class FStringBase extends Field
 
     public function dbType()
     {
-        if(isset($this->_rules['max_length']))
+        if (isset($this->_rules['max_length']))
         {
             if ($this->_rules['max_length'] === @$this->_rules['min_length'])
                 return "BPCHAR({$this->_rules['max_length']})";
@@ -1175,13 +1190,13 @@ class FInt extends Field
         switch($this->_rules['precision'])
         {
             case 2:
-                return ('SMALLINT');
+                return ('INT2');
             break;
             case 4:
-                return ('INTEGER');
+                return ('INT4');
             break;
             case 8:
-                return ('BIGINT');
+                return ('INT8');
             break;
         }
     }
@@ -1271,10 +1286,14 @@ class FEnum extends Field
     {
         $res = parent::checkType($def);
 
+        if (isset($res['typename']))
+        {
+            $res['typename'] = '"' . $res['typename'] . '"';
+        }
+
         if (isset($res['defval']))
         {
             $res['defval'] .= '::' . $this->_type_name;
-            var_dump($res['defval']);
         }
         return $res;
     }
@@ -1824,7 +1843,7 @@ class FBool extends Field implements IBoolean
 
     public function dbType()
     {
-        return ('BOOLEAN');
+        return 'BOOL';
     }
 }
 
@@ -1909,13 +1928,13 @@ class FId extends Field
             switch($this->_rules['precision'])
             {
                 case 2:
-                    return ('SMALLINT');
+                    return ('INT2');
                 break;
                 case 4:
-                    return ('INTEGER');
+                    return ('INT4');
                 break;
                 case 8:
-                    return ('BIGINT');
+                    return ('INT8');
                 break;
             }
     }
