@@ -642,7 +642,7 @@ abstract class Field implements IModelField
 
     public function columnDefinition()
     {
-        $sql = '"' . $this->getName() . '" ' . $this->dbType();
+        $sql = '"' . $this->getName() . '" "' . $this->dbType() . '"';
 
         if ($this->notNull())
         {
@@ -671,16 +671,32 @@ abstract class Field implements IModelField
     public function checkType($def)
     {
         $res = array();
+
+        // NOT NULL
+
         $v = 'f';
         if(isset($this->_rules['notnull']))
             $v = ($this->_rules['notnull'] === true ? 't' : 'f');
         if($def['notnull'] != $v)
             $res['notnull'] = $v;
-        $v = '';
-        if(isset($this->_rules['defval']))
-            $v = $this->_rules['defval'];
-        if($def['defval'] != $v && $v . "::character varying" !== $def['defval'])
-            $res['defval'] = $v;
+
+        // DEFAULT
+
+        $v = @$this->_rules['defval'];
+        if (null !== $v)
+        {
+            $v = $this->dbString($v);
+        }
+        // stand alone value
+        if ($v !== $def['defval'])
+        {
+            // casted value
+            if ($v.'::'.$this->dbType() !== $def['defval'])
+                // casted value with quoted type
+                if ($v.'::"'.$this->dbType().'"' !== $def['defval'])
+                    $res['defval'] = $v;
+        }
+
         return empty($res) ? false : $res;
     }
 
@@ -1251,13 +1267,20 @@ class FEnum extends Field
 
     public function checkType($def)
     {
-        return parent::checkType($def);
+        $res = parent::checkType($def);
+
+        if (isset($res['defval']))
+        {
+            $res['defval'] .= '::' . $this->_type_name;
+            var_dump($res['defval']);
+        }
+        return $res;
     }
 
 
     public function dbType()
     {
-        return '"' . $this->_type_name . '"';
+        return $this->_type_name;
     }
 
 
@@ -1651,12 +1674,22 @@ class FTimestamp extends Field
 
     public function checkType($def)
     {
-        if(false === ($res = parent::checkType($def)))
+        // dbString() uppercases function names
+        switch (strtoupper($def['defval']))
+        {
+            case 'NOW()' :
+                $def['defval'] = strtoupper($def['defval']);
+        }
+
+        if (false === ($res = parent::checkType($def)))
             $res = array();
-        if($def['typename'] != 'timestamp')
+
+        if ($def['typename'] != 'timestamp')
             $res['typename'] = $this->dbType();
-        if($def['type_specific'] != '-1')
+
+        if ($def['type_specific'] != '-1')
             $res['typename'] = $this->dbType();
+
         return (empty($res) ? false : $res);
     }
 
