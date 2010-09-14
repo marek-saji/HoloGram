@@ -545,7 +545,7 @@ abstract class Field implements IModelField
                         {
                             throw new HgException("Automatic uses default value that is not set");
                         }
-                        $value = "'" . $this->dbString($value) . "'";
+                        $value = $this->dbString($value);
                     }
                     else
                         return false;
@@ -1205,9 +1205,6 @@ class FEnum extends Field
         }
 
         parent::__construct($name, $notnull, $default_value);
-        
-        if(!empty($this->_rules['defval']))
-            $this->_rules['defval'] = trim($this->dbString($this->_rules['defval']));
 
         $this->_type_name = $type_name;
         $this->_values = & $enums[$type_name];
@@ -1247,60 +1244,28 @@ class FEnum extends Field
         }
         else
         {
-            return " '" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
+            return "'" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
         }
     }
+
 
     public function checkType($def)
     {
-        $res = array();
-        $v = 'f';
-        if(isset($this->_rules['notnull']))
-            $v = ($this->_rules['notnull'] === true ? 't' : 'f');
-        if($def['notnull'] != $v)
-            $res['notnull'] = $v;
-        $v = '';
-        if(isset($this->_rules['defval']))
-            $v = $this->_rules['defval'];
-        if($def['defval'] != $v && $v . "::" . $this->_type_name !== $def['defval'])
-            $res['defval'] = $v;
-        return empty($res) ? false : $res;
+        return parent::checkType($def);
     }
+
 
     public function dbType()
     {
-        return $this->_type_name;
+        return '"' . $this->_type_name . '"';
     }
+
 
     public function columnDefinitionAdditionalQuery()
     {
-        $checking_query = sprintf('SELECT COUNT(1) from pg_type WHERE typname = \'%s\'', $this->_type_name);
-        if(! g()->db->getOne($checking_query))
-        {
-            $sql_values = "'".join("','", $this->_values)."'";
-            return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
-                    $this->_type_name, $sql_values );
-        }
-        else
-            return false;
-    }
-    
-    public function columndefinition()
-    {
-        $sql = '"' . $this->getName() . '"' . $this->dbType();
-
-        if ($this->notNull())
-        {
-            $sql .= ' NOT NULL';
-        }
-
-        $def = $this->defaultValue();
-        if (null !== $def)
-        {
-            $sql .= ' DEFAULT' . $this->dbString($def);
-        }
-
-        return $sql;
+        $sql_values = "'".join("','", $this->_values)."'";
+        return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
+                $this->_type_name, $sql_values );
     }
 }
 
