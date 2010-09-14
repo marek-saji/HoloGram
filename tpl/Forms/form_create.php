@@ -66,26 +66,39 @@ if ($err_handling) :
 
 <?php
 if($ajax)
+{
     g()->view->addOnLoad(<<< JS
-    $('#{$id}').submit(function(e)
-    {
-        $(this).find('.sending-form-message').show();
-        var ret = hg('form_validate')('{$ident}');
-        if (!ret)
+        $('#{$id}').submit(function(e)
         {
-            $(this).find('.sending-form-message').hide();
-            var first_invalid = $('.invalid:input:first');
-            if (0 < first_invalid.length)
+            var form = $(this);
+            var msg = form.find('.sending-form-message');
+            var buttons = form.find('input[type="submit"], input[type="reset"]');
+            msg.show();
+            buttons
+                .attr('disabled', 'disabled')
+                .addClass('disabled');
+
+            var ret = hg('form_validate')('{$ident}');
+            if (!ret)
             {
-                var pos = first_invalid.offset().top - 10;
-                (pos < 0) && (pos = 0);
-                $('body').animate({scrollTop: pos}, 'slow');
+                msg.hide();
+                buttons
+                    .removeAttr('disabled')
+                    .removeClass('disabled');
+
+                var first_invalid = $('.invalid:input:first');
+                if (0 < first_invalid.length)
+                {
+                    var pos = first_invalid.offset().top - 10;
+                    (pos < 0) && (pos = 0);
+                    $('body').animate({scrollTop: pos}, 'slow');
+                }
             }
-        }
-        return ret;
-    });
+            return ret;
+        });
 JS
     );
+}
 
 endif; // handle errors
 

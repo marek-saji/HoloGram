@@ -30,10 +30,8 @@ if (!isset($data))
         $data = $value;
     }
 }
-?>
 
-<label>
-<?php
+
 $input_vars = array_merge($____local_variables, array(
     'data' => $value,
     'err_handling' => false,
@@ -46,11 +44,20 @@ if (isset($data) && (string)$value === (string)$data)
     $input_vars['attrs']['checked'] = 'checked';
 }
 
-$attrs = $t->inc('Forms/input', $input_vars);
-echo $label;
-?>
-</label>
 
-<?php
-return $attrs;
+// render
+
+if ($label)
+{
+    printf("<label for=\"%s\">\n", $f->uniqueId(false));
+}
+
+$return_me = $t->inc('Forms/input', $input_vars);
+
+if ($label)
+{
+    printf("%s\n</label>\n", $label);
+}
+
+return $return_me;
 
