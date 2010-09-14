@@ -640,9 +640,9 @@ abstract class Field implements IModelField
         }
     }
 
-    public function columndefinition()
+    public function columnDefinition()
     {
-        $sql = '"' . $this->getName() . '"' . $this->dbType();
+        $sql = '"' . $this->getName() . '" ' . $this->dbType();
 
         if ($this->notNull())
         {
@@ -671,16 +671,32 @@ abstract class Field implements IModelField
     public function checkType($def)
     {
         $res = array();
+
+        // NOT NULL
+
         $v = 'f';
         if(isset($this->_rules['notnull']))
             $v = ($this->_rules['notnull'] === true ? 't' : 'f');
         if($def['notnull'] != $v)
             $res['notnull'] = $v;
-        $v = '';
-        if(isset($this->_rules['defval']))
-            $v = $this->_rules['defval'];
-        if($def['defval'] != $v && $v . "::character varying" !== $def['defval'])
-            $res['defval'] = $v;
+
+        // DEFAULT
+
+        $v = @$this->_rules['defval'];
+        if (null !== $v)
+        {
+            $v = $this->dbString($v);
+        }
+        // stand alone value
+        if ($v !== $def['defval'])
+        {
+            // casted value
+            if ($v.'::'.$this->dbType() !== $def['defval'])
+                // casted value with quoted type
+                if ($v.'::"'.$this->dbType().'"' !== $def['defval'])
+                    $res['defval'] = $v;
+        }
+
         return empty($res) ? false : $res;
     }
 
@@ -1187,6 +1203,8 @@ class FInt extends Field
 
 /**
  * Enumeration field
+ *
+ * Enumerations are defined in {@uses $conf[enum]}
  * @author m.augustynowicz
  */
 class FEnum extends Field
@@ -1201,7 +1219,7 @@ class FEnum extends Field
 
         if (!array_key_exists($type_name, $enums))
         {
-            throw new HgException('Tried to create '.__CLASS__.' with non-existing enum `'.$type_name.'\'. Create one in conf[db][enum].');
+            throw new HgException('Tried to create '.__CLASS__.' with non-existing enum `'.$type_name.'\'. Create one in conf[enum].');
         }
 
         parent::__construct($name, $notnull, $default_value);
@@ -1220,7 +1238,7 @@ class FEnum extends Field
     {
         $err = array();
 
-        if (!array_key_exists($value, $this->_values))
+        if (false === array_search($value, $this->_values))
         {
             $err['invalid'] = true;
         }
@@ -1251,16 +1269,51 @@ class FEnum extends Field
 
     public function checkType($def)
     {
-        return parent::checkType($def);
+        $res = parent::checkType($def);
+
+        if (isset($res['defval']))
+        {
+            $res['defval'] .= '::' . $this->_type_name;
+            var_dump($res['defval']);
+        }
+        return $res;
     }
 
 
     public function dbType()
     {
-        return '"' . $this->_type_name . '"';
+        return $this->_type_name;
     }
 
 
+    /**
+     * Part of SQL query used when creating 
+     * @author m.augustynowicz
+     */
+    public function columnDefinition()
+    {
+        $sql = '"' . $this->getName() . '" "' . $this->dbType() . '"';
+
+        if ($this->notNull())
+        {
+            $sql .= ' NOT NULL';
+        }
+
+        $def = $this->defaultValue();
+        if (null !== $def)
+        {
+            $sql .= ' DEFAULT ' . $this->dbString($def);
+        }
+
+        return $sql;
+    }
+
+
+    /**
+     * SQL query to be executed before creating model with that field
+     * @author m.augustynowicz
+     * @todo check whether type already exist
+     */
     public function columnDefinitionAdditionalQuery()
     {
         $sql_values = "'".join("','", $this->_values)."'";
@@ -1653,12 +1706,22 @@ class FTimestamp extends Field
 
     public function checkType($def)
     {
-        if(false === ($res = parent::checkType($def)))
+        // dbString() uppercases function names
+        switch (strtoupper($def['defval']))
+        {
+            case 'NOW()' :
+                $def['defval'] = strtoupper($def['defval']);
+        }
+
+        if (false === ($res = parent::checkType($def)))
             $res = array();
-        if($def['typename'] != 'timestamp')
+
+        if ($def['typename'] != 'timestamp')
             $res['typename'] = $this->dbType();
-        if($def['type_specific'] != '-1')
+
+        if ($def['type_specific'] != '-1')
             $res['typename'] = $this->dbType();
+
         return (empty($res) ? false : $res);
     }
 
