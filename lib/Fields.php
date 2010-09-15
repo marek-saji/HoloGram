@@ -1969,12 +1969,6 @@ class FId extends Field
             $sql .= ' NOT NULL';
         }
 
-        $def = $this->defaultValue();
-        if (null !== $def)
-        {
-            $sql .= ' DEFAULT ' . $this->defaultValue();
-        }
-
         return $sql;
     }
 }
