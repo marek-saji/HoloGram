@@ -642,7 +642,7 @@ abstract class Field implements IModelField
 
     public function columnDefinition()
     {
-        $sql = '"' . $this->getName() . '" "' . $this->dbType() . '"';
+        $sql = '"' . $this->getName() . '" ' . $this->dbType();
 
         if ($this->notNull())
         {
@@ -1251,7 +1251,7 @@ class FEnum extends Field
     {
         $err = array();
 
-        if (!array_key_exists($value, $this->_values))
+        if (false === array_search($value, $this->_values))
         {
             $err['invalid'] = true;
         }
@@ -1303,6 +1303,34 @@ class FEnum extends Field
     }
 
 
+    /**
+     * Part of SQL query used when creating 
+     * @author m.augustynowicz
+     */
+    public function columnDefinition()
+    {
+        $sql = '"' . $this->getName() . '" "' . $this->dbType() . '"';
+
+        if ($this->notNull())
+        {
+            $sql .= ' NOT NULL';
+        }
+
+        $def = $this->defaultValue();
+        if (null !== $def)
+        {
+            $sql .= ' DEFAULT ' . $this->dbString($def);
+        }
+
+        return $sql;
+    }
+
+
+    /**
+     * SQL query to be executed before creating model with that field
+     * @author m.augustynowicz
+     * @todo check whether type already exist
+     */
     public function columnDefinitionAdditionalQuery()
     {
         $sql_values = "'".join("','", $this->_values)."'";
@@ -1934,7 +1962,7 @@ class FId extends Field
 
     public function columnDefinition()
     {
-        $sql = '"' . $this->getName() . '" "' . $this->dbType() . '"';
+        $sql = '"' . $this->getName() . '" ' . $this->dbType();
 
         if ($this->notNull())
         {
