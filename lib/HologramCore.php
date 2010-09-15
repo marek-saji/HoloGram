@@ -1439,18 +1439,15 @@ abstract class Controller extends HgBase implements IController
      *
      * @param string $file file name to get without extension (excluding $type=='img')
      * @param string $type file type, can be js|css|img|tpl
+     * @param bool $assert fail, when file does not exist
      * @return false|string when $type=='tpl' returns absolute path to the template
-     *         or false, when it doesn't exist; for other types -- returns URI
+     *         or false, when it doesn't exist and $assert=false; for other types -- returns URI
      *         to the file, and false if it does not exist (and raises NOTICE
      *         when debug is allowed).
      */
-    public function file($file, $type)
+    public function file($file, $type, $assert=true)
     {
         $argv = func_get_args();
-        if(isset($argv[2]))
-            $return_false_on_404 = g('Functions')->anyToBool($argv[2]);
-        else
-            $return_false_on_404 = false;
         $return_real_path = false;
         switch($type)
         {
@@ -1466,7 +1463,6 @@ abstract class Controller extends HgBase implements IController
                 break;
             case 'tpl':
                 $base_bases = array('tpl/%s.php');
-                $return_false_on_404 = true;
                 $return_real_path = true;
                 break;
             default:
@@ -1505,9 +1501,9 @@ abstract class Controller extends HgBase implements IController
         // file not found
         if (null === $c)
         {
-            if ($return_false_on_404)
+            if (false == $assert)
                 return false;
-            else if (g()->conf['allow_debug'])
+            else
                 trigger_error("File $file not found!", E_USER_NOTICE);
         }
 
