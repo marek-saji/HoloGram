@@ -157,6 +157,10 @@ class View extends HgBase implements IView
         if (!isset($this->_metas['generator']))
             $this->setMeta('generator', 'Hologram');
 
+        // don't use any backward compatibility mode in IE>=8
+        if (!isset($this->_headers['X-UA-Compatible']))
+            $this->addHeader('X-UA-Compatible', 'IE=edge');
+
         if (!isset($this->_headers['content-type']))
             $this->setEncoding();
 
