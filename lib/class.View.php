@@ -59,11 +59,19 @@ class View extends HgBase implements IView
         // include some javascript by default
 
         $js_debug = g()->debug->on('js');
-        // jQuery itself
-        $jquery_version = '1.4.1';
         $min = $js_debug ? '.min' : '';
+
+        // jQuery itself
+
+        $jquery_version = '1.4.1';
+        // this will raise a warning, when file is absent. we should check for
+        // that, even when using extarnal CDNs
+        $jquery_file = $this->_renderer->file(
+                'jquery-'.$jquery_version.$min, 'js', false );
         if (g()->debug->on('disable','externalcdn'))
-            $this->addJs($this->_renderer->file('jquery-'.$jquery_version.$min,'js'));
+        {
+            $this->addJs($jquery_file);
+        }
         else
         {
             $protocol = g()->req->isSSL() ? 'https' : 'http';
@@ -129,9 +137,10 @@ class View extends HgBase implements IView
             // html5.js is for, well.. html5
             // http://code.google.com/p/html5shiv/
 
+            $html5_shiv_file = $this->_renderer->file('html5','js');
             if (g()->debug->on('disable','externalcdn'))
             {
-                $attrs['src'] = $this->_renderer->file('html5','js');
+                $attrs['src'] = $html5_shiv_file;
             }
             else
             {
