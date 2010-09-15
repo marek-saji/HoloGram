@@ -336,7 +336,6 @@ class View extends HgBase implements IView
         }
         else
         {
-            $type = strtolower($type);
             $this->_headers[$type] = $value;
         }
     }
