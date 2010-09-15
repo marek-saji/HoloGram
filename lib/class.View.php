@@ -110,26 +110,32 @@ class View extends HgBase implements IView
             }
         }
 
-        // this should make IE behave a litte better
-        // IE8.js is for CSS in general
-        // html5.js is for, well.. html5
-        /*
-        $ie7js_version = '2.1(beta4)';
-        $attrs = array('type' => 'text/javascript');
-        $attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/'.$ie7js_version.'/IE9.js';
-        $this->addInHead(sprintf("<!--[if lt IE 9]>\n%s<![endif]-->",
-            $this->_tag('script', $attrs)
-        ));
-        */
+
+        // these should make IE behave a litte better
+
+        // ie-css3 javascript library: fix some CSS selectors
+        // http://www.keithclark.co.uk/labs/ie-css3/
+        // NOTE: there's also ie-css3 htc adding support for some attributes
+        //       laying in css/
+        //       http://fetchak.com/ie-css3/
+
+        $ie_css3_js_version = '0.9.7b';
+        $ie_css3_js_fn = sprintf('ie-css3-%s.min', $ie_css3_js_version);
+        $this->addJs($this->_renderer->file($ie_css3_js_fn,'js'));
+
+        // fixing HTML5 in less-keen browsers
         if ($this->_is_html5)
         {
+            // html5.js is for, well.. html5
+            // http://code.google.com/p/html5shiv/
+
             if (g()->debug->on('disable','externalcdn'))
             {
                 $attrs['src'] = $this->_renderer->file('html5','js');
             }
             else
             {
-            $protocol = g()->req->isSSL() ? 'https' : 'http';
+                $protocol = g()->req->isSSL() ? 'https' : 'http';
                 $attrs['src'] = $protocol.'://html5shiv.googlecode.com/svn/trunk/html5.js';
             }
             $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
