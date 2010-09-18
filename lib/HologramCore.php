@@ -698,7 +698,6 @@ JS;
 class Kernel
 {
     private $__instances;
-    private $__refresh;
     protected $_session; //
     public $db;
     public $conf = array();
@@ -931,28 +930,8 @@ class Kernel
 
         return $object;
     }
-    
-    
-    /**
-    * Rejestruje kontroler w liscie elementow wymagajacych odswiezenia w kernelu.
-    */
-    public function register4Refresh(Controller $controller)
-    {
-        $this->__refresh[$controller->level()][]=$controller;
-    }
-    
-    /**
-    * Zwraca zgromadzona liste nieswiezych kontrolerow.
-    */
-    public function getRottenControllers()
-    {
-        $res = array();
-        foreach($this->__refresh as &$r)
-            $res = array_merge($res, $r);
-        return($res);
-    }
-    
-    
+
+
     /**
     * Dodaje informacje do wyświetlenia użytkownikowi.
     * @author m.augustynowicz
@@ -1586,79 +1565,10 @@ abstract class Controller extends HgBase implements IController
         return($this->__parent);
     }
 
-    public function needRefresh()
-    {
-        g()->register4Refresh($this);
-    }
-    
-    
-    /**
-    * @param $actions array badz pojedyncza akcja okreslona relatywnie do bierzacego kontrolera
-    * @example 
-    *     $this->link(array('table/paginate', 'user/id=6'));
-    */
-    public function href($actions='')
-    {
-        if (!is_array($actions))
-            $actions = array($actions);
-        if ($url = $this->url())
-            $url .= '/';
-        return g()->req->getBaseUri().$url.implode(';'.$url,$actions);
-    }
-    
+
     public function getName()
     {
         return($this->__name);
-    }    
-    
-    /**
-     * Prints Controller-centered backtrace.
-     * DEPRECATED in favour of Debug::trace()
-     * @todo remove this?
-     * @author p.piskorski
-     */
-    public function dumpBranch()
-    {
-        $dbbt = debug_backtrace();
-        array_shift($dbbt);
-        $currc = NULL;
-        $line = 0;
-        
-        echo "<table border=\"2px\" frame=\"border\" rules=\"groups\" style=\"font-family:monospace\">\n<colgroup style=\"width:50px\" /><colgroup /><colgroup />\n<tr style=\"background-color:#eee\"><th>no.</th><th>function</th><th>called</th></tr><tbody>";
-        foreach($dbbt as $trace)
-        {
-            $file = '&nbsp;';
-            if (isset($trace['file']))
-                $file =  substr($trace['file'],strpos($trace['file'],'lib'))."  {$trace['line']}";
-        
-            if (!isset($trace['object']))
-            {
-                $line ++;
-                echo "<tr><td>".substr(100+$line,1)."</td><td>{$trace['function']}()</td><td style=\"font-style:italic\"> $file</td></tr>\n";
-                continue;
-            }
-            if ($trace['object'] instanceof Kernel)
-            {
-                $line ++;
-                echo "<tr><td colspan=\"3\" style=\"padding-bottom:10px; font-size:large; text-indent:50px;\"><strong>".$currc->path().'</strong> <small>['.get_class($currc)."]</small></td></tr></tbody><tbody>";
-                echo "<tr><td>".substr(100+$line,1)."</td><td>{$trace['class']} {$trace['type']} {$trace['function']}()</td><td style=\"font-style:italic\"> $file</td></tr>\n";
-                $line ++;
-                //$currc = $trace['object'];                
-                continue;
-            }
-            if (!$trace['object'] instanceof IController)
-                continue;
-            if (NULL === $currc)
-                $currc = $trace['object'];
-            if ($currc !== $trace['object'])
-            {
-                $currc = $trace['object'];
-            }
-            $line ++;
-            echo "<tr><td>".substr(100+$line,1)."</td><td>{$trace['class']} {$trace['type']} {$trace['function']}()</td><td style=\"font-style:italic\"> $file</td></tr>\n";
-        }
-        //echo "<tr><td colspan=\"3\" style=\"padding:5px\"><strong>".$currc->path().'</strong> <small>['.get_class($currc)."]</small></td></tr>";
-        echo "</tbody></table>";
     }
 
     public function redirect($url='',$with_controllers=true, $with_base_uri=true)
@@ -1877,45 +1787,6 @@ abstract class Controller extends HgBase implements IController
     }
 
 
-    /**
-     * @param string $current
-     * @param string Request $req
-     * @param boolean $really_route or maybe just check whether it would route?
-     *
-     * @return boolean
-     */
-    protected function _routeAction($current, Request $req, $really_route=true)
-    {
-        if (NULL === ($child = $this->getChild($current)))
-            return(false);
-
-        if (!$really_route)
-            return true;
-        
-        if (method_exists($this,$callback = "onActionRouted2$current"))
-            if (false === $this->$callback())
-                return true;
-        if (method_exists($this,"onActionRouted"))
-            if (false === $this->onActionRouted($current))
-                return true;
-                
-        $child->process($req);
-        
-        return(true);
-    }
-    
-
-    protected function _handle(&$req, &$current, $route=true)
-    {
-        if ($route && $this->_routeAction($current,$req))
-            return true;
-            
-        $action = $current;
-        $params = (array) $req->getParams();
-        return $this->launchAction($action, $params);
-    }    
-    
-    
     /**
      * Link to action in current controller
      * @author m.augustynowicz
