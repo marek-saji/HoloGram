@@ -2961,6 +2961,51 @@ abstract class Component extends Controller
 
 
     /**
+     * Get param from this component's parent, if it's of certain type
+     * and certain action is to be launched.
+     * @author m.augustynowicz
+     *
+     * @param string $parent_name name of the parent
+     * @param string|null $parent_action name of action, null or empty string
+     *        for default action
+     * @param int|string $key param name or numeric key
+     *
+     * @return string|null|false
+     *         - param value;
+     *         - null if param is not set
+     *         - false when parent is not of requested type;
+     */
+    public function getParentParam($parent_name, $parent_action=null, $key=0)
+    {
+        $parent = $this->getParent();
+
+        // null and empty strings denotes default action
+        if (!$parent_action)
+        {
+            $parent_action = $this->_default_action;
+        }
+
+        // check whether parent matches
+        if ($parent_name != $parent->getName())
+        {
+            return false;
+        }
+
+        // check whether parent's action matches
+        // we use _action_to_launch as at this point parent's action hasn't
+        // been launched yet
+        if ($parent_action != $parent->_action_to_launch)
+        {
+            return false;
+        }
+
+
+        // returns null when $key is not set
+        return $parent->getParam($key);
+    }
+
+
+    /**
     * Renders a component. A template named after the controller name is included.
     */
     public function render()
