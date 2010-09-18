@@ -813,11 +813,12 @@ class Request extends HgBase
      * @return mixed found element's value
      *               or false, it it does not exist
      */
-    private function __seekTo($key, array &$arr = null)
+    public function seekTo($key, array &$arr = null)
     {
         if (null === $arr)
             $arr = & $this->_rtree['children'];
-        for (reset($arr) ; key($arr)!=$key && false!==key($arr) ; next($arr) );
+        for (reset($arr) ; key($arr)!=$key && null!==key($arr) ; next($arr) );
+        $this->_current = $key;
         return current($arr);
     }
 
@@ -836,7 +837,7 @@ class Request extends HgBase
         {
             $this->_rtree = & $this->_rtree['children'][$k];
         }
-        $this->__seekTo($this->_current);
+        $this->seekTo($this->_current);
     }
 
 
@@ -858,7 +859,7 @@ class Request extends HgBase
         }
         else
         {
-            $this->__seekTo($this->_current);
+            $this->seekTo($this->_current);
             $fn($this->_rtree['children']);
             $this->_current = key($this->_rtree['children']);
         }

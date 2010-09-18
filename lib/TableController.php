@@ -22,7 +22,9 @@ class TableController extends Component
         parent::__construct($args);
         extract($args);
         $this->_subject = $subject;
-        
+
+        $this->init();
+
     }
     
     public function addRecordAction($url, $params, $contents)
@@ -42,15 +44,8 @@ class TableController extends Component
                 $this->page_size = 1;
         }
     }
-    
-    
-    public function process(Request $req)
-    {
-        parent::process($req);
-        $this->init();
 
-    }
-    
+
     public function url2a($act='', array $params=array())
 	{
         if ($act)
