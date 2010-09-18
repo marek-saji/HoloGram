@@ -1257,6 +1257,12 @@ abstract class Controller extends HgBase implements IController
 
     protected $_default_action = 'default';
 
+    /**
+     * @var Component component that should handle rendering
+     *      should be one of $__components
+     */
+    protected $_subrenderer = null;
+
     protected $_template = '';
     protected $_launched_action = null;
 
@@ -1615,14 +1621,50 @@ abstract class Controller extends HgBase implements IController
         //echo "<tr><td colspan=\"3\" style=\"padding:5px\"><strong>".$currc->path().'</strong> <small>['.get_class($currc)."]</small></td></tr>";
         echo "</tbody></table>";
     }
-    
+
     public function redirect($url='',$with_controllers=true, $with_base_uri=true)
     {
         if (is_array($url))
             $url = call_user_func_array(array($this,'url2c'), $url);
         g()->redirect($url, $with_base_uri);
     }
-    
+
+
+    /**
+     * Let one of children handle rendering
+     *
+     * @param string|Controller $ctrl whether name or object of controller
+     *        that should be used to render the page. Have to be a valid child
+     *        of $this
+     * @return boolean false, when $ctrl is not a valid child
+     */
+    protected function _passRenderingTo($ctrl)
+    {
+        if ($ctrl instanceof Controller)
+        {
+            if (!$this->isChild($ctrl))
+                return false;
+            else
+                $child = $ctrl;
+        }
+        else
+        {
+            $child = $this->getChild($ctrl);
+        }
+
+        if ($child)
+        {
+            $this->_subrenderer = $child;
+            return true;
+        }
+        else
+        {
+            $this->_subrenderer = null;
+            return false;
+        }
+    }
+
+
     /**
      * Sets template that will be used to render the component
      * @author m.augustynowicz
@@ -2715,7 +2757,14 @@ abstract class Component extends Controller
             printf('<!-- %s::render() BEGIN -->', $this->path() );
         }
 
-        $this->inc($this->_template);
+        if (null === $this->_subrenderer)
+        {
+            $this->inc($this->_template);
+        }
+        else
+        {
+            $this->_subrenderer->render();
+        }
 
         if (g()->debug->on('view'))
         {
