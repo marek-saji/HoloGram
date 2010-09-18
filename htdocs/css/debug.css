@@ -68,25 +68,36 @@
 
 #pre-display_stuff.foo #pre-display_stuff_content
 {
+    font-family: sans-serif;
     height: 100%;
     overflow: auto;
     margin: 0 1ex;
 } 
 
-#pre-display_stuff_content .debug-action-output
+#pre-display_stuff_content .debug-output-block
 {
     border-left: #ccc thin solid;
     padding-left: 1ex;
     margin: 0 0 1em 0;
 }
-#pre-display_stuff_content .debug-action-output > h3
+#pre-display_stuff_content .debug-output-block > h1,
+#pre-display_stuff_content .debug-output-block > h2,
+#pre-display_stuff_content .debug-output-block > h3,
+#pre-display_stuff_content .debug-output-block > h4,
+#pre-display_stuff_content .debug-output-block > h5,
+#pre-display_stuff_content .debug-output-block > h6
 {
-    font-size: .8em;
     color: black;
     margin: 0;
     padding: 0;
     font-weight: bold;
 }
+#pre-display_stuff_content .debug-output-block > h1 { font-size: 1.3em; }
+#pre-display_stuff_content .debug-output-block > h2 { font-size: 1.2em; }
+#pre-display_stuff_content .debug-output-block > h3 { font-size: 1.1em; }
+#pre-display_stuff_content .debug-output-block > h4 { font-size: 1.0em; }
+#pre-display_stuff_content .debug-output-block > h5 { font-size: 0.9em; }
+#pre-display_stuff_content .debug-output-block > h6 { font-size: 0.8em; }
 
 #debug_toolbar
 {
