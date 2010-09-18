@@ -22,9 +22,29 @@ class TableController extends Component
         parent::__construct($args);
         extract($args);
         $this->_subject = $subject;
-        
+
+        $this->init();
+
     }
-    
+
+
+    /**
+     * Always allow access to this controller
+     *
+     * It's used only in DataSetController so far.
+     * @author m.augustynowicz
+     *
+     * @param string $action action name
+     * @param array $params request params
+     *
+     * @return boolean true. allow access
+     */
+    protected function _onAction($action, array &$params)
+    {
+        return true;
+    }
+
+
     public function addRecordAction($url, $params, $contents)
     {
         $this->_actions[] = compact('url','params','contents');
@@ -42,15 +62,8 @@ class TableController extends Component
                 $this->page_size = 1;
         }
     }
-    
-    
-    public function process(Request $req)
-    {
-        parent::process($req);
-        $this->init();
 
-    }
-    
+
     public function url2a($act='', array $params=array())
 	{
         if ($act)
