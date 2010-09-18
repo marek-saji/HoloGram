@@ -1,7 +1,7 @@
 <?php
 define('DEFAULT_PAGE_SIZE',20);
 class TableController extends Component
-{   
+{
     public $page_size = DEFAULT_PAGE_SIZE;
     public $page = 0;
     public $next = false;
@@ -10,13 +10,13 @@ class TableController extends Component
     public $records_count = 0;
     public $first_record = 0;
     public $last_record = 0;
-    
+
     protected $_subject;
     protected $_default_action='Get';
     protected $_actions=array();
 
     private $__initialized=false;
-    
+
     public function __construct($args)
     {
         parent::__construct($args);
@@ -50,7 +50,6 @@ class TableController extends Component
         $this->_actions[] = compact('url','params','contents');
     }
 
-
     public function actionGet($args=NULL)
     {
         if (isset($args[0]))
@@ -78,10 +77,10 @@ class TableController extends Component
         }
         $p = substr($p,0,-1);
 
-        
+
         return(trim($this->getParent()->url2a(NULL))."/".$this->getName()."$act{$p}");
     }
-    
+
     public function render()
     {
         if (!$this->__initialized)
@@ -99,20 +98,20 @@ class TableController extends Component
                 'records_count'=>$this->records_count
             )
         );
-        */  
+        */
         if(!$this->_action)
             $tpl = $this->_default_action; //strtolower(substr(get_class($this),0,-10));
         else
             $tpl = $this->_action;
         //var_dump($tpl);
         $this->inc(strtolower($tpl));
-       
+
     }
 
     public function init()
     {
         $this->__initialized = true;
-        
+
         $this->records_count = (int) $this->_subject->getCount();
         $this->pages_count = (int) ceil($this->records_count/$this->page_size);
 
@@ -120,12 +119,12 @@ class TableController extends Component
             $this->page=0;
         if ($this->page>0)
             $this->prev = $this->page-1;
-            
+
         if ($this->page >= $this->pages_count)
             $this->page = $this->pages_count;
         if ($this->page < $this->pages_count-1)
             $this->next = $this->page+1;
-        
+
         $this->first_record = $this->page * $this->page_size;
         $this->last_record = ($this->page+1) * $this->page_size;
         if ($this->last_record > $this->records_count)
@@ -137,7 +136,7 @@ class TableController extends Component
         $this->_subject->setMargins($this->first_record, $this->last_record);
         $this->_subject->exec();
     }
-    
+
     public function page($x)
     {
         if ($this->page_size!=DEFAULT_PAGE_SIZE)
@@ -145,7 +144,7 @@ class TableController extends Component
         else
             return(array($x));
     }
-    
+
     protected function _actionParams(&$record, &$pk, &$params)
     {
         $res = g()->conf['link_split'];
@@ -178,7 +177,7 @@ class TableController extends Component
             }
         }
         return(substr($res,0,-1));
-        
+
     }
-    
+
 }
