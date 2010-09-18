@@ -7,28 +7,46 @@
  * @package hologram2
  */
 
+
+
 /**
- * Plik implementujacy klase z wyjatkami
+ * HoloGram exceptions
  * @package hologram2
  */
 require_once(HG_DIR.'lib/class.HgException.php');
 
+
+
 /**
- * Magiczna funkcja "na wszelki wypadek" do ladowania klas, jesli nie istnieja
+ * Autoloading's performance is not really great, so we'll throw exceptions
+ * if anybody tries that
  * @author m.augustynowicz
  * @uses $kernel
- * @param string $name nazwa zadanej funkcji
+ *
+ * @param string $name class or interface name
+ *
  * @return void
  */
 function __autoload($name)
 {
-    global $kernel;
-    if (is_object($kernel) && $kernel->conf['allow_debug'])
-        print("System Error #000, autoload called: no $name found! ZOMG!");
     throw new Exception("System Error #000, autoload called: no $name found! ZOMG!");
 }
 
-function g($name='', $type="class", $args=array())
+
+
+/**
+ * Object Factory, wrapper for Kernel::get()
+ * @author p.piskorski
+ * @author m.augustynowicz
+ * @uses $kernel
+ *
+ * @param string $name class name (without suffix)
+ * @param string $type class name suffix
+ * @param array $args
+ *
+ * @return HgBase
+ */
+function g($name='', $type='class', $args=array())
 {
     global $kernel;
     if (empty($kernel))
@@ -39,19 +57,24 @@ function g($name='', $type="class", $args=array())
 
 
 ////////////////////////////////////////////////////////////////////////
-///////////////////////////interfejsy///////////////////////////////////
+////////////////////////// interfaces //////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
 
 /**
- * Interface for classes used to process user's requests.
+ * Interface for classes that can be used to process user's requests.
+ *
  *
  * Possible callbacks in classes implementing this interface:
  *
- * action{ActionName}(array $params)
- *      action other than defaultAction that can be called from process().
- *      launching an action() sets $this->_template to lowercased action name,
- *      You can override this using _setTemplate().
+ * * action{ActionName}(array $params)
+ *
+ *   action other than defaultAction that can be called with launchAction().
+ *   launching an action sets $this->_template to lowercased action name,
+ *   You can override this using _setTemplate().
+ *
+ *   - $params are request params
+ *   - return value is ignored
  *
  * For (lot of) more callbacks see Component
  */
@@ -85,139 +108,188 @@ interface IController
     public function launchAction($action, array &$params=array());
 
     /**
-     * Getter for launched action name
-     * @return string|null
+     * Getter for launched action's name
+     * @return string|null null, when no action has been launched yet
      */
     public function getLaunchedAction();
-    
+
     /**
-    * Renderuje controler. Zwraca odpowiadajacy mu kod xhtml (albo inny). 
-    */
+     * Render controller (without lauout and such)
+     * @return string rendered code (html, xml, text etc)
+     */
     public function render();
-    
+
     /**
-    * Rejestruje komponent w liscie elementow wymagajacych odswiezenia w kernelu.
-    */
-    public function needRefresh();
-    
-    /**
-    * @param $actions array badz pojedyncza akcja okreslona relatywnie do bierzacego kontrolera
-    * @example 
-    *     $this->link(array('table/paginate', 'user/id=6'));
-    */
-    public function href($actions='');
-    
+     * Getter for controller's name
+     * @return string controller name
+     */
     public function getName();
-    
+
+    /**
+     * Getter for controller's parent
+     * @return IController controller's parent
+     */
     public function getParent();
-    
+
     /**
-    * Adds a child controller (a subcontroller)
-    * @param Controller|string $controller to add
-    *        (object or name to pass to Kernel::get())
-    * @param null|string|array $name_or_args if string passed as $controller,
-    *        this will be used to initialize $controller,
-    *        null -- use lowercased $controller as name
-    *        string -- use as name
-    *        array -- pass to $controller's constructor
-    * @return the $controller itself (to allow chainig)
-    */
+     * Adds a child controller (a subcontroller)
+     *
+     * usages: addChild(string)
+     *         addChild(string, array)
+     *         addChild(IController)
+     * @param IController|string $controller to add
+     *        (object or name to pass to Kernel::get())
+     * @param null|string|array $name_or_args
+     *        null -- use lowercased $controller as name;
+     *        string -- use as name for $controller;
+     *        array -- pass to $controller's constructor;
+     * @return the $controller itself (to allow chainig)
+     */
     public function addChild($controller, $name_or_args=null);
-    
+
     /**
-    * Checks if given controlelr 
-    * @param $controller A controller to look for, or a string with controller name. 
-    * @return boolean false if $controller not found among the subcontrollers. 
-    *    Otherwise the name of the found controller is returned.
-    */
+     * Checks if given controller is a child of current one
+     * @param IController|string $controller controller to look for,
+     *        or controller name.
+     * @return bool|string false if $controller is not subcontroller;
+     *         otherwise name of the found controller is returned
+     */
     public function isChild($controller);
-        
+
+    /**
+     * Getter for all the children
+     * @return array all of controller's children
+     */
     public function getChildren();
-    
+
+    /**
+     * Getter for one of the children
+     * @param string $name name of requested child
+     * @return IController|null child object, or null if none found
+     */
     public function getChild($name);
 
     /**
-     * Getter of main displaying controller
+     * Getter for controller that handles layout in current request
+     * @return IController
      */
     public function displayingCtrl();
+
+    /**
+     * Getter for permanent controllers
+     * @param string $name permanent controller name
+     *        as defined in conf[permanent_controllers]
+     * @return PermanentController
+     */
+    public function getPermaCtrl($name);
 }
 
 
+
+/**
+ * Interface of controller that handles authentication of users
+ */
 interface IUserController extends IController
 {
     public function actionLogin(array $params);
-    
+
     public function actionLogout(array $params);
 }
 
+
+
+/**
+ * Interface for class that handles authorization and authentication.
+ * It is available via g()->auth
+ */
 interface IAuth
 {
-    // authentificationon
-
     /**
+     * Check whether we are logged in
      * @return boolean true if some user is logged in
      */
     public function loggedIn();
 
     /**
-     * @return bool|int logged-in user's id
+     * Return logged in user's id
+     * @return bool|mixed logged-in user's id (type depends on UserModel)
      *         or false when no user is logged in
      */
     public function id();
 
     /**
+     * Return logged in user's display name
      * @return bool|mixed logged-in users's display name
      *         or false when no user is logged in
      */
     public function displayName();
 
+
     /**
-     * @return boolean
+     * Get logged-in users's data.
+     * @param string $field field name, available fields will differ
+     *        accross implementations
+     * @return mixed field's value, null when field is not available
+     *         or user is not logged-in
+     */
+    public function get($field);
+
+
+    /**
+     * Authenticate against given credentials
+     * @param array $auth_data authentication credentials
+     * @return bool whether authentication was successfull
      */
     public function login(array $auth_data);
+
     /**
-     * @return string
+     * Get last operation's error
+     * @return string error identifier (not user-friendly)
      */
     public function getLastError();
 
+    /**
+     * De-authenticate logged-in user
+     * @return void
+     */
     public function logout();
 
-    // authorisation
-
     /**
-     * @todo domyślić sytuację, w której $target, bądź $user są obiektami
-     *
-     * @param string|Controller $ctrl
-     * @param string $action
-     * @param string|array|Object $target
-     * @param string|array|Object $user
-     * @return boolean will return false if unsure
+     * Check whether configuration grands access to requested action
+     * @param string|IController|array $ctrl controller url or object,
+     *        or array with [url] key and optionally others
+     * @param string $action action name
+     * @param null|string|array|Object $target target object actions it to
+     *        be performed on. Object identifier, array with it's data;
+     *        behaviour depends on implementation
+     * @param null|string|array|Object $user user that tries to perform the
+     *        action. Identifier, array with it's data or object;
+     *        null for currently logged-in user
+     * @return bool will return false if unsure (launching Component's
+     *         callbacks is recommented
      */
     public function hasAccess($ctrl, $action=null, $target=null, $user=null);
-
-    // user's data getter
-
-    public function get($field);
 
 }
 
 
+
 /**
  * Implementations of ILang should conform BCF47
- * {@url http://en.wikipedia.org/wiki/IETF_language_tag}
- * 
- * @author m.augustynowicz
+ * @url http://en.wikipedia.org/wiki/IETF_language_tag
  */
 interface ILang
 {
     /**
      * Gets currently set user's language
+     * @return string language code
      */
     public function get();
 
     /**
      * Stores user's languages choice
-     * @return false if language is invalid, previous value otherwise
+     * @return bool|string false if language is invalid,
+     *         previous value otherwise
      */
     public function set($lang);
 
@@ -251,10 +323,10 @@ interface ILang
 
 
 /**
-* Interfejs widoku. 
-* Zadaniem widoku jest wygenerowanie dokumentu w odpowiedzi na zapytanie. 
+* Interfejs widoku.
+* Zadaniem widoku jest wygenerowanie dokumentu w odpowiedzi na zapytanie.
 * Widok powinien zapewniac poszczegolnym komponentom systemu (kontrolerom) bezkonfliktowe
-* wspoldzielenie zasobow definiowanych przez wybrane medium. W szczegolnosci, w 
+* wspoldzielenie zasobow definiowanych przez wybrane medium. W szczegolnosci, w
 * przypadku strony xhtml zasobami mozna nazwac:
 *  - naglowek
 *    - podpiecie styli CSS z plikow zewnetrznych
@@ -263,54 +335,54 @@ interface ILang
 *    - meta tagi (glownie keywords i description)
 *    - tytul (zasob? ustawiajacy najczesciej ma na to wylacznosc! trudno generycznie wspoldzielic)
 *  - body
-* W celu realizacji tego zadania widok ma kilka funkcji umozliwiajacych dodawanie poszczegolnych deklaracji i 
+* W celu realizacji tego zadania widok ma kilka funkcji umozliwiajacych dodawanie poszczegolnych deklaracji i
 * ogolnie - zarzadzanie ich zbiorem (np. dodawanie (i kasowanie?) plikow css i sprawdzanie, czy jakis
 * css juz zostal podpiety).
-* Widokowi odpowiada najbardziej podstawowy szablon strony, zawierajacy doctype, naglowek i puste body. 
+* Widokowi odpowiada najbardziej podstawowy szablon strony, zawierajacy doctype, naglowek i puste body.
 * W przypadku widoku fragmenty html moga byc zaszyte w kodzie i nie powinno to byc traktowane jako
-* zlamanie zasad programowania metoda MVC. 
+* zlamanie zasad programowania metoda MVC.
 */
 interface IView
 {
     /**
     * Dodaje znacznik link.
     * @param def jest w postaci array ( $ident => $definition ), gdzie $definition jest tablica
-    *        asocjacyjna z kluczami (opcjonalnymi) 
+    *        asocjacyjna z kluczami (opcjonalnymi)
                 title, href, type, media, rel, rev, hreflang.
     */
     public function addLink($name,$def);
-    
+
     /**
     * Dodaje link do pliku css. Efektem przypomina szczegolne wywolanie addLink.
     */
     public function addCss($file, $media='all');
-    
+
     /**
-    * Dodaje css wbudowany w html. 
+    * Dodaje css wbudowany w html.
     * @param array( $key => $definition), gdzie $key jest selectorem CSS.
     */
     public function addInlineCss($css_code);
-    
+
     /**
-    * Dodaje zewnetrzny skrypt. 
+    * Dodaje zewnetrzny skrypt.
     */
     public function addJs($file);
-    
+
     /**
-    * Dodaje skrypt wbudowany w strone. 
+    * Dodaje skrypt wbudowany w strone.
     */
     public function addInlineJs($js_code);
-    
+
     /**
     * Dodaje instrukcje wywolywane po zaladowaniu DOM'u
     */
     public function addOnLoad($js_code);
-    
+
     public function addKeyword($word);
     public function setDescription($desc);
     public function setTitle($title);
     public function getTitle();
-    
+
     public function getMeta($tag);
     public function setMeta($tag,$value);
 
@@ -327,7 +399,7 @@ interface IView
      * @return void
      */
     public function addHeader($header, $value=null);
-    
+
     /**
      * Add code between <head></head> signs
      *
@@ -344,7 +416,7 @@ interface IView
      * @return void
      */
     public function setEncoding($enc=NULL);
-    
+
     /**
      * Sets page language.
      *
@@ -357,23 +429,23 @@ interface IView
     /**
      * Adds HTML head's profile.
      * Used mainly for microformats' XMDPs.
-     * 
+     *
      * @param string $uri URI to profile document
      */
     public function addProfile($uri);
-    
+
     /**
     * Prezentuje strone. Wysyla do przegladarki wszystkie informacje potrzebne do wyswietlenia
     * albo zaktualizwoania strony.
     */
     public function present();
-    
+
     /**
-    * Zalacza podkontroler. Ta metoda powinna byc uzywana przez kontrolery do wstawiania 
+    * Zalacza podkontroler. Ta metoda powinna byc uzywana przez kontrolery do wstawiania
     * w okreslonym miejscu szablonu zawartosci podkontrolera.
-    */   
+    */
     public function inc($controller);
-    
+
 }
 
 
@@ -398,14 +470,14 @@ class NonConnectedDb
 {
     private $__connection_params;
     private $__true_db;
-    
+
     public function __construct($params)
     {
         list($connection_params) = $params;
         $this->__connection_params = $connection_params;
         $this->__true_db = NULL;
     }
-    
+
     public function __call($name,$args)
     {
         if ('config'===$name)
@@ -436,7 +508,7 @@ class NonConnectedDb
 
 /**
 * Frontend bazy danych z leniwym laczeniem - dopiero wykonanie jakiejs operacji
-* na bazie powoduje polaczenie z nia. 
+* na bazie powoduje polaczenie z nia.
 *
 * @todo Moze nalezy zrobic do tego INTERFEJS!!
 */
@@ -449,12 +521,12 @@ class DataBase
 
     private $__debug = 0;
     const debug_css = 'font-size:11px; background-color: white; color: black; border: #888 solid; border-width: 1px 0; margin: .5ex 1em;';
-    
+
     public function __construct($db_resource)
     {
         $this->__db = $db_resource;
     }
-    
+
     /**
      * @todo check if pg_query succeeded
      */
@@ -466,14 +538,14 @@ class DataBase
         $this->__trans_counter++;
         $this->_printInDebugPost(__FUNCTION__, array());
    }
-    
+
     public function failTrans()
     {
         $this->_printInDebugPre(__FUNCTION__, array());
         $this->__trans_failed = true;
         $this->_printInDebugPost(__FUNCTION__, array());
     }
-    
+
     /**
      * @todo check if pg_query succeeded
      * @todo how to deal with negative trans_counter?
@@ -497,7 +569,7 @@ class DataBase
         }
         $this->_printInDebugPost(__FUNCTION__, array());
     }
-    
+
     public function getOne($query, $row=0, $field=0)
     {
         $argv = func_get_args();
@@ -508,7 +580,7 @@ class DataBase
         $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }
-    
+
     public function getAll($query)
     {
         $argv = func_get_args();
@@ -519,7 +591,7 @@ class DataBase
         $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }
-    
+
     public function getRow($query, $number=0)
     {
         $argv = func_get_args();
@@ -540,8 +612,8 @@ class DataBase
             $result = pg_fetch_all_columns($resource, $number);
         $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
-    }    
-    
+    }
+
     public function execute($query)
     {
         if ($print_in_debug = ('get' != substr(g('Functions')->getCaller('function'),0,3)))
@@ -718,18 +790,18 @@ class Kernel
      * @var boolean
      */
     protected $_rendering = false;
-    
+
     /**
     */
     public function __construct()
-    {    
+    {
         ob_start();
         session_start();
-        
+
         $this->readConfigFiles();
         if (empty($this->conf))
             die('System Error #001');
-        
+
         $this->_session = &$_SESSION[$this->conf['SID']]['KERNEL'];
         $this->session = &$_SESSION[$this->conf['SID']]['GLOBAL'];
         $this->infos = &$this->_session['infos'];
@@ -746,18 +818,17 @@ class Kernel
     * - Tworzy pierwszy kontroler
     * - Wywoluje jego metode process($req) (byc mozer wielokrotnie, jezeli dopuszczamy wywolanie kilku akcji na raz.
     * - Inicjuje renderowanie strony
-    * - 
     */
     public function run()
     {
-        try 
+        try
         {
             $this->debug = $this->get('Debug');
             $this->req = $this->get('Request');
             $this->auth = $this->get('Auth');
 
             $this->lang->available(); // fill the cache
-            
+
             if ($lang = $this->lang->get())
                 $this->readConfigFiles('lang/'.$lang);
 
@@ -800,11 +871,11 @@ class Kernel
             }
         }
     }
-    
-        
+
+
     /**
     * Laduje plik php. Jezeli plik jest w katalogu wdrozenia, to ma priorytet przed plikiem z biblioteki Hologramu.
-    * Obsluga classes override. 
+    * Obsluga classes override.
     * @param assert When true, the function works in assert mode - it stops the script execution on fail.
     * @return mixed If the call succeedes, the name of the actually loaded class is returned, if not - the function
     *         either throws an error (assert=true), or returns boolean false (assert=false)
@@ -845,7 +916,7 @@ class Kernel
                 break;
             }
         }
-        
+
         if (!$fn)
         {
             if (!$assert)
@@ -864,7 +935,7 @@ class Kernel
 
         return $class;
     }
-    
+
 
     /**
      * Objects factory
@@ -953,7 +1024,7 @@ class Kernel
         $message = vsprintf($message, $args);
         if ($ident)
             $this->infos[$class][$ident] = $message;
-        else 
+        else
             $this->infos[$class][] = $message;
         if (g()->debug->allowed())
         {
@@ -961,11 +1032,11 @@ class Kernel
                     $class, $ident?$ident:'', $message );
         }
     }
-    
+
     /**
     * Zwraca zawartosc bufora z rzeczami wyslanymi do przegladarki w trakcie przetwarzania
     * akcji. Najczesciej znajdowac sie tam beda debugi.
-    * @return Zwraca zawartosc bufora z rzeczami wyslanymi przed nadaniem naglowkow strony. 
+    * @return Zwraca zawartosc bufora z rzeczami wyslanymi przed nadaniem naglowkow strony.
     */
     public function getPrerenderEcho()
     {
@@ -987,7 +1058,7 @@ class Kernel
                 printf("<pre><strong>prerender echoes (fallback display)</strong>\n%s</pre>", $display_me);
         }
     }
-    
+
     /**
      * Reads configuration files (*conf*php) from config directories.
      *
@@ -1035,7 +1106,7 @@ class Kernel
 
             Functions::arrayMergeRecursive($this->conf, $confAll, false);
         }
-    }    
+    }
 
     /**
      * Getter for {@see $_rendering}
@@ -1048,7 +1119,7 @@ class Kernel
 
     public function redirect($url, $with_base_uri=true)
     {
-        if (!preg_match('!^[a-z]+://!', $url)) 
+        if (!preg_match('!^[a-z]+://!', $url))
             // add host part if $url starts with a slash
             if($with_base_uri)
                 $url = g()->req->getBaseUri(false).ltrim($url,'/');
@@ -1064,23 +1135,23 @@ class Kernel
             header('Location: '.$url, true, 301);
         exit;
     }
-    
+
 }
 
 
 /**
 * Klasa bazowa wszystkich klas Hologramu (za wyjatkiem Kernel). Zapewnia ladowanie i pobieranie instancji
 * innych klas za posrednictwem kernela w notacji $this->NazwaKlasy, albo $this->NazwaKlasy($args).
-* Domyslnie, wszystkie klasy dziedziczace sa singletonami. Zadekladowanie w ktorejs klasie pochodnej 
+* Domyslnie, wszystkie klasy dziedziczace sa singletonami. Zadekladowanie w ktorejs klasie pochodnej
 * statycznej zmiennej $singleton = false powoduje, ze klasa przestaje byc singletonem. Wtedy kazde odwolanie
 * do metody get() zwraca nowa instancje.
 */
-class HgBase 
+class HgBase
 {
     static $singleton=true;
 
     protected $_trans_sources = array();
-    
+
     public function __construct(array $params = array())
     {
         if (!in_array(get_class($this), $this->_trans_sources))
@@ -1105,7 +1176,7 @@ class HgBase
         //$args = func_get_args();
         return($this);
     }
-    
+
     /**
      * sets lang to be used in translations
      * @author b.matuszewski
@@ -1207,9 +1278,9 @@ class HgBase
 /**
 * Event sygnalizowany, gdy akcja jest przekazywana do innego kontrolera.
 * Jezeli w klasie jest metoda onActionRouted2[$nazwa], gdzie $nazwa jest
-* rowna 
+* rowna
 */
-abstract class Controller extends HgBase implements IController 
+abstract class Controller extends HgBase implements IController
 {
     private $__parent;
     private $__name;
@@ -1223,7 +1294,7 @@ abstract class Controller extends HgBase implements IController
     protected $_default_action = 'default';
 
     /**
-     * @var Component component that should handle rendering
+     * @var Component component that should handle rendering.
      *      should be one of $__components
      */
     protected $_subrenderer = null;
@@ -1234,8 +1305,8 @@ abstract class Controller extends HgBase implements IController
     protected $_params = null;
 
     /**
-    * Tworzy kontroler. Do $this->_session przypisuje referencje do klucza w $_SESSION. 
-    * Do rzeczy znajdujacych sie pod tym kluczem domyslnie ma dostep tylko jego wlasciciel.    
+    * Tworzy kontroler. Do $this->_session przypisuje referencje do klucza w $_SESSION.
+    * Do rzeczy znajdujacych sie pod tym kluczem domyslnie ma dostep tylko jego wlasciciel.
     */
     public function __construct($args=array())
     {
@@ -1288,7 +1359,7 @@ abstract class Controller extends HgBase implements IController
         $has_access = $this->hasAccess($action, $params, false);
         if (g()->debug->allowed())
         {
-            printf('<p class="debug">Permission to <em>%s</em>, action <em>%s</em><small>(%s)</small> %s by <em>%s</em></p>',
+            printf('<p class="debug">Permission to <em>%s::%s<small>(%s)</small></em> %s by <em>%s</em></p>',
                 $this->path(), $action, print_r($params, true),
                 $has_access ? 'granted' : 'denied',
                 is_int($has_access) ? 'configuration' : 'callback'
@@ -1427,7 +1498,7 @@ abstract class Controller extends HgBase implements IController
                    $this->path(), get_class($this),
                    $____tpl, $____file );
         }
-        
+
         if ('.php' !== strrchr($____file,'.'))
         {
             throw new HgException('Non-PHP template extension.');
@@ -1451,14 +1522,14 @@ abstract class Controller extends HgBase implements IController
         }
         return $ret;
     }
-    
+
     /**
      * Specifies URI to given file owned $this class.
      * First it checks if ClassBaseName/$file exists (base i.e. without suffix)
      * then it tries with it's parent etc.
      *
      * All files except templates ($type=='tpl') are looked for in htdocs
-     * directories. 
+     * directories.
      *
      * @author m.augustynowicz
      *
@@ -1485,7 +1556,7 @@ abstract class Controller extends HgBase implements IController
                 $file .= '.'.$type;
                 $base_bases = array('htdocs/'.$type.'/%s');
                 break;
-            case 'gfx': 
+            case 'gfx':
                 // filename suffix is not added here.
                 $base_bases = array('htdocs/gfx/%s');
                 break;
@@ -1540,8 +1611,8 @@ abstract class Controller extends HgBase implements IController
             return $fn;
         else
             return "$base$type/$n$file";
-    }    
-    
+    }
+
     public function path()
     {
         $parent = $this->getParent();
@@ -1965,7 +2036,7 @@ abstract class Controller extends HgBase implements IController
         else
             // set of controllers
             $controllers = func_get_args();
-            
+
         $url = array();
         foreach ($controllers as $c)
         {
@@ -2004,7 +2075,7 @@ abstract class Controller extends HgBase implements IController
         g()->req->enhanceURL($url);
         return g()->req->getBaseUri($with_host).$url;
     }
-    
+
     /**
      * Acts like url2a, but uses url2cInside instead
      *
@@ -2021,7 +2092,7 @@ abstract class Controller extends HgBase implements IController
     }
 
     /**
-     * Build a URL. 
+     * Build a URL.
      * Function uses current request tree, modifies it using given parameters and
      * builds new URL based on it.
      *
@@ -2040,7 +2111,7 @@ abstract class Controller extends HgBase implements IController
     public function url2cInside($ctrl, $act='', array $params=array())
     {
         $new_tree = array('children'=>array());
-        
+
         if (is_array($ctrl))
             $controllers = func_get_args();
         else
@@ -2087,9 +2158,9 @@ abstract class Controller extends HgBase implements IController
             if(!empty($params))
                 $rtree['params'] = array_merge_recursive($rtree['params'],$params);
         }
-    
+
         $current_tree = g()->req->getWhole();
-        
+
         g('Functions')->arrayMergeRecursive($current_tree,$new_tree);
 
         $url = g()->req->getTreeBasedUrl($current_tree);
@@ -2168,9 +2239,9 @@ abstract class Controller extends HgBase implements IController
 * Kontroler pniowy. Wspolna cecha kontrolerow pniowych jest posiadanie
 * jednego childa (kontrolera podrzednego). Domyslnie, przetwarzanie akcji
 * w kontrolerze pniowym polega na transparentnym przekazaniu akcji do
-* jego jedynego childa, podobnie domyslny render polega na przekazaniu 
-* wyniku renderowania childa. 
-* 
+* jego jedynego childa, podobnie domyslny render polega na przekazaniu
+* wyniku renderowania childa.
+*
 */
 abstract class TrunkController extends Controller
 {
@@ -2182,25 +2253,35 @@ abstract class TrunkController extends Controller
         $controller = $this->_makeController($controller, $name_or_args);
         $this->__child = $controller;
         $this->__child_name = $controller->getName();
-    }    
-    
+        return $controller;
+    }
+
     public function isChild($controller)
     {
         if ($controller instanceof IController)
-            return($controller === $this->__child ? $this->__child_name : false);
-        if (is_string($controller))
-            if ($controller === $this->__child_name)
-                return($controller);
+        {
+            if ($controller === $this->__child)
+                return $controller;
             else
-                return(false);
+                return false;
+        }
+
+        if (is_string($controller))
+        {
+            if ($controller === $this->__child_name)
+                return $controller;
+            else
+                return false;
+        }
+
         throw new HgException('$controller must be either a string or an IController');
     }
-        
+
     public function getChildren()
     {
         return array($this->__child_name => $this->__child);
     }
-    
+
     public function getChild($name)
     {
         if ($this->isChild($name))
@@ -2270,29 +2351,53 @@ abstract class TrunkController extends Controller
  * should be launched for this component and all his children (preparing),
  * then we launch tem (launching).
  *
- * Possible callbacks:
  *
- * _prepareAction{ActionName}(array $params);
- *      called in prepare round for action that will be launched later.
+ * Possible callbacks used during processing the request:
  *
- * _onRoutingTo{ComponentName}();
- *      called in prepare round for each component.
- *      return false to prevent component from processing
+ * * _prepareAction{ActionName}(array $params)
  *
- * _onAction($name, $params);
- *      called in launch round before launching action.
- *      return false to prevent action from being launched
+ *   Called in prepare round for action that will be launched later.
  *
- * validate{FormName}(&$post)
- *      called to validate POST send to the form
- *      ($post is this form's part of $_POST)
- *      returns array of errors. it can contain special key [stop_validation]
- *      if you don't want to launch default (model's) validation methods
- *      afterwards
+ *   - $params is a reference to request params
+ *   - return value ignored.
  *
- * validate{FormName}{FieldName}(&$value)
- *      called to validate POST data for specified form field.
- *      returns the same as validate{FormName}
+ * * _onRoutingTo{ComponentName}(bool $in_request);
+ *
+ *   Called in prepare round for each component.
+ *
+ *   - $in_request determines wheter component is present in
+ *     the request (URL)
+ *   - return false to prevent component from processing
+ *
+ * * _onAction(string $name, array &$params);
+ *
+ *   Called in launch round before launching action. It already exists in
+ *   Controller, so be sure you call parent::_onAction(), when overloading.
+ *
+ *   - $name stores name of the action that is about to be launched
+ *   - $params is a reference to request params
+ *   - return false to prevent action from being launched
+ *
+ *
+ *
+ * Possible callbacks used in form validation:
+ *
+ * * validate{FormName}(array &$post)
+ *
+ *   Called to validate POST send to the form
+ *
+ *   - $post is this form's part of $_POST
+ *   - returns array of errors. it can contain special key [stop_validation]
+ *     if you don't want to launch build-in (model's) validation methods
+ *     afterwards
+ *
+ * * validate{FormName}{FieldName}(mixed &$value)
+ *
+ *   Called to validate POST data for specified form field.
+ *
+ *   - $value is a value of the field, taken from POST (therefore it can
+ *     be string or an array of strings)
+ *   - returns the same as validate{FormName}
  */
 abstract class Component extends Controller
 {
@@ -2665,20 +2770,32 @@ abstract class Component extends Controller
         $f = g('Functions');
         foreach ($this->__components as & $child)
         {
+            // whether component is present in request
+            $in_request = $dived && false !== $req->seekTo($child->getName());
+
+            // _onRoutingToChildName callback
+
             $child_name = $f->camelify($child->getName());
             if (method_exists($this, $callback = "_onRoutingTo$child_name"))
             {
-                if (false === $this->$callback())
-                    break;
+                if (g()->debug->allowed())
+                {
+                    printf('<div class="debug-output-block"><h4>launching %s(%s)</h3>',
+                           $callback, print_r($in_request, true) );
+                }
+
+                $route = $this->$callback($in_request);
+
+                if (g()->debug->allowed())
+                {
+                    printf('</div>');
+                }
+
+                if (!$route)
+                    continue;
             }
-            if ($dived && false !== $req->seekTo($child->getName()))
-            {
-                $child->prepareActions($req);
-            }
-            else
-            {
-                $child->prepareActions();
-            }
+
+            $child->prepareActions($in_request ? $req : null);
         }
         unset($component);
         if ($dived)
@@ -2719,14 +2836,11 @@ abstract class Component extends Controller
         $dived = null!==$req && $req->dive();
         foreach ($this->__components as & $child)
         {
-            if ($dived && false !== $req->seekTo($child->getName()))
-            {
-                $child->launchActions($req);
-            }
-            else
-            {
-                $child->launchActions();
-            }
+            if (!$child->_action_to_launch)
+                continue;
+
+            $in_request = $dived && false !== $req->seekTo($child->getName());
+            $child->launchActions($in_request ? $req : null);
         }
         unset($component);
         if ($dived)
@@ -2761,27 +2875,31 @@ abstract class Component extends Controller
     public function addChild($controller, $name_or_args=null)
     {
         $controller = $this->_makeController($controller, $name_or_args);
-        
+
         if ($this->isChild($controller->getName()))
             throw new HgException("This component already has a child named ".$controller->getName());
         $this->__components[$controller->getName()] = $controller;
-        return($controller);
+        return $controller;
     }
 
     public function isChild($controller)
     {
         if ($controller instanceof IController)
-            return(array_search($controller,$this->__components));
+        {
+            return array_search($controller,$this->__components);
+        }
+
         if (is_string($controller))
         {
             if (array_key_exists($controller, $this->__components))
-                return($controller);
+                return $controller;
             else
-                return(false);
+                return false;
         }
+
         throw new HgException('$controller must be either a string or an IController');
     }
-    
+
     /**
     * Includes a template or a controller. If $____tpl is a name of a components child, then the child is included.
     * @param $____tpl either a child name, a controller, or a template name
@@ -2794,7 +2912,7 @@ abstract class Component extends Controller
         else
             return parent::inc($____tpl, $____local_variables);
     }
-        
+
     /**
     * Retrieves children array
     */
@@ -2802,7 +2920,7 @@ abstract class Component extends Controller
     {
         return($this->__components);
     }
-    
+
     /**
     * Retrieves a child, if one is found.
     * @param $name name of the child to look for
@@ -3002,7 +3120,6 @@ abstract class Component extends Controller
         $this->forms = $fixed;
         $this->_forms_are_ok = true;
     }
-   
 
 }
 
@@ -3029,3 +3146,4 @@ abstract class PermanentController extends Component
     }
 
 }
+

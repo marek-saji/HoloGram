@@ -105,8 +105,8 @@ class DebugController extends TrunkController
 
         parent::process($req);
     }
-    
-    
+
+
     /**
      * Display toolbar, then prerender echoe, then real content
      * @author m.augustynowicz
@@ -136,18 +136,19 @@ class DebugController extends TrunkController
         }
 
         parent::present();
-    }    
-    
-    
+    }
+
+
     /**
      * Don't do anything by default. Just in case.
      * @author m.augustynowicz
      */
     public function defaultAction(array $params)
     {
-        
+
     }
-    
+
+
     /**
      * Enable debug mode
      * @author p.piskorski
@@ -166,7 +167,7 @@ class DebugController extends TrunkController
         }
     }
 
-    
+
     /**
      * Disable debug mode
      * @author p.piskorski

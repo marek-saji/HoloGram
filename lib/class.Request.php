@@ -643,7 +643,8 @@ class Request extends HgBase
         $this->__updateRTree();
         return true;
     }
-    
+
+
     /**
      * Returns parameters of a node.
      * @uses {$_rtree}
