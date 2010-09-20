@@ -38,7 +38,7 @@ abstract class DeveloperController extends PagesController
                 (?:^\s*\*.*$\s*)*   #  *
                 ^\s*\*/\s*$         #  */
                 )\s*
-                ^\s*public\s+function\s+action([[:alpha:]]*)[^[:alpha:]].*$!mUx',
+                ^\s*public\s+function\s+action([[:alpha:]]*)[^[:alpha:]].*$!mx',
                     $source, $matches
             );
             $actions = array_merge(
