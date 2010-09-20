@@ -183,7 +183,49 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             return ($this->_array);
         }
 	}
-    
+
+
+    /**
+     * Get one row
+     *
+     * After executing, margins and filters are restored to previous values
+     * @author m.augustynowicz
+     *
+     * @param mixed $filter optionally, filter to use (for more detail
+     *        {@see filter()}).
+     *
+     * @return array|false model row on false, when no such row
+     */
+    public function getRow($filter=null)
+    {
+        // set up model storing original settings
+
+        if (null !== $filter)
+        {
+            $prev_filter = & $this->_filter;
+            unset($this->_filter);
+            $this->filter($filter);
+        }
+        $prev_limit = $this->_limit;
+        $prev_offset = $this->_offset;
+        $this->setMargins(1);
+
+
+        $row = $this->exec();
+
+        // restore previous settings
+
+        if (null !== $filter)
+        {
+            $this->_filter = & $prev_filter;
+        }
+        $this->_limit  = $prev_limit;
+        $this->_offset  = $prev_offset;
+
+
+        return $row;
+    }
+
 
     public function alias($alias='')
     {
@@ -1098,6 +1140,37 @@ abstract class Model extends DataSet implements IModel
             $sql .= sprintf(' "%s"', $this->_alias);
         return $sql;
     }
+
+
+    /**
+     * Get one row
+     *
+     * With ability to filter by scalar PK value
+     * @author m.augustynowicz
+     *
+     * @param mixed $filter apart from parent's functionality,
+     *        if model has only one primary key, you can pass it's
+     *        value here alone
+     *
+     * @return void
+     */
+    public function getRow($filter=null)
+    {
+        // accept scalar value of $filter
+        if (null !== $filter)
+        {
+            // allow passing flat value, when only one PK is defined
+            if (is_scalar($filter) && 1 == sizeof($this->_primary_keys))
+            {
+                $filter = array(
+                    reset($this->_primary_keys) => $filter
+                );
+            }
+        }
+
+        return parent::getRow($filter);
+    }
+
         
     /**
     * Retrieves names of primary key fields
