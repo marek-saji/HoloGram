@@ -1203,8 +1203,10 @@ class FInt extends Field
 
     public function dbString($value)
     {
+        /*
         if(false !== ($av = @$this->autoValue()))
             return ($av);
+         */
         if($value === null || $value === '')
             return "NULL";
         else
@@ -1622,8 +1624,10 @@ class FMonthYear extends FDate
 {
     public function dbString($value)
     {
+        /*
         if(false !== ($av = @$this->autoValue()))
             return ($av);
+         */
         if($value === null || $value === '')
             return 'NULL';
         if(!g('Functions')->isInt($value))
