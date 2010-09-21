@@ -48,11 +48,12 @@ if (isset($ident))
 
 printf('<form %s>', $f->xmlAttr($attrs));
 
-if ($err_handling) :
+if($err_handling)
+{
 ?>
-<div class="form_errors" id="<?=($id.'__err')?>" name="<?=$ident?>" <?=(@empty($errors))?'style="display:none"':''?>>
+<div class="form_errors <?= !empty($errors) ? 'invalid' : ''; ?>" id="<?=($id.'__err')?>" name="<?=$ident?>" <?=(@empty($errors))?'style="display:none"':''?>>
     <?php
-    if (@$errors)
+    if(@$errors)
     {
         echo '<ol>';
         foreach ($errors as $key => $error)
@@ -65,29 +66,28 @@ if ($err_handling) :
 </div>
 
 <?php
-if($ajax)
-    g()->view->addOnLoad(<<< JS
-    $('#{$id}').submit(function(e)
-    {
-        $(this).find('.sending-form-message').show();
-        var ret = hg('form_validate')('{$ident}');
-        if (!ret)
+    if($ajax)
+        g()->view->addOnLoad(<<< JS
+        $('#{$id}').submit(function(e)
         {
-            $(this).find('.sending-form-message').hide();
-            var first_invalid = $('.invalid:input:first');
-            if (0 < first_invalid.length)
+            $(this).find('.sending-form-message').show();
+            var ret = hg('form_validate')('{$ident}');
+            if(!ret)
             {
-                var pos = first_invalid.offset().top - 10;
-                (pos < 0) && (pos = 0);
-                $('body').animate({scrollTop: pos}, 'slow');
+                $(this).find('.sending-form-message').hide();
+                var first_invalid = $('.invalid:first');
+                if(0 < first_invalid.length)
+                {
+                    var pos = first_invalid.offset().top - 10;
+                    (pos < 0) && (pos = 0);
+                    $('body').animate({scrollTop: pos}, 'slow');
+                }
             }
-        }
-        return ret;
-    });
+            return ret;
+        });
 JS
-    );
-
-endif; // handle errors
+        );
+} // handle errors
 
 return $attrs;
 

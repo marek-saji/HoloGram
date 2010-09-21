@@ -101,11 +101,14 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                         values.push(val);
                         errors_count++;
                     });
+
+                    var err = $('#' + form.attr('id') + '__err');
+                    err.removeClass('invalid');
                     if ('0' == field)
                     {
                         // general form errors
                         var field_input = $();
-                        var err = $('#' + form.attr('id') + '__err');
+                        err.addClass('invalid');
                     }
                     else
                     {
@@ -119,8 +122,8 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                             var field_input = $(':input[name^="'+form_name+'['+field+']"]');
                         }
                         var err = $('#' + field_input.eq(-1).attr('id') + '__err');
-                        console.log(field_input, err);
                     }
+                    console.log(field_input, err);
                     if (0 >= errors_count)
                     {
                         err
