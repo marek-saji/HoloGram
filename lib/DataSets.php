@@ -313,7 +313,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             return($this->_whitelist);
 
         $fields = $this->getFields();
-        
+       //echo '<pre>'.print_r(array_keys($fields), true).'</pre>';
         $new_whitelist = array();
         
         foreach($field_keys as $alias => $column)
