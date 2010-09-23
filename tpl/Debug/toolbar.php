@@ -2,6 +2,7 @@
 if ('View' !== get_class($v))
     return; // only HTML view can handle this mighty toolbar!
 
+
 $v->addCss($this->file('debug','css'));
 ?>
 <div id="debug_toolbar" style="background-color:#cca; width:100%; border:thin solid #886; border-width: thin 0;">
@@ -54,7 +55,20 @@ $v->addCss($this->file('debug','css'));
             <li><?=$this->l2c('data sets', 'DataSet','list',array(),array('title'=>'manage data sets'))?></li>
             <li><?=$this->l2c('developer controller', 'Dev','',array(),array('title'=>'perform some developer magic'))?></li>
             <?php endif; ?>
-            <li><a href="<?=$this->url2c(array('Debug','On'),array('Debug', 'set', array('fav')))?>" title="turn on debugs in in conf[favorite debugs]">enable favorite debugs</a></li>
+            <li>
+<?php $this->url2c(array('Debug','On'),array('Debug', 'set', array('fav'))) ?>
+            </li>
+            <li>
+                <?php
+                echo $this->l2c(
+                    'enable favorite debugs',
+                    'Debug/on;Debug/set', // HACK
+                    '',
+                    array('fav'),
+                    array('title'=>'turn on debugs defined in conf[favorite debugs]')
+                );
+                ?>
+            </li>
             <?php if (g()->debug->allowed()) : ?>
             <?php if (g()->debug->on('view')) : ?>
             <li><a href="#debug_inc_tree">templates inclusion tree</a></li>
