@@ -56,6 +56,26 @@ function g($name='', $type='class', $args=array())
 }
 
 
+// lcfirst() has been added in php-5.3
+if (!function_exists('lcfirst'))
+{
+    /**
+     * Lower case first letter in a string
+     * @author m.augustynowicz
+     *
+     * @param string $string
+     *
+     * @return string
+     */
+    function lcfirst($string)
+    {
+        if (is_string($string))
+            $string[0] = strtolower($string[0]);
+        return $string;
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////// interfaces //////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
