@@ -673,16 +673,34 @@ class Request extends HgBase
 
     /**
      * Encodes value in url, for building links.
-     * @param string $val
-     * @return string encoded value
+     *
+     * @param string|array $val scalar value or array with parameters
+     *
+     * @return string encoded value or set of values
      */
     public function encodeVal($val)
     {
+        // encode set of values
+        if (is_array($val))
+        {
+            foreach ($val as $name => & $value)
+            {
+                $value = $this->encodeVal($value);
+                if (!is_int($name))
+                    $value = $this->encodeVal($name) . '=' . $value;
+            }
+            return implode(',', $val);
+        }
+
+        // encode one value
+
         // triple encod is a must, apache tends to freak out otherwise
         $val = @urlencode(urlencode(urlencode($val)));
         if ($this->_link_split_encoded)
+        {
             $val = str_replace(g()->conf['link_split'],
                                $this->_link_split_encoded, $val);
+        }
         return $val;
     }
 
