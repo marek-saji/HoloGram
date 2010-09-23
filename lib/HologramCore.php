@@ -2030,6 +2030,7 @@ abstract class Controller extends HgBase implements IController
         return $this->url2c(null, $act, $params);
     }
 
+
     /**
      * Build a URL to specified controller(s)
      *
@@ -2062,39 +2063,51 @@ abstract class Controller extends HgBase implements IController
         {
             @list($ctrl, $act, $params) = $c;
 
+            // validate types of parameters
+
             if (null === $ctrl)
                 $ctrl = $this->url();
             else if ($ctrl instanceof IController)
                 $ctrl = $ctrl->url();
-            /**
-             * @todo remove this, when sure nobody uses it (created 2010-01)
-             */
-            if (is_array($act) && g()->debug->allowed())
-                trigger_error('Passed array as action to url2c()', E_USER_NOTICE);
+
+            if (!is_string($act) && null !== $act)
+                throw new HgException('Action passed to url2c should be a string &#8212; '.gettype($act).' given.');
 
             if (null === $params)
                 $params = (array) $params;
             else if (!is_array($params))
                 throw new HgException('Params passed to url2c should be an array &#8212; '.gettype($params).' given.');
 
-            foreach ($params as $name => & $val)
+
+            // get controller's meta (action + params)
+
+            $c_meta = g()->req->encodeVal($params);
+            if ('' !== $c_meta)
+                $c_meta = g()->conf['link_split'] . $c_meta;
+            if ($act)
             {
-                $val = g()->req->encodeVal($val);
-                if (!is_int($name))
-                    $val = g()->req->encodeVal($name).'='.$val;
+                $act = lcfirst($act);
+                $c_meta = '/' . $act . $c_meta;
             }
-            $params = join(',',$params);
-            if ($params !== '')
-                $params = g()->conf['link_split'].$params;
-            if (!empty($act) && !empty($ctrl))
-                $act = "/$act";
-            $ctrl = trim($ctrl,'/');
-            $url[] = $ctrl.$act.$params;
+
+
+            // store meta in array under it's path
+
+            $r_url = & $url;
+            $path = explode('/', $ctrl);
+            foreach ($path as $elem)
+            {
+                $elem = ucfirst($elem);
+                $r_url = & $r_url[$elem];
+            }
+            $r_url[null] = $c_meta;
         }
-        $url = join(';',$url);
+        $this->_buildStringURLFromArray($url);
+
         g()->req->enhanceURL($url);
         return g()->req->getBaseUri($with_host).$url;
     }
+
 
     /**
      * Acts like url2a, but uses url2cInside instead
@@ -2187,6 +2200,35 @@ abstract class Controller extends HgBase implements IController
         g()->req->enhanceURL($url);
         return g()->req->getBaseUri().$url;
     }
+
+
+    /**
+     * Create string url from array format, used internally in {@see url2c()}
+     * @author m.augustynowicz
+     *
+     * @param array $url current node in an array
+     * @param string $curr_path path to current node
+     *
+     * @return void method works on reference to $url
+     */
+    protected function _buildStringURLFromArray(array &$url, $curr_path='')
+    {
+        foreach ($url as $name => & $node)
+        {
+            $node_meta = & $node[null];
+            unset($node[null]);
+
+            $node_path = $curr_path . $name . '/';
+            $this->_buildStringURLFromArray($node, $node_path);
+            if ($node)
+                $node = '/' . $node;
+
+            $node = $name . $node_meta . $node;
+        }
+
+        $url = implode(';'.$curr_path, $url);
+    }
+
 
     /**
      * Makes a controller.
