@@ -74,12 +74,12 @@ if($ajax)
         if (!ret)
         {
             $(this).find('.sending-form-message').hide();
-            var first_invalid = $('.invalid:input:first');
+            var first_invalid = $('.invalid:first');
             if (0 < first_invalid.length)
             {
                 var pos = first_invalid.offset().top - 10;
                 (pos < 0) && (pos = 0);
-                $('body').animate({scrollTop: pos}, 'slow');
+                $('html').animate({scrollTop: pos}, 'slow');
             }
         }
         return ret;

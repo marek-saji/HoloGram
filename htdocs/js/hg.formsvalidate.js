@@ -104,8 +104,8 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                     if ('0' == field)
                     {
                         // general form errors
-                        var field_input = $();
                         var err = $('#' + form.attr('id') + '__err');
+                        var field_input = err;
                     }
                     else
                     {
