@@ -766,7 +766,7 @@ abstract class FStringBase extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if (NULL === $value || '' === $value)
+        if (NULL === $value || '' === trim($value))
         {
             if ($this->notNull())
             {
