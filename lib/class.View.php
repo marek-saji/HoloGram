@@ -119,7 +119,25 @@ class View extends HgBase implements IView
         }
 
 
-        // these should make IE behave a litte better
+        // Uniform: sexy forms with jQuery
+        // http://pixelmatrixdesign.com/uniform/
+        if (!g()->debug->on('disable', 'uniform'))
+        {
+            $uniform_version = '1.5';
+            $uniform_fn = sprintf('jquery.uniform-%s%s', $uniform_version, $min);
+            $this->addJs($this->_renderer->file($uniform_fn, 'js'));
+            // uniform these form elements
+            $this->addOnLoad('$(":checkbox.hg, :radio.hg, select.hg").uniform();');
+        }
+
+
+        // these things below should make IE behave a litte better
+
+        // fix for IE and tip floats in holoforms
+        $this->addOnLoad('$(".holoform li.field").css({
+            "z-index"  : function(i){ return 99999-i; },
+            "position" : "relative"
+        });');
 
         // ie-css3 javascript library: fix some CSS selectors
         // http://www.keithclark.co.uk/labs/ie-css3/
@@ -166,9 +184,10 @@ class View extends HgBase implements IView
         if (!isset($this->_metas['generator']))
             $this->setMeta('generator', 'Hologram');
 
-        // don't use any backward compatibility mode in IE>=8
+        // don't use any backward compatibility mode in IE>=8,
+        // but do use google chrome frame, if available
         if (!isset($this->_headers['X-UA-Compatible']))
-            $this->addHeader('X-UA-Compatible', 'IE=edge');
+            $this->addHeader('X-UA-Compatible', 'IE=edge,chrome=1');
 
         if (!isset($this->_headers['content-type']))
             $this->setEncoding();
