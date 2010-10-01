@@ -171,11 +171,13 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                           .toggleClass('valid',  !invalid);
                     });
 
-        if(all_errors_count)
-            $.nyroModalSettings({
-                width: null,
-                height: null
-            });
+            if(form.closest('#nyroModalContent').is() && all_errors_count)
+            {
+                $.nyroModalSettings({
+                    width: null,
+                    height: null
+                });
+            }
         } // opts.success
     };
     
