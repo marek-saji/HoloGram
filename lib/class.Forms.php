@@ -160,14 +160,7 @@ class Forms extends HgBase
      */
     public function input($input, array $additional_params = array())
     {
-        static $rendered = array();
-        if (true === @$rendered[$input])
-        {
-            trigger_error("Re-rendering $input form input.", E_USER_WARNING);
-        }
-        $rendered[$input] = true;
-
-        $input_def = $this->_getInput($input);
+        $input_def = $this->_getInput($input, 'input');
 
         $data = @ $this->__ctrl->data[$this->__short_ident][$input];
         $errors = $this->_getErrors($input);
@@ -184,6 +177,45 @@ class Forms extends HgBase
         $params = array_merge($hg_params, $additional_params);
 
         return $this->__ctrl->inc($input_def['tpl'], $params);
+    }
+
+
+    /**
+     * Render label for form input
+     * @author m.augustynowicz
+     *
+     * @param string $input key in $forms[inputs]
+     * @param string $label text label. will be translated
+     * @param array $additional_params additional params to pass to the template
+     *
+     * @return void
+     */
+    public function label($input, $label, array $additional_params = array())
+    {
+        $input_def = $this->_getInput($input, 'label');
+
+        $required = false;
+        foreach ($input_def['models'] as $model_name => &$fields)
+        {
+            $model = g($model_name, 'model');
+            foreach ($fields as $field_name)
+            {
+                if ($model[$field_name]->notNull())
+                {
+                    $required = true;
+                    break 2;
+                }
+            }
+        }
+        unset($fields);
+
+        $hg_params = array(
+            'label' => $label,
+            'required' => $required
+        );
+        $params = array_merge($hg_params, $additional_params);
+
+        return $this->__ctrl->inc('Forms/label', $params);
     }
 
 
@@ -287,6 +319,8 @@ class Forms extends HgBase
      * @author m.augustynowicz
      *
      * @param string $name valid input field name
+     * @param mixed $slot if given, will rise an error on calling the method
+     *        again for the same slot
      *
      * @return array input field definition containing:
      *         - [form_ident]
@@ -296,8 +330,23 @@ class Forms extends HgBase
      *         - [id]
      *         - [ajax]
      */
-    protected function _getInput($name)
+    protected function _getInput($name, $slot=null)
     {
+        if (null !== $slot)
+        {
+            static $rendered_cache = array();
+            $rendered = & $rendered_cache[$name][$slot];
+            $rendered++;
+            if (1 !== $rendered)
+            {
+                trigger_error(
+                    'Called method ' . __FUNCTION__
+                            . " for input `$name', slot `$slot' again ($rendered).",
+                    E_USER_WARNING
+                );
+            }
+        }
+
         $input_def = & $this->__form['inputs'][$name];
 
         if (null === $this->__form['inputs'][$name])
