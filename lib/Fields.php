@@ -958,9 +958,9 @@ class FMD5String extends FString
 class FPassword extends FMD5String
 {
 
-    public function __construct($name, $min_length = null, $max_length = null)
+    public function __construct($name, $min_length = null, $max_length = null, $notnull = true)
     {
-        parent::__construct($name, true, $min_length, $max_length);
+        parent::__construct($name, $notnull, $min_length, $max_length);
     }
 
     public function dbString($value)
