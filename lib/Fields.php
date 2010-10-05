@@ -1335,9 +1335,15 @@ class FEnum extends Field
      */
     public function columnDefinitionAdditionalQuery()
     {
-        $sql_values = "'".join("','", $this->_values)."'";
-        return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
-                $this->_type_name, $sql_values );
+        $checking_query = sprintf('SELECT COUNT(1) from pg_type WHERE typname = \'%s\'', pg_escape_string($this->_type_name));
+        if(! g()->db->getOne($checking_query))
+        {
+            $sql_values = "'".join("','", $this->_values)."'";
+            return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
+                    $this->_type_name, $sql_values );
+        }
+        else
+            return false;
     }
 }
 
