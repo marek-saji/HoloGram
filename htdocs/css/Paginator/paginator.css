@@ -3,6 +3,7 @@
     margin-left: 40%;
     list-style: none;
 	clear: both;
+    overflow: hidden;
 }
 .paginator > .page
 {
@@ -24,17 +25,24 @@
 	padding: 0;
 	overflow: hidden;
 	line-height: 20px;
+    /*
 	color: #575757;
+    */
 	text-align: center;
 }
 
 .paginator > .num.active.page > *
 {
+    /*
 	color: #fff;
+    */
 	background: url("../../gfx/sprite.png") no-repeat -110px -75px;
 }
-.paginator a, .paginator a:visited, .paginator a:focus, .paginator a:active{
+.paginator a, .paginator a:visited, .paginator a:focus, .paginator a:active
+{
+    /*
 	color: #666;
+    */
 	text-decoration: none;
 	font-weight: bold;
 	line-height: 20px;
@@ -42,7 +50,9 @@
 .paginator > .page.num > a:hover
 {
     font-weight: bold;
+    /*
 	color: #2868a8;
+    */
 }
 .paginator > .page > strong, .paginator > .page > a, .paginator > .page > span{
 	line-height: 20px;
@@ -66,18 +76,24 @@
 	padding: 0;
 	overflow: hidden;
 	line-height: 20px;
+    /*
 	color: #575757;
+    */
 }
 .paginator > .disabled.page.next span {
 	background: url("../../gfx/sprite.png") no-repeat -110px -75px;
+    /*
 	color: #fff;
+    */
 }
 .paginator > .active.page.prev a, .paginator > .page.prev a, .paginator > .page.prev span{
 	background: url("../../gfx/sprite.png") no-repeat -131px -75px;
 }
 .paginator > .disabled.page.prev span{
 	background: url("../../gfx/sprite.png") no-repeat -110px -75px;
+    /*
 	color: #fff;
+    */
 }
 div.sort_by{
 	float: left;
