@@ -26,7 +26,25 @@ class TableController extends Component
         $this->init();
 
     }
-    
+
+
+    /**
+     * Always allow access to this controller
+     *
+     * It's used only in DataSetController so far.
+     * @author m.augustynowicz
+     *
+     * @param string $action action name
+     * @param array $params request params 
+     * 
+     * @return boolean true. allow access
+     */
+    protected function _onAction($action, array &$params)
+    {
+        return true;
+    }
+
+
     public function addRecordAction($url, $params, $contents)
     {
         $this->_actions[] = compact('url','params','contents');
