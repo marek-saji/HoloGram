@@ -714,6 +714,7 @@ class Kernel
     private $__instances;
     private $__refresh;
     protected $_session; //
+    protected $_log = null;
     public $db;
     public $conf = array();
     public $auth;
@@ -770,6 +771,9 @@ class Kernel
             $this->debug = $this->get('Debug');
             $this->req = $this->get('Request');
             $this->auth = $this->get('Auth');
+
+            // used in log() method
+            $this->_log = $this->get('Log', 'model');
 
             $this->lang->available(); // fill the cache
             
@@ -996,6 +1000,30 @@ class Kernel
                     $class, $ident?$ident:'', $message );
         }
     }
+
+
+    /**
+     * Log an event
+     * @author m.augustynowicz
+     *
+     * @see LogModel::log() this is a wrapper to that method
+     *
+     * @param string $level {@see conf[enum][log_level]}
+     * @param Controller|null $that controller event happened in
+     * @param mixed $id id of object event regards
+     * @param string $title title of object, or event if ($id===null)
+     * @param array $values when no $values2 given, set of event properties,
+     *        when $values2 given -- set of old properties
+     * @param array $new_values set of new properties
+     *
+     * @return void
+     */
+    public function log($level, Controller $that, $id=null, $title=null,
+                        array $values=null, array $new_values=null )
+    {
+        $this->_log->log($level, $that, $id, $title, $values, $new_values);
+    }
+
     
     /**
     * Zwraca zawartosc bufora z rzeczami wyslanymi do przegladarki w trakcie przetwarzania
