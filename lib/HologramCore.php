@@ -2673,9 +2673,7 @@ abstract class Component extends Controller
                             throw new HgException("Model declared in Component variable \$forms does not exist!");
                         foreach ($fields as $field)
                         {
-                            if (! $model_field = $model->getField($field))
-                                throw new HgException("Field `$field' does not exist in $model declared in Component variable \$forms does not exist!");
-                            $err = $model_field->invalid($post[$input]);
+                            $err = $model->validateField($field, $post[$input]);
                             if($err)
                             {
                                 foreach ($err as &$err_text)
