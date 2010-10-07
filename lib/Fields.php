@@ -958,9 +958,9 @@ class FMD5String extends FString
 class FPassword extends FMD5String
 {
 
-    public function __construct($name, $min_length = null, $max_length = null)
+    public function __construct($name, $min_length = null, $max_length = null, $notnull = true)
     {
-        parent::__construct($name, true, $min_length, $max_length);
+        parent::__construct($name, $notnull, $min_length, $max_length);
     }
 
     public function dbString($value)
@@ -1335,9 +1335,17 @@ class FEnum extends Field
      */
     public function columnDefinitionAdditionalQuery()
     {
-        $sql_values = "'".join("','", $this->_values)."'";
-        return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
-                $this->_type_name, $sql_values );
+        static $type_exists = array();
+        $checking_query = sprintf('SELECT COUNT(1) from pg_type WHERE typname = \'%s\'', pg_escape_string($this->_type_name));
+        if(! g()->db->getOne($checking_query) && !@$type_exists[$this->_type_name])
+        {
+            $type_exists[$this->_type_name] = true;
+            $sql_values = "'".join("','", $this->_values)."'";
+            return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
+                    $this->_type_name, $sql_values );
+        }
+        else
+            return false;
     }
 }
 
