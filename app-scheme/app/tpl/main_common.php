@@ -47,6 +47,15 @@ $v->addProfile('http://purl.org/uF/2008/03/');
 $v->addCss($this->file('common','css'));
 
 
+// stylesheet for jquery-uniform
+// without this forms will not be usable!
+if (!g()->debug->on('disable', 'uniform'))
+{
+    $uniform_version = 1.5;
+    $v->addCss($this->file("jquery.uniform-{$uniform_version}.default",'css'));
+}
+
+
 ##
 ## jquery plugins
 ##
