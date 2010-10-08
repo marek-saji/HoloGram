@@ -191,7 +191,7 @@ class LogModel extends Model
                 . $f->camelify($log_row['target_action']);
         if (method_exists($this, $callback))
         {
-            $this->callback($level, $that, $title, $id, $values, $new_values);
+            $this->$callback($level, $that, $title, $id, $values, $new_values);
         }
 
     }
