@@ -108,7 +108,7 @@ class ImagesUploadModel extends Model
 
                 $this->_file = $data['file'];
 
-                if(!($hash = $data['id']))
+                if(!($hash = @$data['id']))
                     do
                     {
                         $hash = g('Functions')->generateKey();
