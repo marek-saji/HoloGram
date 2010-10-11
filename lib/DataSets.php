@@ -629,6 +629,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                         switch ($operator)
                         {
                             case 'IN' :
+                            case 'NOT IN' :
                                 foreach ($value as &$v)
                                     $v = $field->dbString($v);
                                 unset($v);

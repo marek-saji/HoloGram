@@ -1,0 +1,10 @@
+body.Log div#content section.log table { border: black solid thin; border-width: 0 0 thin thin; border-spacing: 0; }
+
+body.Log div#content section.log table th,
+body.Log div#content section.log table td { border: black solid thin; border-width: thin thin 0 0; padding: .2em; vertical-align: top; }
+
+body.Log div#content section.log table tbody th { text-align: left; }
+
+body.Log div#content section.log.details table.diff.with_old_values tbody tr      { background-color: #afa; }
+body.Log div#content section.log.details table.diff.with_old_values tbody tr.diff { background-color: #faa; }
+

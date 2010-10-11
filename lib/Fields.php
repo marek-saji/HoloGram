@@ -1012,7 +1012,7 @@ class FURL extends FString
             else if (!isset($this->_allowed_protocols[$matches[1]]))
                 $err['unsupported protocol'] = true;
 
-            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9]+)+)(?:\/|$)!', $value, $matches))
+            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?:\/|$)!', $value, $matches))
                 $err['syntax error'] = true;
 
             if (!function_exists('checkdnsrr'))

@@ -121,12 +121,14 @@ class View extends HgBase implements IView
 
         // Uniform: sexy forms with jQuery
         // http://pixelmatrixdesign.com/uniform/
-
-        $uniform_version = '1.5';
-        $uniform_fn = sprintf('jquery.uniform-%s%s', $uniform_version, $min);
-        $this->addJs($this->_renderer->file($uniform_fn, 'js'));
-        // uniform these form elements
-        $this->addOnLoad('$(":checkbox.hg, :radio.hg, select.hg").uniform();');
+        if (!g()->debug->on('disable', 'uniform'))
+        {
+            $uniform_version = '1.5';
+            $uniform_fn = sprintf('jquery.uniform-%s%s', $uniform_version, $min);
+            $this->addJs($this->_renderer->file($uniform_fn, 'js'));
+            // uniform these form elements
+            $this->addOnLoad('$(":checkbox.hg, :radio.hg, select.hg").uniform();');
+        }
 
 
         // these things below should make IE behave a litte better
