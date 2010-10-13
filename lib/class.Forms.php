@@ -361,8 +361,7 @@ class Forms extends HgBase
         if ($generate_id)
         {
             $input_def['input_name'] = $name;
-            $input_def['id'] = $input_def['input_name']
-                    . '_' . g('Functions')->uniqueId();
+            $input_def['id'] = g('Functions')->uniqueId();
         }
 
 
