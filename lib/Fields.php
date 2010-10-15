@@ -2162,6 +2162,34 @@ class FFile extends FString
         }
         return $size;
     }
+
+    /**
+     * Invalidate file field
+     * @author j.rozanski
+     * @param not_known $value uploaded file array or md5 string
+     */
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(is_array($value))
+        {
+            if($value['error'] != UPLOAD_ERR_OK)
+            {
+                if($value['error'] == UPLOAD_ERR_NO_FILE)
+                {
+                    if($this->notNull())
+                        $err['notnull'] = true;
+                }
+                else
+                    $err['invalid'] = true;
+            }
+        }
+        elseif(is_string($value))
+        {
+            return parent::invalid($value);
+        }
+        return ($this->_errors($err, $value));
+    }
 }
 
 /**
