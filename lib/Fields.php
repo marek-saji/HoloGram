@@ -2142,14 +2142,16 @@ class FoFunc extends FAnyType implements IEvalField
             'MAX($int:FInt)',
             'MAX($int:FBool)',
             'MAX($int:FString)',
-            'MAX($int:FTimestamp)'
+            'MAX($int:FTimestamp)',
+            'MAX($int:FDate)',
         ),
         'min' => array(
             'res' => 'FString',
             'MIN($int:FInt)',
             'MIN($int:FBool)',
             'MIN($int:FString)',
-            'MIN($int:FTimestamp)'
+            'MIN($int:FTimestamp)',
+            'MIN($int:FDate)',
         ),
         'count' => array(
             'res' => 'FString',
@@ -2188,6 +2190,7 @@ class FoFunc extends FAnyType implements IEvalField
         if(!array_key_exists($func, self::$functions))
             throw new HgException("No such function '$func'");
         $func = self::$functions[$func];
+        var_dump($func);
         $call_args = array();
         foreach($args as $param)
         {
