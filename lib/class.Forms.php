@@ -160,7 +160,7 @@ class Forms extends HgBase
      */
     public function input($input, array $additional_params = array())
     {
-        $input_def = $this->_getInput($input, 'input');
+        $input_def = $this->_getInput($input, false);
 
         $data = @ $this->__ctrl->data[$this->__short_ident][$input];
         $errors = $this->_getErrors($input);
@@ -192,7 +192,7 @@ class Forms extends HgBase
      */
     public function label($input, $label, array $additional_params = array())
     {
-        $input_def = $this->_getInput($input, 'label');
+        $input_def = $this->_getInput($input, true);
 
         $required = false;
         foreach ($input_def['models'] as $model_name => &$fields)
@@ -211,6 +211,7 @@ class Forms extends HgBase
 
         $hg_params = array(
             'label' => $label,
+            'input_id' => $input_def['id'],
             'required' => $required
         );
         $params = array_merge($hg_params, $additional_params);
@@ -316,11 +317,13 @@ class Forms extends HgBase
 
     /**
      * Get a complete input field definition
+     *
+     * Here we take care of duplicate ids.
      * @author m.augustynowicz
      *
      * @param string $name valid input field name
-     * @param mixed $slot if given, will rise an error on calling the method
-     *        again for the same slot
+     * @param bool $for_label determine wheter we are getting input data for rendering
+     *        <label /> and not actual <input />.
      *
      * @return array input field definition containing:
      *         - [form_ident]
@@ -330,37 +333,43 @@ class Forms extends HgBase
      *         - [id]
      *         - [ajax]
      */
-    protected function _getInput($name, $slot=null)
+    protected function _getInput($name, $for_label)
     {
-        if (null !== $slot)
-        {
-            static $rendered_cache = array();
-            $rendered = & $rendered_cache[$name][$slot];
-            $rendered++;
-            if (1 !== $rendered)
-            {
-                trigger_error(
-                    'Called method ' . __FUNCTION__
-                            . " for input `$name', slot `$slot' again ($rendered).",
-                    E_USER_WARNING
-                );
-            }
-        }
-
-        $input_def = & $this->__form['inputs'][$name];
-
         if (null === $this->__form['inputs'][$name])
         {
             throw new HgException("Input `$name' not defined in controller variable \$forms!");
         }
+
+        $input_def = & $this->__form['inputs'][$name];
+
+
+        // determine whether we should (re-)generate id
+        if (!@$input_def['_generated'])
+            $generate_id = true; // we should for new inputs
+        elseif ($for_label)
+            $generate_id = true; // we should, when rendering <label />
+        else
+        {
+            // we should, when rendering <input /> again.
+
+            static $rendered_cache = array();
+            $rendered = & $rendered_cache[$name];
+            $rendered++;
+            $generate_id = (1 > $rendered);
+        }
+
+        if ($generate_id)
+        {
+            $input_def['input_name'] = $name;
+            $input_def['id'] = g('Functions')->uniqueId();
+        }
+
 
         if (true === @$input_def['_generated'])
         {
             return $input_def;
         }
 
-
-        $input_def['input_name'] = $name;
 
         $models = & $input_def['models'];
 
@@ -395,9 +404,6 @@ class Forms extends HgBase
             $input_def['ajax'] = $this->__form['ajax'];
         else
             $input_def['ajax'] = USE_AJAX_BY_DEFAULT;
-
-        $input_def['id'] = $input_def['input_name']
-                . '_' . g('Functions')->uniqueId();
 
 
         $input_def['_generated'] = true;
