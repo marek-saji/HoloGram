@@ -2190,7 +2190,6 @@ class FoFunc extends FAnyType implements IEvalField
         if(!array_key_exists($func, self::$functions))
             throw new HgException("No such function '$func'");
         $func = self::$functions[$func];
-        var_dump($func);
         $call_args = array();
         foreach($args as $param)
         {
