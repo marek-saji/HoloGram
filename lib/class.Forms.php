@@ -344,7 +344,6 @@ class Forms extends HgBase
 
         static $rendered_cache = array();
         $rendered = & $rendered_cache[$name];
-        echo $rendered;
 
         // determine whether we should (re-)generate id
         if (!@$input_def['_generated'])
