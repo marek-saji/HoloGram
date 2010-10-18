@@ -63,7 +63,7 @@ class View extends HgBase implements IView
 
         // jQuery itself
 
-        $jquery_version = '1.4.1';
+        $jquery_version = '1.4.3';
         // this will raise a warning, when file is absent. we should check for
         // that, even when using extarnal CDNs
         $jquery_file = $this->_renderer->file(
@@ -514,7 +514,7 @@ class View extends HgBase implements IView
     {
         $lang = htmlspecialchars($this->_lang);
         if ($this->_is_html5)
-            printf("<html xml:lang=\"%s\" lang=\"%1\$s\">\n", $lang);
+            printf("<html lang=\"%s\">\n", $lang);
         else
         {
             printf("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"%s\" lang=\"%1\$s\">\n",
