@@ -1023,6 +1023,7 @@ class FInt extends Field
     public function invalid(&$value)
     {
         $err = array();
+        $value = preg_replace('! !', '', $value);
         if(NULL !== $value && $value !== '')
         {
             if(!g('Functions')->isInt($value))
@@ -1202,6 +1203,7 @@ class FDouble extends FFloat
         if(!$this->checkAutoValue($value) && NULL === $value)
             $err['notnull'] = true;
         $value = preg_replace('!,!','.',$value);
+        $value = preg_replace('! !', '', $value);
         $reg_expression = sprintf('/^[\+\-]?[0-9]*[[\.]?[0-9]{0,%s}]?$/', $this->_rules['decimal_places'] > 0 ? $this->_rules['decimal_places'] : 1);
         if(!preg_match($reg_expression, $value))
             $err['invalid'] = true;
