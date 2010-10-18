@@ -22,7 +22,7 @@ $____local_variables = array_merge($____local_variables, array(
 
 // first input
 $____local_variables = array_merge($____local_variables, array(
-    'id'            => ($id0 = $f->uniqueId()),
+    'id'            => ($id0 = $id),
     'name_suffix'   => '[0]',
     'err_handling'  => false
 ));

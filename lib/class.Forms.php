@@ -342,20 +342,25 @@ class Forms extends HgBase
 
         $input_def = & $this->__form['inputs'][$name];
 
+        static $rendered_cache = array();
+        $rendered = & $rendered_cache[$name];
+        echo $rendered;
 
         // determine whether we should (re-)generate id
         if (!@$input_def['_generated'])
+        {
             $generate_id = true; // we should for new inputs
+            if (!$for_label)
+                $rendered++;
+        }
         elseif ($for_label)
             $generate_id = true; // we should, when rendering <label />
         else
         {
             // we should, when rendering <input /> again.
 
-            static $rendered_cache = array();
-            $rendered = & $rendered_cache[$name];
             $rendered++;
-            $generate_id = (1 > $rendered);
+            $generate_id = (1 < $rendered);
         }
 
         if ($generate_id)
