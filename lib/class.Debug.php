@@ -386,7 +386,7 @@ JS;
                     printf("%04d: %s", $l, htmlspecialchars($f[$l-1]));
                     if ($l == $call['line']) echo '</strong>';
                 }
-                printf('<button title="suprised? ask saji how to get this working {;" onclick="hgDebugPost(\'/edit.php\', \'fn=%s&amp;l=%d\');">edit</button>', $call['file'], $call['line']);
+                printf('<button title="surprised? ask saji how to get this working {;" onclick="hgDebugPost(\'/edit.php\', \'fn=%s&amp;l=%d\');">edit</button>', $call['file'], $call['line']);
                 echo '</pre>';
                 echo '</td></tr>';
             }
