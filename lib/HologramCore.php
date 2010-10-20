@@ -2509,6 +2509,7 @@ abstract class Component extends Controller
                 if (method_exists($this,$callback = 'validate'.$f->camelify($form)))
                 {
                     $new_errors = $this->$callback($post);
+                    unset($new_errors['stop_validation']);
                     if (!empty($new_errors))
                         $errors[$ident][0] = array_merge((array)@$errors[$ident][0], (array)$new_errors);
                 }
