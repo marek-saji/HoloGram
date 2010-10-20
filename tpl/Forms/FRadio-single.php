@@ -49,7 +49,7 @@ if (isset($data) && (string)$value === (string)$data)
 
 if ($label)
 {
-    printf("<label for=\"%s\">\n", $f->uniqueId(false));
+    printf("<label for=\"%s\">\n", $id);
 }
 
 $return_me = $t->inc('Forms/input', $input_vars);

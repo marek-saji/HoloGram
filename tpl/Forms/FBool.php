@@ -11,7 +11,6 @@
  * (params passed as local variables)
  * @param null|string $label will add this text after checkbox and wrap it in <label />
  */
-
 extract(array_merge(
         array(
             'label'  => null
@@ -42,7 +41,7 @@ $____local_variables['data'] = 1;
 
 if ($label)
 {
-    printf("<label for=\"%s\">\n", $f->uniqueId(false));
+    printf("<label for=\"%s\">\n", $id);
 }
 
 $return_me = $t->inc('Forms/input', $____local_variables);

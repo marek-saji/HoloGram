@@ -577,6 +577,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *        IBoolean generating IField,
      *        array with such elements:
      *          1. 'field_name' => 'value'
+     *             if value is given as an array, IN operator is used
      *          2. 'literal query part'
      *          3' array('field_name','operator','value')
      *             e.g. array('date','>','2009')
@@ -586,6 +587,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *             third one as field value (only if first one was given)
      *             special operators:
      *                  'IN' -- 3rd operator is expected to be array of values
+     *                  'NOT IN' -- 3rd operator is expected to be array of values
      * @return $this
      */
     public function filter($condition)
@@ -624,19 +626,54 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     $field = $this[$field_name];
                     if (!$field)
                         throw new HgException("Trying to filter ".get_class($this)." with unknown field $field_name");
-                    if ($value_given)
+
+                    // change "=NULL" and "<>NULL" into "IS (NOT) NULL"
+                    if ($value_given && null===$value)
                     {
                         switch ($operator)
                         {
-                            case 'IN' :
-                            case 'NOT IN' :
-                                foreach ($value as &$v)
-                                    $v = $field->dbString($v);
-                                unset($v);
-                                $value = '('.join(', ',$value).')';
+                            case '=' :
+                                $operator = 'IS NULL';
+                                $value = '';
+                                $value_given = false;
                                 break;
-                            default :
-                                $value = $field->dbString($value);
+                            case '!=' :
+                            case '<>' :
+                                $operator = 'IS NOT NULL';
+                                $value = '';
+                                $value_given = false;
+                                break;
+                        }
+                    }
+
+                    if ($value_given)
+                    {
+                        if (!is_array($value))
+                        {
+                            $value = $field->dbString($value);
+                        }
+                        else
+                        {
+                            switch ($operator)
+                            {
+                                // allow array values (translate to IN operator)
+                                case '=' :
+                                case '!=' :
+                                case '<>' :
+                                    $operator = ('='==$operator) ? 'IN' : 'NOT IN';
+
+                                case 'IN' :
+                                case 'NOT IN' :
+                                    foreach ($value as &$v)
+                                        $v = $field->dbString($v);
+                                    unset($v);
+                                    $value = '('.join(', ',$value).')';
+                                    break;
+
+                                default :
+                                    trigger_error("Filter operator `{$operator}' does not support arrays.", E_USER_WARNING);
+                                    return $this;
+                            }
                         }
                     }
                 }
@@ -644,6 +681,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 switch ($operator)
                 {
                     case 'IN' :
+                    case 'NOT IN' :
                         if ('()'===$value)
                         {
                             $cond[] = sprintf('/* %s */ false', $this_cond);
