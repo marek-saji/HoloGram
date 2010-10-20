@@ -100,9 +100,10 @@ interface IController
 
     /**
      * Getter for launched action name
+     * @param boolean $collapse_default if true, will return empty string form default action
      * @return string|null
      */
-    public function getLaunchedAction();
+    public function getLaunchedAction($collapse_default=false);
     
     /**
     * Renderuje controler. Zwraca odpowiadajacy mu kod xhtml (albo inny). 
@@ -1810,9 +1811,12 @@ abstract class Controller extends HgBase implements IController
      *
      * @return string
      */
-    public function getLaunchedAction()
+    public function getLaunchedAction($collapse_default=false)
     {
-        return $this->_launched_action;
+        if ($this->_launched_action == $this->_default_action)
+            return '';
+        else
+            return $this->_launched_action;
     }
 
 
