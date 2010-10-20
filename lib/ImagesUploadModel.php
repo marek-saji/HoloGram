@@ -368,6 +368,25 @@ class ImagesUploadModel extends Model
     }
 
     /**
+     * Gets image data from database
+     * @author j.rozanski
+     * @param string $id - md5 string indicating image
+     * @return array ImageUpload record
+     */
+    public function getImage($id)
+    {
+        if(@$id)
+        {
+            $this->filter(array(
+                'id' => $id
+            ));
+            $this->setMargins(1);
+            return $this->exec();
+        }
+        return array();
+    }
+
+    /**
      * Returns the full path of given filename in the upload directory.
      *
      * @author m.jutkiewicz
