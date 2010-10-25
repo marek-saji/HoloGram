@@ -69,6 +69,11 @@ class PagesController extends Component
         $arr[count($arr)-1] = strtolower($arr[count($arr)-1]);
         $this->_layout = implode('/',$arr);
         $this->inc($this->_layout);
-    }    
+    }
+
+    public function displayName()
+    {
+        return $this->getName();
+    }
 }
 
