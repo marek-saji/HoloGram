@@ -68,7 +68,7 @@ class LogModel extends Model
 
         $this->_addField(new FId('log_id'));
         $this->_addField(new FTimestamp('timestamp', true, 'NOW()'));
-        $this->_addField(new FString('ip', false, '', 7, 15));
+        $this->_addField(new FString('ip', false, null, 7, 15));
         $this->_addField(new FEnum('level', 'log_level', true, 'info'));
         $this->_addField(new FForeignId('user_id', false, 'User'));
         $this->_addField(new FString('title', false));
