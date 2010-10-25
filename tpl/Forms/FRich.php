@@ -5,21 +5,28 @@
  *
  * (params passed as local variables) 
  * same as FString_area
- * @param null|boolean $use_loader Use Xinha's splash screen? null for xinha/init.php default
+ * @param null|boolean $use_loader Use Xinha's splash screen?
  */
 
 extract(array_merge(
         array(
+            // works for: xinha
             'use_loader'  => null,
+            'css'         => null,
         ),
         (array) $____local_variables
     ));
 
-$xinha_parms = array();
-if (null !== $use_loader)
-    $xinha_parms['use_loader'] = $use_loader;
+$wysiwyg_parmas = compact('use_loader', 'css');
 
-$t->inc('xinha/init', $xinha_parms);
+if (null !== $use_loader)
+    $wysiwyg_parmas['use_loader'] = $use_loader;
+
+if (null === $css)
+    $css = $this->file('user_content', 'css');
+@$____local_variables['attrs']['data-user-content-css'] = $css;
+
+$t->inc('wysiwyg/init', $wysiwyg_parmas);
 
 if (!@$____local_variables['disabled'])
     @$____local_variables['class'] .= ' richedit';
