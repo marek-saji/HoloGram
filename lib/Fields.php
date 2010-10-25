@@ -1023,9 +1023,9 @@ class FInt extends Field
     public function invalid(&$value)
     {
         $err = array();
-        $value = preg_replace('! !', '', $value);
         if(NULL !== $value && $value !== '')
         {
+            $value = preg_replace('! !', '', $value);
             if(!g('Functions')->isInt($value))
                 $err['invalid'] = true;
         }
