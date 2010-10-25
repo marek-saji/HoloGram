@@ -1396,6 +1396,8 @@ class FFloat extends Field
             $res = array();
         if($def['typename'] != 'float' && $def['typename'] != 'float' . $this->_rules['precision'])
             $res['typename'] = $this->dbType();
+        else
+            unset($res['typename']);
         if($def['type_specific'] != '-1')
             $res['typename'] = $this->dbType();
         return (empty($res) ? false : $res);
