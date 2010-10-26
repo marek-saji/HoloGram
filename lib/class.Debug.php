@@ -4,7 +4,8 @@ class Debug extends HgBase
 {
     static $singleton = true;
     protected $_session = null;
-    protected $_evil_monkeys = 0; // count of @
+    protected $_evil_monkeys_count = 0; // count of @
+    protected $_error_counts = array();
     protected $_old_error_handler = null;
 
     public function __construct()
@@ -519,7 +520,7 @@ JS;
         // when debug is allowed error_reporting should indicate use of "@"
         if (!error_reporting())
         {
-            $this->_evil_monkeys++;
+            $this->_evil_monkeys_count++;
             return true;
         }
 
@@ -545,6 +546,8 @@ JS;
 
         if (!$errtype = @$err_consts[$errno])
             $errtype = '<a href="http://php.net/manual/en/errorfunc.constants.php">ERR#'.$errno.'</a>';
+
+        @$this->_error_counts[strip_tags($errtype)]++;
 
         $msg = '<strong style="background-color:orange">['.$errtype.']</strong> '.$errstr;
         $trace = debug_backtrace();
@@ -580,7 +583,19 @@ JS;
             return;
 
         echo '<pre style="border: silver solid thin">';
-        printf("<a href=\"http://google.com/images?q=evil+monkey\">evil monkeys</a> used: ~%d\n", $this->_evil_monkeys);
+
+        printf("<a href=\"http://google.com/images?q=evil+monkey\">evil monkeys</a> used: ~%d\n", $this->_evil_monkeys_count);
+
+        if (!empty($this->_error_counts))
+        {
+            echo "<em>Oh dear, there has been some errors:</em>\n";
+            ksort($this->_error_counts);
+            foreach ($this->_error_counts as $errtype => $count)
+            {
+                printf("%s: <strong>%d</strong>", $errtype, $count);
+            }
+        }
+
         echo '</pre>';
     }
 
