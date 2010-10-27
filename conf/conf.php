@@ -41,3 +41,7 @@ $conf['classes_override'] = array(
     //'Lang'           => 'LangOne',
 );
 
+// whether to use translations stored in database, in addition
+// to those in config files
+$conf['use_db_trans'] = false;
+
