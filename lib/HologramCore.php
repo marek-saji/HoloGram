@@ -54,7 +54,7 @@ function g($name='', $type="class", $args=array())
  *      You can override this using _setTemplate().
  *      @return void
  *
- * prepare{ActionName}(array &$params)
+ * prepareAction{ActionName}(array &$params)
  *      called by PagesController process() before possible diving deeper into
  *      request that would happen if URL would look like this:
  *      Ctrl1/actionName:params/Ctrl1'sChild
@@ -100,9 +100,10 @@ interface IController
 
     /**
      * Getter for launched action name
+     * @param boolean $collapse_default if true, will return empty string form default action
      * @return string|null
      */
-    public function getLaunchedAction();
+    public function getLaunchedAction($collapse_default=false);
     
     /**
     * Renderuje controler. Zwraca odpowiadajacy mu kod xhtml (albo inny). 
@@ -174,18 +175,16 @@ interface IAuth
     public function loggedIn();
 
     /**
-     * @return mixed logged-in user's id
+     * @return bool|int logged-in user's id
      *         or false when no user is logged in
      */
     public function id();
 
     /**
-     * DEPRECATED in favour of id().
-     * Will get deleted as soon as all applications get rid of it.
-     * @return array|boolean associative array with logged-in user's ids (PKs in database)
+     * @return bool|mixed logged-in users's display name
      *         or false when no user is logged in
      */
-    public function ids();
+    public function displayName();
 
     /**
      * @return boolean
@@ -716,6 +715,7 @@ class Kernel
     private $__instances;
     private $__refresh;
     protected $_session; //
+    protected $_log = null;
     public $db;
     public $conf = array();
     public $auth;
@@ -773,6 +773,9 @@ class Kernel
             $this->req = $this->get('Request');
             $this->auth = $this->get('Auth');
 
+            // used in log() method
+            $this->_log = $this->get('Log', 'model');
+
             $this->lang->available(); // fill the cache
 
             $this->_getTranslations($lang);
@@ -811,7 +814,9 @@ class Kernel
                 ob_end_flush();
             echo "<h1>Unhandled exception</h1>";
             if ($this->conf['allow_debug'])
+            {
                 echo "<pre>$e</pre>";
+            }
         }
     }
     
@@ -995,6 +1000,30 @@ class Kernel
                     $class, $ident?$ident:'', $message );
         }
     }
+
+
+    /**
+     * Log an event
+     * @author m.augustynowicz
+     *
+     * @see LogModel::log() this is a wrapper to that method
+     *
+     * @param string $level {@see conf[enum][log_level]}
+     * @param Controller|null $that controller event happened in
+     * @param mixed $id id of object event regards
+     * @param string $title title of object, or event if ($id===null)
+     * @param array $values when no $values2 given, set of event properties,
+     *        when $values2 given -- set of old properties
+     * @param array $new_values set of new properties
+     *
+     * @return void
+     */
+    public function log($level, Controller $that, $id=null, $title=null,
+                        array $values=null, array $new_values=null )
+    {
+        $this->_log->log($level, $that, $id, $title, $values, $new_values);
+    }
+
     
     /**
     * Zwraca zawartosc bufora z rzeczami wyslanymi do przegladarki w trakcie przetwarzania
@@ -1043,6 +1072,8 @@ class Kernel
         if ($prefix)
             $prefix = trim($prefix,'/') . '/';
 
+        $this->load('Functions');
+
         foreach ($configDirs as $configDir)
         {
             $confDir = rtrim($configDir,'/').'/';
@@ -1058,11 +1089,13 @@ class Kernel
                     unset($conf);
                     include $configFile;
                     if (@is_array($conf))
-                        $confAll = array_merge($confAll,$conf);
+                    {
+                        Functions::arrayMergeRecursive(
+                                $confAll, $conf, false );
+                    }
                 }
             }
 
-            $this->load('Functions');
             Functions::arrayMergeRecursive($this->conf, $confAll, false);
         }
     }    
@@ -1082,24 +1115,26 @@ class Kernel
 
 
         // get from database
-
-        $f = g('Functions');
-        $trans = & $this->conf['translations'];
-
-        $db_trans = g('Trans', 'model')
-                ->filter(array(
-                    'lang' => $lang
-                ))
-                ->exec();
-
-        foreach ($db_trans as &$row)
+        if ($this->conf['use_db_trans'])
         {
-            if ($f->anyToBool($row['value_is_complex']))
-            {
-                $row['value'] = json_decode($row['value'], true);
-            }
+            $f = g('Functions');
+            $trans = & $this->conf['translations'];
 
-            $trans[$row['context']][$row['key']] = $row['value'];
+            $db_trans = g('Trans', 'model')
+                    ->filter(array(
+                        'lang' => $lang
+                    ))
+                    ->exec();
+
+            foreach ($db_trans as &$row)
+            {
+                if ($f->anyToBool($row['value_is_complex']))
+                {
+                    $row['value'] = json_decode($row['value'], true);
+                }
+
+                $trans[$row['context']][$row['key']] = $row['value'];
+            }
         }
     }
 
@@ -1229,7 +1264,10 @@ class HgBase
                 $argv_key = $argv;
                 do
                 {
-                    $key = join("\t", $argv_key);
+                    if (1 == sizeof($argv_key))
+                        list($key) = $argv_key;
+                    else
+                        $key = join("\t", $argv_key);
                     if (isset($trans[$key]))
                     {
                         $msg = $trans[$key];
@@ -1351,12 +1389,27 @@ abstract class Controller extends HgBase implements IController
         {
             trigger_error('SIC! Launching action from a template?', E_USER_WARNING);
         }
+
+        $has_access = $this->hasAccess($action, $params, false);
+        if (g()->debug->allowed())
+        {
+            printf('<p class="debug">Permission to <em>%s</em>, action <em>%s</em><small>(%s)</small> %s by <em>%s</em></p>',
+                $this->path(), $action, print_r($params, true),
+                $has_access ? 'granted' : 'denied',
+                is_int($has_access) ? 'configuration' : 'callback'
+            );
+        }
+        if (!$has_access)
+        {
+            $this->redirect(); // main page
+        }
+
         return true;
     }
 
     public function defaultAction(array $params)
     {
-        $this->redirect('HttpErrors/Error404');
+        $this->redirect('HttpErrors/error404');
     }
     
     public function assign($a, $value=null)
@@ -1464,18 +1517,15 @@ abstract class Controller extends HgBase implements IController
      *
      * @param string $file file name to get without extension (excluding $type=='img')
      * @param string $type file type, can be js|css|img|tpl
+     * @param bool $assert fail, when file does not exist
      * @return false|string when $type=='tpl' returns absolute path to the template
-     *         or false, when it doesn't exist; for other types -- returns URI
+     *         or false, when it doesn't exist and $assert=false; for other types -- returns URI
      *         to the file, and false if it does not exist (and raises NOTICE
      *         when debug is allowed).
      */
-    public function file($file, $type)
+    public function file($file, $type, $assert=true)
     {
         $argv = func_get_args();
-        if(isset($argv[2]))
-            $return_false_on_404 = g('Functions')->anyToBool($argv[2]);
-        else
-            $return_false_on_404 = false;
         $return_real_path = false;
         switch($type)
         {
@@ -1491,7 +1541,6 @@ abstract class Controller extends HgBase implements IController
                 break;
             case 'tpl':
                 $base_bases = array('tpl/%s.php');
-                $return_false_on_404 = true;
                 $return_real_path = true;
                 break;
             default:
@@ -1530,9 +1579,9 @@ abstract class Controller extends HgBase implements IController
         // file not found
         if (null === $c)
         {
-            if ($return_false_on_404)
+            if (false == $assert)
                 return false;
-            else if (g()->conf['allow_debug'])
+            else
                 trigger_error("File $file not found!", E_USER_NOTICE);
         }
 
@@ -1589,8 +1638,23 @@ abstract class Controller extends HgBase implements IController
     public function getName()
     {
         return($this->__name);
-    }    
-    
+    }
+
+
+    /**
+     * Get name ment for navigation (highlighting menu item etc)
+     *
+     * When overwritten, it can be used to interpersonate different controller
+     * @author m.augustynowicz
+     *
+     * @return string
+     */
+    public function getNavName()
+    {
+        return $this->getName();
+    }
+
+
     /**
      * Prints Controller-centered backtrace.
      * DEPRECATED in favour of Debug::trace()
@@ -1742,11 +1806,11 @@ abstract class Controller extends HgBase implements IController
      */
     public function delegateAction($action, array &$params)
     {
-        $real_action = & $this->_launched_action;
-        unset($this->_launched_action);
+        $real_action = $this->_launched_action;
+        $this->_launched_action = null;
         $this->_template = '';
         $ret = $this->launchAction($action, $params);
-        $this->_launched_action = & $real_action;
+        $this->_launched_action = $real_action;
         return $ret;
     }
 
@@ -1803,10 +1867,51 @@ abstract class Controller extends HgBase implements IController
     }
 
 
-    public function getLaunchedAction()
+    /**
+     * Gets launched action
+     *
+     * note: It returns action's name even, when permission has been denied.
+     * @author m.augustynowicz
+     *
+     * @return string
+     */
+    public function getLaunchedAction($collapse_default=false)
     {
-        return $this->_launched_action;
+        if ($this->_launched_action == $this->_default_action)
+            return '';
+        else
+            return $this->_launched_action;
     }
+
+
+    /**
+     * Gets params of launched action
+     * @see getParam()
+     * @see getLaunchedAction()
+     * @author m.augustynowicz
+     *
+     * @return array
+     */
+    public function getParams()
+    {
+        return $this->_params;
+    }
+
+
+    /**
+     * Gets a param of launched action
+     * @see getParams()
+     * @see getLaunchedAction()
+     * @author m.augustynowicz
+     *
+     * @param string|int $key name or index of a param
+     * @return string param value, null when it's not set
+     */
+    public function getParam($key)
+    {
+        return @$this->_params[$key];
+    }
+
 
     /**
      * @param string $current
@@ -2255,6 +2360,12 @@ abstract class TrunkController extends Controller
         $this->__child->process($req);
     }
     
+
+    public function present()
+    {
+        $this->__child->present();
+    }
+
     public function render()
     {
         $this->__child->render();
@@ -2335,32 +2446,27 @@ abstract class Component extends Controller
         if (null !== $this_cache)
             return $this_cache;
 
-        if(!g()->auth->hasAccess($this, $action, $params))
+        if (g()->auth->hasAccess($this, $action, $params))
+        {
+            $ret = 1;
+        }
+        else
         {
             // or maybe we have any callback for checking this?
-            if('default' === $action)
+            if($this->_default_action === $action)
                 $callback = 'hasAccessToDefault';
             else
                 $callback = 'hasAccessTo' . ucfirst($action);
 
             if (!method_exists($this, $callback))
                 $ret = 0;
-            else if (!$this->$callback($params, $just_checking))
-                $ret = false;
-            else
+            else if ($this->$callback($params, $just_checking))
                 $ret = true;
+            else
+                $ret = false;
         }
-        else
-            $ret = 1;
 
         $this_cache = $ret;
-        if (g()->debug->allowed())
-        {
-            if (0 === $ret)
-                echo '<p class="debug">Permission denied by <em>configuration</em></p>';
-            else if (false === $ret)
-                echo '<p class="debug">Permission denied by <em>callback</em></p>';
-        }
         return $ret;
     }
 
@@ -2603,7 +2709,7 @@ abstract class Component extends Controller
         while ($current = $req->next())
         {
             if (!$this->_handle($req,$current))
-                $this->redirect('HttpErrors/Error404');
+                $this->redirect('HttpErrors/error404');
         }
         $req->emerge();
     }       
@@ -2698,44 +2804,14 @@ abstract class Component extends Controller
     {
         if (g()->debug->on('view'))
         {
-            printf('<!-- %s: %s::render() -->', 
-                   $this->path(), get_class($this) );
-        }
-        if (is_array($this->_template))
-        {
-            $that = $this->_template[0];
-            $template = $this->_template[1];
-        }
-        else
-        {
-            $that = $this;
-            $template = $this->_template;
+            printf('<!-- %s::render() BEGIN -->', $this->path() );
         }
 
-        if (null === $template)
-            return;
+        $this->inc($this->_template);
 
-        if(!$template)
-        {
-            $tpl = $this->_default_action;
-            if (g()->debug->allowed())
-            {
-                g()->addInfo(null, 'debug', 'Something wrong might have happened. Rendering <em>%s</em>, which does not have any template set. Using default template.', $this->path());
-            }
-        }
-        else
-        {
-            // lowercase last element in path-like template
-            $arr = explode('/',$template);
-            $arr[count($arr)-1] = strtolower($arr[count($arr)-1]);
-            $action = implode('/',$arr);
-            $tpl = $action;
-        }
-        $that->inc($tpl);
         if (g()->debug->on('view'))
         {
-            printf('<!-- (end) %s: %s::render() -->', 
-                   $this->path(), get_class($this) );
+            printf('<!-- %s::render() END -->', $this->path() );
         }
     }
 
@@ -2796,8 +2872,10 @@ abstract class Component extends Controller
                     if (is_int($input_name))
                     {
                         if (empty($default_model))
+                        {
                             throw new HgException('No default model specified for '.
-                                  "$form_name[$input_def] and no supplied in \$forms!");
+                                  $form_name."[$input_def] and no supplied in \$forms!");
+                        }
                         $form['inputs'][$input_def]['models'][$default_model] =
                             array($input_def);
                         $input_name = $input_def; // so [tpl] got set properly

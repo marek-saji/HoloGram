@@ -59,11 +59,19 @@ class View extends HgBase implements IView
         // include some javascript by default
 
         $js_debug = g()->debug->on('js');
-        // jQuery itself
-        $jquery_version = '1.4.1';
         $min = $js_debug ? '.min' : '';
+
+        // jQuery itself
+
+        $jquery_version = '1.4.3';
+        // this will raise a warning, when file is absent. we should check for
+        // that, even when using extarnal CDNs
+        $jquery_file = $this->_renderer->file(
+                'jquery-'.$jquery_version.$min, 'js', false );
         if (g()->debug->on('disable','externalcdn'))
-            $this->addJs($this->_renderer->file('jquery-'.$jquery_version.$min,'js'));
+        {
+            $this->addJs($jquery_file);
+        }
         else
         {
             $protocol = g()->req->isSSL() ? 'https' : 'http';
@@ -110,26 +118,51 @@ class View extends HgBase implements IView
             }
         }
 
-        // this should make IE behave a litte better
-        // IE8.js is for CSS in general
-        // html5.js is for, well.. html5
-        /*
-        $ie7js_version = '2.1(beta4)';
-        $attrs = array('type' => 'text/javascript');
-        $attrs['src'] = 'http://ie7-js.googlecode.com/svn/version/'.$ie7js_version.'/IE9.js';
-        $this->addInHead(sprintf("<!--[if lt IE 9]>\n%s<![endif]-->",
-            $this->_tag('script', $attrs)
-        ));
-        */
+
+        // Uniform: sexy forms with jQuery
+        // http://pixelmatrixdesign.com/uniform/
+        if (!g()->debug->on('disable', 'uniform'))
+        {
+            $uniform_version = '1.5';
+            $uniform_fn = sprintf('jquery.uniform-%s%s', $uniform_version, $min);
+            $this->addJs($this->_renderer->file($uniform_fn, 'js'));
+            // uniform these form elements
+            $this->addOnLoad('$(":checkbox.hg, :radio.hg, select.hg").uniform();');
+        }
+
+
+        // these things below should make IE behave a litte better
+
+        // fix for IE and tip floats in holoforms
+        $this->addOnLoad('$(".holoform li.field").css({
+            "z-index"  : function(i){ return 99999-i; },
+            "position" : "relative"
+        });');
+
+        // ie-css3 javascript library: fix some CSS selectors
+        // http://www.keithclark.co.uk/labs/ie-css3/
+        // NOTE: there's also ie-css3 htc adding support for some attributes
+        //       laying in css/
+        //       http://fetchak.com/ie-css3/
+
+        $ie_css3_js_version = '0.9.7b';
+        $ie_css3_js_fn = sprintf('ie-css3-%s.min', $ie_css3_js_version);
+        $this->addJs($this->_renderer->file($ie_css3_js_fn,'js'));
+
+        // fixing HTML5 in less-keen browsers
         if ($this->_is_html5)
         {
+            // html5.js is for, well.. html5
+            // http://code.google.com/p/html5shiv/
+
+            $html5_shiv_file = $this->_renderer->file('html5','js');
             if (g()->debug->on('disable','externalcdn'))
             {
-                $attrs['src'] = $this->_renderer->file('html5','js');
+                $attrs['src'] = $html5_shiv_file;
             }
             else
             {
-            $protocol = g()->req->isSSL() ? 'https' : 'http';
+                $protocol = g()->req->isSSL() ? 'https' : 'http';
                 $attrs['src'] = $protocol.'://html5shiv.googlecode.com/svn/trunk/html5.js';
             }
             $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
@@ -145,11 +178,16 @@ class View extends HgBase implements IView
     public function present()
     {
         ob_start(NULL);
-        echo g()->first_controller->render();
+        echo g()->first_controller->present();
         $contents = ob_get_clean();
         
         if (!isset($this->_metas['generator']))
             $this->setMeta('generator', 'Hologram');
+
+        // don't use any backward compatibility mode in IE>=8,
+        // but do use google chrome frame, if available
+        if (!isset($this->_headers['X-UA-Compatible']))
+            $this->addHeader('X-UA-Compatible', 'IE=edge,chrome=1');
 
         if (!isset($this->_headers['content-type']))
             $this->setEncoding();
@@ -336,7 +374,6 @@ class View extends HgBase implements IView
         }
         else
         {
-            $type = strtolower($type);
             $this->_headers[$type] = $value;
         }
     }
@@ -477,7 +514,7 @@ class View extends HgBase implements IView
     {
         $lang = htmlspecialchars($this->_lang);
         if ($this->_is_html5)
-            printf("<html xml:lang=\"%s\" lang=\"%1\$s\">\n", $lang);
+            printf("<html lang=\"%s\">\n", $lang);
         else
         {
             printf("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"%s\" lang=\"%1\$s\">\n",
@@ -672,8 +709,12 @@ class View extends HgBase implements IView
      */
     protected function _renderHeadJSCode()
     {
-        $this->_inl_jses['hg_id_offset'] = "var hg_id_offset = "
-                . (100+g('Functions')->uniqueId(null));
+        if (preg_match('/([0-9]*)$/', g('Functions')->uniqueId(), $matches))
+        {
+            $numeric_id = $matches[1];
+            $this->_inl_jses['hg_id_offset'] = "var hg_id_offset = "
+                    . (100+$numeric_id);
+        }
 
         // display
         if ($this->_inl_jses)

@@ -41,9 +41,7 @@ $conf['classes_override'] = array(
     //'Lang'           => 'LangOne',
 );
 
-/*
- * Google Maps API key, domain-specific, generate here:
- * http://code.google.com/intl/pl/apis/maps/signup.html
- */
-$conf['gmaps_api_key'] = '(fill me)';
+// whether to use translations stored in database, in addition
+// to those in config files
+$conf['use_db_trans'] = false;
 

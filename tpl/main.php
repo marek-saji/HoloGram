@@ -12,9 +12,11 @@ $this->inc('main_common');
 ?>
 
 <div id="content">
-    <h2><?=g()->view->getTitle()?></h2>
+    <h2><?=$v->getTitle()?></h2>
     <div class="content">
-        <?$this->contents();?>
+        <?php
+        $this->render();
+        ?>
     </div>
 </div>
 
@@ -23,3 +25,4 @@ $this->inc('main_common');
         <small>&copy; HolonGlobe</small>
     </div>
 </div>
+

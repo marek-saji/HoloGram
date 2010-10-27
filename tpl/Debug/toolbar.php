@@ -41,7 +41,7 @@ $v->addCss($this->file('debug','css'));
               else
                   printf('nothing enabled');
 
-              printf(' <button onclick="if (x=prompt(\'e.g.\ndb=true,js=0,user,item.controller=1,item.class=0\ndisable.gmaps to disable google maps\ndisable.externalcdn to disable external CDNs (jQuery etc)\ntrans.missing to highlight missing translations\nall=0 to reset\')) window.location.href=(\'%s\'.replace(\'__here__\',x))">change</button>', $this->url2a('set',array('__here__')));
+              printf(' <button onclick="if (x=prompt(\'e.g.\ndb=true,js=0,user,item.controller=1,item.class=0\ndisable.gmaps to disable google maps\ndisable.externalcdn to disable external CDNs (jQuery etc)\sdisable.uniform to disable uniformed forms\ntrans.missing to highlight missing translations\nall=0 to reset\')) window.location.href=(\'%s\'.replace(\'__here__\',x))">change</button>', $this->url2a('set',array('__here__')));
               echo '; ';
               print((g()->debug->get()?$this->l2a('disable global',"set",array('global'=>'off')):$this->l2a('enable global','set',array('global'=>'on'))));
           }
@@ -51,7 +51,7 @@ $v->addCss($this->file('debug','css'));
         <h4>toolbox</h4>
         <ul>
             <?php if (g()->debug->allowed()) : ?>
-            <li><?=$this->l2c('data sets', 'DataSet','',array(),array('title'=>'manage data sets'))?></li>
+            <li><?=$this->l2c('data sets', 'DataSet','list',array(),array('title'=>'manage data sets'))?></li>
             <li><?=$this->l2c('developer controller', 'Dev','',array(),array('title'=>'perform some developer magic'))?></li>
             <?php endif; ?>
             <li><a href="<?=$this->url2c(array('Debug','On'),array('Debug', 'set', array('fav')))?>" title="turn on debugs in in conf[favorite debugs]">enable favorite debugs</a></li>
@@ -63,21 +63,23 @@ $v->addCss($this->file('debug','css'));
             <?php endif; ?>
             <li><a href="javascript:(function(){function%20l(u,i,t,b){var%20d=document;if(!d.getElementById(i)){var%20s=d.createElement('script');s.src=u;s.id=i;d.body.appendChild(s)}s=setInterval(function(){u=0;try{u=t.call()}catch(i){}if(u){clearInterval(s);b.call()}},200)}l('http://leftlogic.com/js/microformats.js','MF_loader',function(){return!!(typeof%20MicroformatsBookmarklet=='function')},%20function(){MicroformatsBookmarklet()})})();" title="find microformats on this page">microformats</a></li>
         </ul>
-        <div>
-            <h5>elseworlds</h5>
-            <ul>
-                <?php
-                $url = $this->url2c(g()->req->getUrlPath());
-                $here = $this->url2c(g()->req->getUrlPath(), '', array(), true); // with host
-                foreach (g()->conf['alternative base URLs'] as $name => $base)
-                {
-                    $there = rtrim($base,'/') . $url;
-                    if ($here != $there)
-                        printf('<li><a href="%s">%s</a></li>', $there, $name);
-                }
-                ?>
-            </ul>
-        </div>
+        <?php if (@g()->conf['alternative base URLs']) : ?>
+            <div>
+                <h5>elseworlds</h5>
+                <ul>
+                    <?php
+                    $url = $this->url2c(g()->req->getUrlPath());
+                    $here = $this->url2c(g()->req->getUrlPath(), '', array(), true); // with host
+                    foreach (g()->conf['alternative base URLs'] as $name => $base)
+                    {
+                        $there = rtrim($base,'/') . $url;
+                        if ($here != $there)
+                            printf('<li><a href="%s">%s</a></li>', $there, $name);
+                    }
+                    ?>
+                </ul>
+            </div>
+        <?php endif; ?>
     </div> <!-- #debug_toolbox -->
 </div> <!-- #debug_toolbar -->
 

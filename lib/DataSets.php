@@ -150,9 +150,10 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     
     public function getCount()
     {
-        if (NULL !== $this->_count)
+        if(NULL !== $this->_count)
 		    return $this->_count;
-		if(empty($this->_groupby))
+
+		if(empty($this->_distincts) && empty($this->_groupby))
 		{
             $sql = "SELECT\n  COUNT(1)";
             $sql .= $this->_queryFrom();
@@ -160,13 +161,33 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         }
         else
         {
-            $sql = "SELECT\n COUNT(1) FROM (";
-            $sql .= "SELECT\n  1";
+    	    $sql_tmp = '';
+
+            if(!empty($this->_distincts))
+            {
+                if(true === $this->_distincts)
+                {
+                    $sql_tmp .= $this->_ident('DISTINCT')."\n";
+                }
+                else
+                {
+                    $sql_tmp .= $this->_ident(
+                        "DISTINCT ON (\n"
+                        . $this->_ident(implode(",\n", $this->_distincts))
+                        . "\n)"
+                    )."\n";
+                }
+            }
+
+            $dist = !empty($this->_whitelist) ? reset($this->_whitelist) : '1';
+            $sql = "SELECT\n  COUNT(1) FROM (";
+            $sql .= "SELECT\n {$sql_tmp} " . $dist;
             $sql .= $this->_queryFrom();
             $sql .= $this->_queryWhere();
             $sql .= $this->_queryGroupBy();
             $sql .= ") AS tab";
         }
+
 		$this->_count = g()->db->getOne($sql);
 		return($this->_count);
     }
@@ -183,7 +204,49 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             return ($this->_array);
         }
 	}
-    
+
+
+    /**
+     * Get one row
+     *
+     * After executing, margins and filters are restored to previous values
+     * @author m.augustynowicz
+     *
+     * @param mixed $filter optionally, filter to use (for more detail
+     *        {@see filter()}).
+     *
+     * @return array|false model row on false, when no such row
+     */
+    public function getRow($filter=null)
+    {
+        // set up model storing original settings
+
+        if (null !== $filter)
+        {
+            $prev_filter = & $this->_filter;
+            unset($this->_filter);
+            $this->filter($filter);
+        }
+        $prev_limit = $this->_limit;
+        $prev_offset = $this->_offset;
+        $this->setMargins(1);
+
+
+        $row = $this->exec();
+
+        // restore previous settings
+
+        if (null !== $filter)
+        {
+            $this->_filter = & $prev_filter;
+        }
+        $this->_limit  = $prev_limit;
+        $this->_offset  = $prev_offset;
+
+
+        return $row;
+    }
+
 
     public function alias($alias='')
     {
@@ -514,6 +577,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *        IBoolean generating IField,
      *        array with such elements:
      *          1. 'field_name' => 'value'
+     *             if value is given as an array, IN operator is used
      *          2. 'literal query part'
      *          3' array('field_name','operator','value')
      *             e.g. array('date','>','2009')
@@ -523,6 +587,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *             third one as field value (only if first one was given)
      *             special operators:
      *                  'IN' -- 3rd operator is expected to be array of values
+     *                  'NOT IN' -- 3rd operator is expected to be array of values
      * @return $this
      */
     public function filter($condition)
@@ -561,18 +626,54 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     $field = $this[$field_name];
                     if (!$field)
                         throw new HgException("Trying to filter ".get_class($this)." with unknown field $field_name");
-                    if ($value_given)
+
+                    // change "=NULL" and "<>NULL" into "IS (NOT) NULL"
+                    if ($value_given && null===$value)
                     {
                         switch ($operator)
                         {
-                            case 'IN' :
-                                foreach ($value as &$v)
-                                    $v = $field->dbString($v);
-                                unset($v);
-                                $value = '('.join(', ',$value).')';
+                            case '=' :
+                                $operator = 'IS NULL';
+                                $value = '';
+                                $value_given = false;
                                 break;
-                            default :
-                                $value = $field->dbString($value);
+                            case '!=' :
+                            case '<>' :
+                                $operator = 'IS NOT NULL';
+                                $value = '';
+                                $value_given = false;
+                                break;
+                        }
+                    }
+
+                    if ($value_given)
+                    {
+                        if (!is_array($value))
+                        {
+                            $value = $field->dbString($value);
+                        }
+                        else
+                        {
+                            switch ($operator)
+                            {
+                                // allow array values (translate to IN operator)
+                                case '=' :
+                                case '!=' :
+                                case '<>' :
+                                    $operator = ('='==$operator) ? 'IN' : 'NOT IN';
+
+                                case 'IN' :
+                                case 'NOT IN' :
+                                    foreach ($value as &$v)
+                                        $v = $field->dbString($v);
+                                    unset($v);
+                                    $value = '('.join(', ',$value).')';
+                                    break;
+
+                                default :
+                                    trigger_error("Filter operator `{$operator}' does not support arrays.", E_USER_WARNING);
+                                    return $this;
+                            }
                         }
                     }
                 }
@@ -580,6 +681,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 switch ($operator)
                 {
                     case 'IN' :
+                    case 'NOT IN' :
                         if ('()'===$value)
                         {
                             $cond[] = sprintf('/* %s */ false', $this_cond);
@@ -1098,6 +1200,37 @@ abstract class Model extends DataSet implements IModel
             $sql .= sprintf(' "%s"', $this->_alias);
         return $sql;
     }
+
+
+    /**
+     * Get one row
+     *
+     * With ability to filter by scalar PK value
+     * @author m.augustynowicz
+     *
+     * @param mixed $filter apart from parent's functionality,
+     *        if model has only one primary key, you can pass it's
+     *        value here alone
+     *
+     * @return void
+     */
+    public function getRow($filter=null)
+    {
+        // accept scalar value of $filter
+        if (null !== $filter)
+        {
+            // allow passing flat value, when only one PK is defined
+            if (is_scalar($filter) && 1 == sizeof($this->_primary_keys))
+            {
+                $filter = array(
+                    reset($this->_primary_keys) => $filter
+                );
+            }
+        }
+
+        return parent::getRow($filter);
+    }
+
         
     /**
     * Retrieves names of primary key fields
@@ -1381,15 +1514,25 @@ abstract class Model extends DataSet implements IModel
     */
     public function tableDefinition()
     {
-        $sql = "DROP TABLE IF EXISTS \"{$this->_table_name}\";\nCREATE TABLE \"{$this->_table_name}\" (\n";
+        $sql0 = '';
+        $sql = "DROP TABLE IF EXISTS \"{$this->_table_name}\";\n";
+        $sql .= "CREATE TABLE \"{$this->_table_name}\" (\n";
         foreach($this->_fields as $f)
+        {
+            if ($pre = $f->columnDefinitionAdditionalQuery())
+            {
+                $sql0 .= $pre . ";\n";
+            }
             $sql .= "    ".$f->columnDefinition().",\n";
+        }
         if (!empty($this->_primary_keys))
             $sql .= "    CONSTRAINT \"{$this->_table_name}_pk\" PRIMARY KEY (".implode(',',$this->_primary_keys)."),\n";
         $sql[strlen($sql)-2]=' ';
         $sql .= ");\n";
         $sql .= "COMMENT ON TABLE \"{$this->_table_name}\" IS 'model:".$this->getName()."';\n";
-        return($sql);
+        if ($sql0)
+            $sql = "$sql0\n$sql";
+        return $sql;
     }
     
     public function delete($execute=false)
@@ -1647,62 +1790,88 @@ abstract class Model extends DataSet implements IModel
         $values = '';
         foreach($this->_fields as $name=>$field)
         {
-            /** @todo wielki syf w tej if-ownicy. naprawić. uporządkować. przepisać od nowa. */
-            if ($action == 'delete')
+            if (array_key_exists($name, $data))
             {
-                if (!in_array($name,$this->_primary_keys)) //only interested in primary keys when deleting
-                    continue;
-                elseif (!isset($data[$name]))
-                    $data[$name]= NULL; //these will be properly caught during validation
-            }            
-            if (get_class($field) === 'FId' && $action == 'insert' && (!isset($data[$name]) || $data[$name]==='' || $data[$name]===null))
+                $auto_value = $data[$name];
+            }
+            else
             {
-                $data[$name] = $field->seqValue('next');
-            }            
-            elseif ($action == 'insert') // key not exist or null value
+                $auto_value = null;
+            }
+            $use_auto_value =  $field->autoValue($action, $auto_value);
+
+            if ($use_auto_value)
             {
-                if (!array_key_exists($name, $data))
+                $data[$name] = $auto_value;
+            }
+            else
+            {
+                /** @todo wielki syf w tej if-ownicy. naprawić. uporządkować. przepisać od nowa. */
+                if ($action == 'delete')
                 {
-                    $null = null;
-                    if($tmp = $field->invalid($null)) //reference to $data[$name] is NULL, 
-                        $error[$name]= $tmp;                     //but the call may fill it with
-                    if (null !== $null)
-                        $data[$name] = $null; 
+                    if (!in_array($name,$this->_primary_keys)) //only interested in primary keys when deleting
+                        continue;
+                    elseif (!isset($data[$name]))
+                        $data[$name]= NULL; //these will be properly caught during validation
+                }
+
+                if ($action == 'insert') // key not exist or null value
+                {
+                    if (!array_key_exists($name, $data))
+                    {
+                        $null = null;
+                        if($tmp = $field->invalid($null)) //reference to $data[$name] is NULL,
+                            $error[$name]= $tmp;                     //but the call may fill it with
+                        if (null !== $null)
+                            $data[$name] = $null;
+                    }
+                    else
+                    {
+                        if($tmp = $field->invalid($data[$name])) //reference to $data[$name] is NULL,
+                            $error[$name]= $tmp;                     //but the call may fill it with some automatic value. @TODO Really?!?.\
+                    }
+
+                }
+                elseif(array_key_exists($name,$data) && !isset($data[$name]) && $action=='update') // key exists and value is null
+                {
+                    if($tmp = $field->invalid($data[$name]))
+                        $error[$name]= $tmp;
+                }
+                elseif(isset($data[$name]) && $tmp = $field->invalid($data[$name]))
+                {
+                    $error[$name] = $tmp;
+                    continue;
+                }
+            }
+
+            if (!isset($error[$name]) && array_key_exists($name,$data)) //so far so good
+            {
+                if ($use_auto_value)
+                {
+                    // Field::autoValue() handles quoting
+                    $value = & $auto_value;
                 }
                 else
                 {
-                    if($tmp = $field->invalid($data[$name])) //reference to $data[$name] is NULL, 
-                        $error[$name]= $tmp;                     //but the call may fill it with some automatic value. @TODO Really?!?.\
+                    $value = $field->dbString($data[$name]);
                 }
-                
-            }
-            elseif(array_key_exists($name,$data) && !isset($data[$name]) && $action=='update') // key exists and value is null
-            {
-                if($tmp = $field->invalid($data[$name]))
-                    $error[$name]= $tmp;
-            }
-            elseif(isset($data[$name]) && $tmp = $field->invalid($data[$name]))
-            {
-                //var_dump(array("$name: '{$data[$name]}' invalid"=>$tmp));
-                $error[$name]= $tmp;
-                continue;
-            }
-			$this->_data = $data;
-            if (!isset($error[$name]) && array_key_exists($name,$data)) //so far so good
-            {
-                $value = $field->dbString($data[$name]);
+
                 if($action == 'insert')
                 {
-                    $sql.= $this->_ident("\n\"$name\",");
+                    $sql .= $this->_ident("\n\"$name\",");
                     $values .= "\n$value,";
                 }
                 elseif($action == 'update')
-                    $sql.= $this->_ident("\n\"$name\"=$value,");
+                {
+                    $sql .= $this->_ident("\n\"$name\"=$value,");
+                }
+                unset($value);
             }
         }
+        $this->_data = $data;
 
         //end local query
-        
+
         if(empty($error))
         {
             if($action != 'delete') $sql = substr($sql,0,-1);
@@ -1766,12 +1935,13 @@ abstract class Model extends DataSet implements IModel
     /**
     * Inserts a new field into a model.
     * @param  IModelField $field A field to insert.
+    * @return IModelField the field itself, for chaining
     */
     protected function _addField(IModelField $field)
     {
         $this->_fields[$field->getName()] = $field;
-        $field->SourceModel($this);
-        return($field);
+        $field->sourceModel($this);
+        return $field;
     }
 
     /**

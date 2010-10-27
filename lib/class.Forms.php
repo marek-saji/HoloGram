@@ -98,7 +98,9 @@ class Forms extends HgBase
             $this->__form['model'] = $ds->getName();
             $fields = $ds->getFields();
             foreach($fields as $fname => $field)
-                $this->__form['inputs'][$fname] = array('models'=>array($this->__form['model']=>array($fname)));
+            {
+                $this->__form['inputs'][$fname]['models'][$this->__form['model']][] = $fname;
+            }
                 
             $this->__form['ajax'] = false;
             $this->__ctrl->forms[$this->__short_ident] = $this->__form;
@@ -126,7 +128,7 @@ class Forms extends HgBase
         $f = g('Functions');
 
         $params = array_merge(array(
-            'id' => $f->uniqueId($this->__ident),
+            'id' => $f->uniqueId(),
             'ident'=>$f->ASCIIfyText($this->__ident),
             'ajax'=>isset($this->__form['ajax'])?$this->__form['ajax']:USE_AJAX_BY_DEFAULT,
             'errors' => $this->getErrors(),
@@ -147,6 +149,7 @@ class Forms extends HgBase
             'form'  => $this,
         ));
     }
+
     
     /**
      * Renders form field using definition from Component::$forms.
@@ -157,63 +160,65 @@ class Forms extends HgBase
      */
     public function input($input, array $additional_params = array())
     {
-        if(!isset($this->__form['inputs'][$input]))
-            throw new HgException("Input `$input' not defined in controller variable \$forms!");
-
-        $input_def = & $this->__form['inputs'][$input];
-            
-        $tpl = @$input_def['tpl'];        
-
-        if (null === $tpl)
-        {
-            if (@empty($input_def['models']))
-                throw new HgException("Template is not defined in controller variable \$forms definition and no models given!");
-            else if (sizeof($input_def['models'])>1)
-                throw new HgException("Template is not defined in controller variable \$forms definition and more than one models given!");
-            else if (sizeof(reset($input_def['models']))>1)
-                throw new HgException("Template is not defined in controller variable \$forms definition and more than one field of a model given!");
-        }
+        $input_def = $this->_getInput($input, false);
 
         $data = @ $this->__ctrl->data[$this->__short_ident][$input];
         $errors = $this->_getErrors($input);
 
-        /*
-        $id0 = $id = g('Functions')->ASCIIfyText();
-        $suffix = '';
-        do
-        {
-            if (!isset(self::$_used_ids[$id]))
-                break;
-            $suffix++;
-            $id = $id0.'__'.$suffix;
-        }
-        while(true);
-        self::$_used_ids[$id] = true;
-         */
-        $id = g('Functions')->uniqueId($this->__ident.'_'.$input);
-            
-        $sys_params = array('ident'=>$this->__ident,
-                            'input'=>$input,
-                            'id' => $id,
-                            'input_def' => $input_def,
-                            'data'=>$data,
-                            'errors'=>$errors,
-                            'ajax'=>isset($this->__form['ajax']) ? $this->__form['ajax'] : USE_AJAX_BY_DEFAULT
-                        );
-        $params = array_merge($sys_params, $additional_params);
+        $hg_params = array(
+            'input_def' => $input_def,
+            'ident'     => $input_def['form_ident'],
+            'input'     => $input_def['input_name'],
+            'id'        => $input_def['id'],
+            'ajax'      => $input_def['ajax'],
+            'data'      => $data,
+            'errors'    => $errors,
+        );
+        $params = array_merge($hg_params, $additional_params);
 
-        if($tpl!==null)
-            $ret = $this->__ctrl->inc($tpl, $params);
-        else
-        {
-            // only one item in [models]
-            list($field) = reset($input_def['models']);
-            $model = key($input_def['models']);
-            $ret = $this->__ctrl->inc('Forms/'.g($model, 'model')->getField($field)->type(),$params);
-        }
-
-        return $ret;
+        return $this->__ctrl->inc($input_def['tpl'], $params);
     }
+
+
+    /**
+     * Render label for form input
+     * @author m.augustynowicz
+     *
+     * @param string $input key in $forms[inputs]
+     * @param string $label text label. will be translated
+     * @param array $additional_params additional params to pass to the template
+     *
+     * @return void
+     */
+    public function label($input, $label, array $additional_params = array())
+    {
+        $input_def = $this->_getInput($input, true);
+
+        $required = false;
+        foreach ($input_def['models'] as $model_name => &$fields)
+        {
+            $model = g($model_name, 'model');
+            foreach ($fields as $field_name)
+            {
+                if ($model[$field_name]->notNull())
+                {
+                    $required = true;
+                    break 2;
+                }
+            }
+        }
+        unset($fields);
+
+        $hg_params = array(
+            'label' => $label,
+            'input_id' => $input_def['id'],
+            'required' => $required
+        );
+        $params = array_merge($hg_params, $additional_params);
+
+        return $this->__ctrl->inc('Forms/label', $params);
+    }
+
 
     /**
      * Wrapper for deprecated method name.
@@ -307,6 +312,110 @@ class Forms extends HgBase
             unset(g()->infos['forms']);
 
         return $errors;
+    }
+
+
+    /**
+     * Get a complete input field definition
+     *
+     * Here we take care of duplicate ids.
+     * @author m.augustynowicz
+     *
+     * @param string $name valid input field name
+     * @param bool $for_label determine wheter we are getting input data for rendering
+     *        <label /> and not actual <input />.
+     *
+     * @return array input field definition containing:
+     *         - [form_ident]
+     *         - [input_name]
+     *         - [models]
+     *         - [tpl]
+     *         - [id]
+     *         - [ajax]
+     */
+    protected function _getInput($name, $for_label)
+    {
+        if (null === $this->__form['inputs'][$name])
+        {
+            throw new HgException("Input `$name' not defined in controller variable \$forms!");
+        }
+
+        $input_def = & $this->__form['inputs'][$name];
+
+        static $rendered_cache = array();
+        $rendered = & $rendered_cache[$name];
+
+        // determine whether we should (re-)generate id
+        if (!@$input_def['_generated'])
+        {
+            $generate_id = true; // we should for new inputs
+            if (!$for_label)
+                $rendered++;
+        }
+        elseif ($for_label)
+            $generate_id = true; // we should, when rendering <label />
+        else
+        {
+            // we should, when rendering <input /> again.
+
+            $rendered++;
+            $generate_id = (1 < $rendered);
+        }
+
+        if ($generate_id)
+        {
+            $input_def['input_name'] = $name;
+            $input_def['id'] = g('Functions')->uniqueId();
+        }
+
+
+        if (true === @$input_def['_generated'])
+        {
+            return $input_def;
+        }
+
+
+        $models = & $input_def['models'];
+
+        $tpl = & $input_def['tpl'];
+        if (null === $tpl)
+        {
+            if (empty($models))
+            {
+                throw new HgException("Template is not defined in controller variable \$forms definition and no models given.");
+            }
+            else if (sizeof($models) > 1)
+            {
+                throw new HgException("Template is not defined in controller variable \$forms definition and more than one models given.");
+            }
+
+            $fields = reset($models);
+            if (sizeof($fields) > 1)
+            {
+                throw new HgException("Template is not defined in controller variable \$forms definition and more than one field of a model given!");
+            }
+
+            $model_name = key($models);
+            $field_name = reset($fields);
+            $model = g($model_name, 'model');
+            $field = $model[$field_name];
+            $tpl = 'Forms/' . $field->type();
+        }
+
+        $input_def['form_ident'] = $this->getIdent();
+
+        if (isset($this->__form['ajax']))
+            $input_def['ajax'] = $this->__form['ajax'];
+        else
+            $input_def['ajax'] = USE_AJAX_BY_DEFAULT;
+
+
+        $input_def['_generated'] = true;
+
+        unset($tpl);
+        unset($models);
+
+        return $input_def;
     }
 
 }

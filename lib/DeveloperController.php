@@ -4,116 +4,87 @@ g()->load('Pages', 'controller');
 
 abstract class DeveloperController extends PagesController
 {
-    protected $_file = __FILE__;
-    private $__file = __FILE__;
+    protected $_files = array(__FILE__);
     protected $_title = null;
 
-    public function __construct($args)
+
+    public function onAction($action, array & $params)
     {
-        if (!g()->conf['allow_debug'])
+        if (!g()->debug->allowed())
         {
-            // redirect to 404.
-            parent::defaultAction(array());
+            $this->redirect(array('HttpErrors', 'error404'));
         }
 
-        g()->db->lastErrorMsg(); // this will initialize database
+        g()->db->lastErrorMsg(); // will initialize db
 
-        parent::__construct($args);
+        return true;
     }
 
 
-    public function render()
-    {
-        if (g()->conf['site_name'])
-            $title = g()->conf['site_name'].' ';
-        else
-            $title = '';
-        $title .= 'Dev';
-        if ($this->_title)
-            $title .= ' : ' . $this->_title;
-        g()->view->setTitle($title);
-
-        return parent::render();
-    }
-
+    /**
+     * Display list of all actions available.
+     *
+     * @param array $params none used
+     */
     public function defaultAction(array $params)
     {
-        $methods = get_class_methods($this);
-        $source1 = file_get_contents($this->__file);
-        $source2 = file_get_contents($this->_file);
-        preg_match_all('/[\t ]*\/\*\*((?:\n[\t ]*\*[^\n]*)*)\n[\t ]*\*\/\s*(?:public )function\s+action([[:alpha:]]*)[^[:alpha:]].*[\r\n]/sUmi', $source1, $matches1);
-        preg_match_all('/[\t ]*\/\*\*((?:\n[\t ]*\*[^\n]*)*)\n[\t ]*\*\/\s*(?:public )function\s+action([[:alpha:]]*)[^[:alpha:]].*[\r\n]/sUmi', $source2, $matches2);
-        $actions = array_merge(
-            (array)array_combine($matches1[2], $matches1[1]),
-            (array)array_combine($matches2[2], $matches2[1])
-        );
+        $actions = array();
+        foreach ($this->_files as & $file)
+        {
+            $source = file_get_contents($file);
+            preg_match_all('!
+                (
+                ^\s*/\*\*\s*$\s*    # /**
+                (?:^\s*\*.*$\s*)*   #  *
+                ^\s*\*/\s*$         #  */
+                )\s*
+                ^\s*public\s+function\s+action([[:alpha:]]*)[^[:alpha:]].*$!mx',
+                    $source, $matches
+            );
+            $actions = array_merge(
+                $actions,
+                (array) array_combine($matches[2], $matches[1])
+            );
+        }
+
+        unset($actions['Template']); // don't include actionTemplate
+        ksort($actions);
+
         $this->assign(compact('actions'));
     }
 
-    /**
-     * Launches all create*, and then add* actions.
-     * @author m.augustynowicz
-     *
-     * @todo fix it. remove comment in tpl/Dev/default.php when fixed.
-     *
-     * @param array $params no params accepted
-     */
-    public function actionSetup(array $params)
-    {
-        $db = g()->db;
-        $db->debugOn();
-        echo '<hr /><h2>creating things..</h2>';
-        $methods = preg_grep('/^actionCreate/', get_class_methods($this));
-        foreach ($methods as $method)
-        {
-            printf ('<h3>%s</h3>', $method);
-            call_user_func(array($this, $method), array());
-        }
-        echo '<hr /><h2>adding things..</h2>';
-        $methods = preg_grep('/^actionAdd/', get_class_methods($this));
-        foreach ($methods as $method)
-        {
-            printf ('<h3>%s</h3>', $method);
-            call_user_func(array($this, $method), array());
-        }
-        $db->debugOff();
-
-        $this->_title = 'setup';
-    }
-
 
     /**
-     * Displays update_actions file
+     * Will launch actions:
+     *   - create*()
+     *   - populate*()
+     *   - add*()
      * @author m.augustynowicz
      *
      * @param array $params accepts "die" parameter
-     *
-     * @return void
      */
-    public function actionPrintUpdateActions(array $params)
+    public function actionSetup(array $params)
     {
         $this->_devActionBegin($params, __FUNCTION__);
 
-        $fn = APP_DIR . 'update_actions';
-
-        if (!file_exists($fn))
-            echo 'File with update actions does not exist.';
-        else
+        $all_methods = get_class_methods($this);
+        foreach (array('create', 'populate', 'add') as $suffix)
         {
-            $f = file($fn);
-            print '<table border="1"><thead><th>rev</th><th>action</th></thead><tbody>';
-            foreach ($f as $row)
+            printf('<hr /><h2>%s* actions</h2>', $suffix);
+            $regex = '/^action'.ucfirst($suffix).'/';
+            $methods = preg_grep($regex, $all_methods);
+            foreach ($methods as $method)
             {
-                list($rev,$action) = preg_split('/\s/', $row, 2);
-                if (!$action)
-                    printf('<tr><td colspan="2"><strong>invalid line:</strong><pre>%s</pre></td></tr>', $rev);
-                else
-                    printf('<tr><td>%s</td><td>%s</td></tr>', $rev, $action);
+                printf ('<h3>%s</h3>', $method);
+                call_user_func(array($this, $method), array());
+                echo $this->getAssigned('output');
+                $this->assign('output', null);
             }
-            print '</tbody></table>';
         }
+        echo '<hr />';
 
         $this->_devActionEnd($params, __FUNCTION__);
+        $this->_title = 'setup';
     }
 
 
@@ -164,4 +135,63 @@ abstract class DeveloperController extends PagesController
     }
 
 
+    /**
+     * Insert some rows to some model
+     * @author m.augustynowicz
+     *
+     * @param string $model_name
+     * @param array $rows No data validation. You have been warned.
+     * @param array $filter_fields list of fields that should be used determine
+     *        whether row already exists. Defaults to model's primary keys
+     */
+    protected function _insertSomething($model_name, array $rows, array $filter_fields=array())
+    {
+        printf('<h3>inserting into `%s\'</h3>', $model_name);
+
+        $model = g($model_name, 'model');
+        if (empty($filter_fields))
+        {
+            $filter_fields = $model->getPrimaryKeys();
+        }
+        $filter_fields = array_flip($filter_fields);
+
+        $ins_count = 0;
+        $upd_count = 0;
+        $succ_count = 0;
+        foreach ($rows as &$row)
+        {
+            $filter = array_intersect_key($row, $filter_fields);
+            if (empty($filter))
+                $filter = $row;
+            $model->filter($filter)->setMargins(1);
+            $existing = $model->exec();
+            if (false === $existing)
+            {
+                $action = 'insert';
+                $count = & $ins_count;
+            }
+            else
+            {
+                $action = 'update';
+                $count = & $upd_count;
+                $row = array_merge(
+                    $row,
+                    array_intersect_key($existing, $filter_fields)
+                );
+            }
+            if (true !== $err = $model->sync($row, true, $action))
+            {
+                g()->addInfo(null, 'error', 'Error while adding ' . $model_name);
+                g()->debug->dump($err);
+                break;
+            }
+            $count++;
+            $succ_count++;
+        }
+
+        printf('<p>inserted %d rows, updated %d. in total: %d/%d</p>',
+                $ins_count, $upd_count, $succ_count, sizeof($rows));
+    }
+
 }
+

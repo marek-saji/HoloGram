@@ -1,4 +1,5 @@
 <?php
+$v->addCss($t->file('dataset', 'css'));
 foreach ($libs as $title => $path_data)
 {
     if (!$title)

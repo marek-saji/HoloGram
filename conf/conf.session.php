@@ -1,7 +1,6 @@
 <?php
 
-	$conf = array(
-
-	  'SID' => 'hg21'
-	);
+$conf = array(
+    'SID' => 'HOL'
+);
 

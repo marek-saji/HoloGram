@@ -176,6 +176,10 @@ interface IModelField extends IField
      * @return string
      */
     public function dbString($value);
+
+
+    public function columnDefinition();
+    public function columnDefinitionAdditionalQuery();
 }
 
 /**
@@ -404,9 +408,8 @@ abstract class Field implements IModelField
     {
         $this->_name = $name;
         $this->_rules['notnull'] = $notnull;
-/*        if($def_val!==null)    TODO: naprawic
+        if($def_val!==null)
             $this->auto('DEFAULT');
-            */
         $this->_rules['defval'] = $def_val;
         $this->mess(array('invalid' => 'Invalid value'));
     }
@@ -496,63 +499,94 @@ abstract class Field implements IModelField
      *  * an IField, for wchich the IField::generator() will be passed. $args is ignored.
      *  * A boolean value. Will be converted to either true or false (without quotes).
      *  * Any other non-array value will be converted to a string and directly pasted into the query. 
-     * @param $args an array of arguments to pass to a function 
+     * @param boolean $quote quote value returned by source
      */
-    public function auto($source = null, $args = array(), $quotes = false)
+    public function auto($source = null, $quote = true)
     {
-        if(NULL === $source)
-            return (isset($this->_rules['auto']) ? $this->_rules['auto'] : NULL);
-        $this->_rules['auto'] = compact('source', 'args', 'quotes');
-        return ($this);
+        if (0 === func_num_args())
+        {
+            return isset($this->_rules['auto']) ? $this->_rules['auto'] : null;
+        }
+
+        $this->_rules['auto'] = array(
+            'source' => & $source,
+            'quote'  => $quote
+        );
+        return $this;
     }
 
     /**
-     * Returns the automatic value of a field.
-     * @return the generated automatic value, or NULL if it hasn't been defined. 
+     * Generates automatic value of a field.
+     * @author p.piskorski
+     * @author m.augustynowicz passing $value by reference, returning boolean
+     *
+     * @param string $action insert or update
+     * @param mixed $value original value, may be modified
+     * @return boolean whether automatic value has been assigned to $value
      */
-    public function autoValue()
+    public function autoValue($action=null, & $value=null)
     {
-        if(isset($this->_rules['auto']))
+        $value_given = func_num_args() >= 2;
+
+        if (isset($this->_rules['auto']))
         {
-            $def = $this->_rules['auto'];
-            if($def['source'] === 'DEFAULT')
+            $def = & $this->_rules['auto'];
+
+            switch (true)
             {
-                if(null !== $this->defaultValue())
-                    return ('DEFAULT');
-                else
-                    throw new HgException("Automatic uses default value that is not set");
+                // DEFAULT
+                case 'DEFAULT' === $def['source'] :
+                    if (null === $action || 'update' === $action)
+                        return false;
+                    if ($this->_rules['notnull'] && null === $value)
+                    {
+                        $value = $this->defaultValue();
+                        if (null === $value)
+                        {
+                            throw new HgException("Automatic uses default value that is not set");
+                        }
+                        $value = $this->dbString($value);
+                    }
+                    else
+                        return false;
+                    break;
+
+                // sync with another field
+                case $def['source'] instanceof IField :
+                    $value = $def['source']->generator();
+                    break;
+
+                // use callback
+                case is_array($def['source']) :
+                    $new_value = call_user_func($def['source'],
+                            $action, $this, $value);
+                    if (null === $new_value)
+                    {
+                        return false;
+                    }
+                    if ($def['quote'])
+                    {
+                        $value = $this->dbString($new_value);
+                    }
+                    else
+                    {
+                        $value = $new_value;
+                    }
+                    break;
+
+                // use the literal value
+                default :
+                    $value = $def['source'];
+                    if ($def['quote'])
+                    {
+                        $value = $this->dbString($value);
+                    }
             }
-            if($def['source'] instanceof IField)
-                return ($def['source']->generator());
-            if(is_array($def['source']))
-            {
-                if(is_array($def['args']) && isset($def['args']['source']) && isset($def['args']['params']))
-                    $def['args'] = call_user_func_array($def['args']['source'], $def['args']['params']);
-                if($def['quotes'])
-                    return "'" . (call_user_func_array($def['source'], $def['args'])) . "'";
-                else
-                    return (call_user_func_array($def['source'], $def['args']));
-            }
-            return ($def['source']);
+            return true;
         }
-        return (NULL);
+        return false;
     }
 
-    public function checkAutoValue(&$value)
-    {
-        if($this->notNull())
-        {
-            $av = $this->autoValue();
-            if($av === NULL || $av === 'DEFAULT')
-            {
-                if($this->defaultValue() === '' || $this->defaultValue() === null)
-                    return false;
-            }
-            else
-                $value = $av;
-        }
-        return true;
-    }
 
     /**
      * Sets or retrieves not null property
@@ -575,7 +609,7 @@ abstract class Field implements IModelField
         if('' !== $def_val)
         {
             $this->_rules['defval'] = $def_val;
-            //$this->auto('DEFAULT'); TODO : autovalues
+            $this->auto('DEFAULT');
         }
         else
             return (isset($this->_rules['defval']) ? $this->_rules['defval'] : '');
@@ -596,17 +630,32 @@ abstract class Field implements IModelField
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
-            return ($av);
-        if($value === null)
-            return "NULL";
+        if (null === $value || '' === $value)
+        {
+            return 'NULL';
+        }
         else
-            return (pg_escape_string($value));
+        {
+            return pg_escape_string($value);
+        }
     }
 
     public function columnDefinition()
     {
-        return ('"' . $this->getName() . '" ' . $this->dbType() . ($this->notNull() ? ' NOT NULL' : '') . ('' == $this->defaultValue() ? '' : ' DEFAULT ' . $this->defaultValue()));
+        $sql = '"' . $this->getName() . '" ' . $this->dbType();
+
+        if ($this->notNull())
+        {
+            $sql .= ' NOT NULL';
+        }
+
+        $def = $this->defaultValue();
+        if (null !== $def)
+        {
+            $sql .= ' DEFAULT ' . $this->dbString($def);
+        }
+
+        return $sql;
     }
 
     public function invalid(&$value)
@@ -622,16 +671,47 @@ abstract class Field implements IModelField
     public function checkType($def)
     {
         $res = array();
+
+        // column type
+
+        $type = $this->dbType();
+        $type = strtolower($type);
+        $db_type = $def['typename'];
+        $db_type = strtolower($db_type);
+        $db_type_with_size = sprintf('%s(%s)', $db_type, @$this->_rules['max_length']);
+
+        if ($type != $db_type)
+        if ($type != $db_type_with_size)
+        {
+            $res['typename'] = $this->dbType();
+        }
+
+        // NOT NULL
+
         $v = 'f';
         if(isset($this->_rules['notnull']))
             $v = ($this->_rules['notnull'] === true ? 't' : 'f');
         if($def['notnull'] != $v)
             $res['notnull'] = $v;
-        $v = '';
-        if(isset($this->_rules['defval']))
-            $v = $this->_rules['defval'];
-        if($def['defval'] != $v && $v . "::character varying" !== $def['defval'])
-            $res['defval'] = $v;
+
+        // DEFAULT
+
+        $v = @$this->_rules['defval'];
+        if (null !== $v)
+        {
+            $v = $this->dbString($v);
+        }
+        $ds_type = strtolower($this->dbType());
+        // stand alone value
+        if ($v !== $def['defval'])
+        {
+            // casted value
+            if ($v.'::'.$type !== $def['defval'])
+                // casted value with quoted type
+                if ($v.'::"'.$type.'"' !== $def['defval'])
+                    $res['defval'] = $v;
+        }
+
         return empty($res) ? false : $res;
     }
 
@@ -657,6 +737,18 @@ abstract class Field implements IModelField
     protected function _filterNulls($val)
     {
         return ($val !== NULL);
+    }
+
+
+    /**
+     * Additional query that should be run before creating table with this field
+     * @author m.augustynowicz
+     *
+     * @return boolean|string sql query to run or false, when nothing is necesary
+     */
+    public function columnDefinitionAdditionalQuery()
+    {
+        return false;
     }
 }
 
@@ -705,7 +797,14 @@ abstract class FStringBase extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if(NULL !== $value && $value !== '')
+        if (NULL === $value || '' === $value)
+        {
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else
         {
             $length = strlen($value);
             //null is not the same as an empty string
@@ -716,21 +815,24 @@ abstract class FStringBase extends Field
             if(isset($this->_rules['max_length']) && $this->_rules['max_length'] < $length)
                 $err['max_length'] = true;
         }
-        elseif(!$this->checkAutoValue($value))
-            $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
-            return ($av);
-        return "'" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
+        if (null === $value || '' === $value)
+        {
+            return 'NULL';
+        }
+        else
+        {
+            return "'" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
+        }
     }
 
     public function dbType()
     {
-        if(isset($this->_rules['max_length']))
+        if (isset($this->_rules['max_length']))
         {
             if ($this->_rules['max_length'] === @$this->_rules['min_length'])
                 return "BPCHAR({$this->_rules['max_length']})";
@@ -753,8 +855,13 @@ class FString extends FStringBase
 {
     public function dbString($value)
     {
-        $value = htmlspecialchars($value);
-        $value = strtr($value, array("\n"=>'', "\r"=>''));
+        if (null  !== $value)
+        if (false !== $value)
+        if (''    !== $value)
+        {
+            $value = htmlspecialchars($value);
+            $value = strtr($value, array("\n"=>'', "\r"=>''));
+        }
         return parent::dbString($value);
     }
 }
@@ -778,7 +885,13 @@ class FMultilineString extends FStringBase
 {
     public function dbString($value)
     {
-        $value = htmlspecialchars($value);
+        if (null  !== $value)
+        if (false !== $value)
+        if (''    !== $value)
+        {
+            $value = htmlspecialchars($value);
+
+        }
         return parent::dbString($value);
     }
 }
@@ -809,7 +922,14 @@ class FEmail extends FString
     public function invalid(&$value)
     {
         $err = array();
-        if(($this->notNull() && NULL !== $value) || (!$this->notNull() && $value != NULL))
+        if (NULL === $value || '' === $value)
+        {
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else
         {
             if($tmp = parent::invalid($value))
                 $err = $tmp;
@@ -817,8 +937,6 @@ class FEmail extends FString
                 $err['invalid'] = true;
             $length = strlen($value);
         }
-        elseif(!$this->checkAutoValue($value))
-            $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
 
@@ -840,14 +958,22 @@ class FMD5String extends FString
 class FPassword extends FMD5String
 {
 
-    public function __construct($name, $min_length = null, $max_length = null)
+    public function __construct($name, $min_length = null, $max_length = null, $notnull = true)
     {
-        parent::__construct($name, true, $min_length, $max_length);
+        parent::__construct($name, $notnull, $min_length, $max_length);
     }
 
     public function dbString($value)
     {
-        return "'" . md5($value) . "'";
+        if (null === $value || '' === $value)
+        {
+            return 'NULL';
+        }
+        else
+        {
+            // it's query-safe
+            return "'" . md5($value) . "'";
+        }
     }
 }
 
@@ -886,7 +1012,7 @@ class FURL extends FString
             else if (!isset($this->_allowed_protocols[$matches[1]]))
                 $err['unsupported protocol'] = true;
 
-            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9]+)+)(?:\/|$)!', $value, $matches))
+            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?:\/|$)!', $value, $matches))
                 $err['syntax error'] = true;
 
             if (!function_exists('checkdnsrr'))
@@ -940,11 +1066,12 @@ class FLocationCoords extends Field
     {
         $err = array();
         // handle null value
-        if(NULL === $value || $value === '')
+        if (NULL === $value || '' === $value)
         {
-            $value = null;
-            if(!$this->checkAutoValue($value))
+            if ($this->notNull())
+            {
                 $err['notnull'] = true;
+            }
             return $this->_errors($err, $value);
         }
 
@@ -980,18 +1107,6 @@ class FLocationCoords extends Field
             $err = array_merge($parent_err, $err);
 
         return ($this->_errors($err, $value));
-    }
-
-    /**
-     * Quote before inserting into SQL query.
-     */
-    public function dbString($value)
-    {
-        if(NULL !== ($av = $this->autoValue()))
-            return ($av);
-        if (null === $value)
-            return 'NULL';
-        return "'" . pg_escape_string($value) . "'";
     }
 
     /**
@@ -1071,27 +1186,165 @@ class FInt extends Field
         switch($this->_rules['precision'])
         {
             case 2:
-                return ('SMALLINT');
+                return ('INT2');
             break;
             case 4:
-                return ('INTEGER');
+                return ('INT4');
             break;
             case 8:
-                return ('BIGINT');
+                return ('INT8');
             break;
         }
     }
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
+        /*
+        if(false !== ($av = @$this->autoValue()))
             return ($av);
+         */
         if($value === null || $value === '')
             return "NULL";
         else
             return (pg_escape_string((int)$value));
     }
+
 }
+
+
+/**
+ * Enumeration field
+ *
+ * Enumerations are defined in {@uses $conf[enum]}
+ * @author m.augustynowicz
+ */
+class FEnum extends Field
+{
+    protected $_type_name = null;
+    protected $_values = array();
+
+
+    public function __construct($name, $type_name, $notnull=false, $default_value=null)
+    {
+        $enums = & g()->conf['enum'];
+
+        if (!array_key_exists($type_name, $enums))
+        {
+            throw new HgException('Tried to create '.__CLASS__.' with non-existing enum `'.$type_name.'\'. Create one in conf[enum].');
+        }
+
+        parent::__construct($name, $notnull, $default_value);
+
+        $this->_type_name = $type_name;
+        $this->_values = & $enums[$type_name];
+
+        if (empty($this->_values))
+        {
+            throw new HgException('Cannot create enum `'.$type_name.'\' as it has no values');
+        }
+    }
+
+
+    public function invalid(&$value)
+    {
+        $err = array();
+
+        if (false === array_search($value, $this->_values))
+        {
+            $err['invalid'] = true;
+        }
+
+        if (empty($err))
+        {
+            return parent::invalid($value);
+        }
+        else
+        {
+            return $this->_errors($err, $value);
+        }
+    }
+
+
+    public function dbString($value)
+    {
+        if (null === $value || '' === $value)
+        {
+            return 'NULL';
+        }
+        else
+        {
+            return "'" . str_replace("\n",'\n',pg_escape_string($value)) . "'";
+        }
+    }
+
+
+    public function checkType($def)
+    {
+        $res = parent::checkType($def);
+
+        if (isset($res['typename']))
+        {
+            $res['typename'] = '"' . $res['typename'] . '"';
+        }
+
+        if (isset($res['defval']))
+        {
+            $res['defval'] .= '::' . $this->_type_name;
+        }
+        return $res;
+    }
+
+
+    public function dbType()
+    {
+        return $this->_type_name;
+    }
+
+
+    /**
+     * Part of SQL query used when creating 
+     * @author m.augustynowicz
+     */
+    public function columnDefinition()
+    {
+        $sql = '"' . $this->getName() . '" "' . $this->dbType() . '"';
+
+        if ($this->notNull())
+        {
+            $sql .= ' NOT NULL';
+        }
+
+        $def = $this->defaultValue();
+        if (null !== $def)
+        {
+            $sql .= ' DEFAULT ' . $this->dbString($def);
+        }
+
+        return $sql;
+    }
+
+
+    /**
+     * SQL query to be executed before creating model with that field
+     * @author m.augustynowicz
+     * @todo check whether type already exist
+     */
+    public function columnDefinitionAdditionalQuery()
+    {
+        static $type_exists = array();
+        $checking_query = sprintf('SELECT COUNT(1) from pg_type WHERE typname = \'%s\'', pg_escape_string($this->_type_name));
+        if(! g()->db->getOne($checking_query) && !@$type_exists[$this->_type_name])
+        {
+            $type_exists[$this->_type_name] = true;
+            $sql_values = "'".join("','", $this->_values)."'";
+            return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
+                    $this->_type_name, $sql_values );
+        }
+        else
+            return false;
+    }
+}
+
 
 /**
  * A floating point type.
@@ -1139,6 +1392,8 @@ class FFloat extends Field
             $res = array();
         if($def['typename'] != 'float' && $def['typename'] != 'float' . $this->_rules['precision'])
             $res['typename'] = $this->dbType();
+        else
+            unset($res['typename']);
         if($def['type_specific'] != '-1')
             $res['typename'] = $this->dbType();
         return (empty($res) ? false : $res);
@@ -1147,7 +1402,14 @@ class FFloat extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if (NULL !== $value)
+        if (NULL === $value || '' === $value)
+        {
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else
         {
             $value = g('Functions')->floatVal($value);
             if (false === $value)
@@ -1170,17 +1432,21 @@ class FFloat extends Field
                     $err['max_decimals_excided'] = true;
             }
         }
-        elseif (!$this->checkAutoValue($value))
-            $err['notnull'] = true;
 
         return ($this->_errors($err, $value));
     }
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
-            return ($av);
-        return g('Functions')->floatVal($value, true);
+        if (null === $value || '' === $value)
+        {
+            return 'NULL';
+        }
+        else
+        {
+            // it's query-safe
+            return g('Functions')->floatVal($value, true);
+        }
     }
 
     public function dbType()
@@ -1189,10 +1455,14 @@ class FFloat extends Field
         {
             case 4:
                 return ('REAL');
-            break;
+                break;
             case 8:
                 return ('DOUBLE PRECISION');
-            break;
+                break;
+            default :
+                throw HgException('Tried to create floating point field with unknow precision: '.
+                            print_r($this->_rules['precision'], true) );
+                break;
         }
     }
 }
@@ -1215,34 +1485,56 @@ class FDouble extends FFloat
      * @param float $min_val - minimum value of a field
      * @param float $max_val - maximum value of a field
      */
-    public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = 2, $min_val = null, $max_val = null)
+    public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = null, $min_val = null, $max_val = null)
     {
-        parent::__construct($name, $notnull, $def_val);
-        if($precision != 4 && $precision != 8)
-            $precison = 8;
-        $this->_rules['precision'] = $precision;
+        parent::__construct($name, $precision, $notnull, $def_val, $min_val, $max_val);
         $this->_rules['decimal_places'] = $decimal_places;
-        $this->_rules['min_val'] = $min_val;
-        $this->_rules['max_val'] = $max_val;
         $this->mess(array('invalid' => 'Invalid floating point value'));
         $this->mess(array('min_val_excided' => 'Number is too small'));
         $this->mess(array('max_val_excided' => 'Number is too big'));
+        $this->mess(array('dec_places_excided' =>
+                'Too many numbers after decimal point' ));
     }
 
     public function invalid(&$value)
     {
         $err = array();
-        if(!$this->checkAutoValue($value) && NULL === $value)
-            $err['notnull'] = true;
-        $value = preg_replace('!,!','.',$value);
-        $value = preg_replace('! !', '', $value);
-        $reg_expression = sprintf('/^[\+\-]?[0-9]*[[\.]?[0-9]{0,%s}]?$/', $this->_rules['decimal_places'] > 0 ? $this->_rules['decimal_places'] : 1);
-        if(!preg_match($reg_expression, $value))
-            $err['invalid'] = true;
-        elseif($this->_rules['min_val'] !== null && $value < $this->_rules['min_val'])
-            $err['min_val_excided'] = true;
-        elseif($this->_rules['max_val'] !== null && $value > $this->_rules['max_val'])
-            $err['max_val_excided'] = true;
+        if (NULL === $value || '' === $value)
+        {
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else
+        {
+            $value = preg_replace('/,/','.',$value);
+            if (!g('Functions')->areFloats($value))
+            {
+                $err['invalid'] = true;
+            }
+            else
+            {
+                if (null !== $this->_rules['decimal_places']
+                    && preg_match('/\.([0-9]*)/', $value, $matches))
+                {
+                    if (strlen($matches[1]) > $this->_rules['decimal_places'])
+                    {
+                        $err['decimal_places_excided'] = true;
+                    }
+                }
+                if (null !== $this->_rules['min_val']
+                        && $value < $this->_rules['min_val'])
+                {
+                    $err['min_val_excided'] = true;
+                }
+                else if (null !== $this->_rules['max_val']
+                        && $value > $this->_rules['max_val'])
+                {
+                    $err['max_val_excided'] = true;
+                }
+            }
+        }
         return ($this->_errors($err, $value));
     }
 }
@@ -1277,25 +1569,30 @@ class FDate extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if(NULL != $value)
+        if (NULL === $value || '' === $value)
+        {
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else if ('NOW()' !== strtoupper($value))
         {
             if (!is_int($value)) // we allow to pass timestamp
             {
                 if(false === strtotime($value))
                     $err['invalid'] = true;
             }
-        }
-        elseif(!$this->checkAutoValue($value))
-            $err['notnull'] = true;
 
-        if ($value)
-        {
-            foreach (g()->conf['locale']['accepted date formats'] as $regex)
+            if ($value && empty($err))
             {
-                if (!preg_match($regex, $value))
+                foreach (g()->conf['locale']['accepted date formats'] as $regex)
                 {
-                    $err['invalid_format'] = true;
-                    break;
+                    if (!preg_match($regex, $value))
+                    {
+                        $err['invalid_format'] = true;
+                        break;
+                    }
                 }
             }
         }
@@ -1310,14 +1607,22 @@ class FDate extends Field
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
-            return ($av);
-        if($value === null || $value === '')
+        if (null === $value || '' === $value)
+        {
             return 'NULL';
-        if(!g('Functions')->isInt($value))
-            $value = strtotime($value);
-        $value = date('Y-m-d', $value);
-        return "'$value'";
+        }
+        else if ('NOW()' === strtoupper($value))
+        {
+            return 'NOW()';
+        }
+        else
+        {
+            if (!g('Functions')->isInt($value))
+                $value = strtotime($value);
+            // it's query-safe
+            $value = date('Y-m-d', $value);
+            return "'$value'";
+        }
     }
 }
 
@@ -1325,8 +1630,10 @@ class FMonthYear extends FDate
 {
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
+        /*
+        if(false !== ($av = @$this->autoValue()))
             return ($av);
+         */
         if($value === null || $value === '')
             return 'NULL';
         if(!g('Functions')->isInt($value))
@@ -1346,7 +1653,7 @@ class FMonthYear extends FDate
                     $err['invalid'] = true;
             }
         }
-        elseif(!$this->checkAutoValue($value))
+        elseif(!$this->autoValue($value) && $this->_rules['notnull'])
             $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
@@ -1372,13 +1679,21 @@ class FTime extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if(NULL !== $value && $value !== '')
+        if (NULL === $value || '' === $value)
         {
-            if(false === strtotime($value))
-                $err['invalid'] = true;
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
         }
-        elseif(!$this->checkAutoValue($value))
-            $err['notnull'] = true;
+        else if ('NOW()' !== strtoupper($value))
+        {
+            if (!is_int($value))
+            {
+                if(false === strtotime($value))
+                    $err['invalid'] = true;
+            }
+        }
         return ($this->_errors($err, $value));
     }
 
@@ -1389,12 +1704,22 @@ class FTime extends Field
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
-            return ($av);
-        if(!g('Functions')->isInt($value))
-            $value = strtotime($value);
-        $value = date('H:i:s', $value);
-        return "'$value'";
+        if (null === $value || '' === $value)
+        {
+            return 'NULL';
+        }
+        else if ('NOW()' === strtoupper($value))
+        {
+            return 'NOW()';
+        }
+        else
+        {
+            if (!g('Functions')->isInt($value))
+                $value = strtotime($value);
+            // it's query-safe
+            $value = date('H:i:s', $value);
+            return "'$value'";
+        }
     }
 }
 
@@ -1406,19 +1731,36 @@ class FTimestamp extends Field
 
     public function checkType($def)
     {
-        if(false === ($res = parent::checkType($def)))
+        // dbString() uppercases function names
+        switch (strtoupper($def['defval']))
+        {
+            case 'NOW()' :
+                $def['defval'] = strtoupper($def['defval']);
+        }
+
+        if (false === ($res = parent::checkType($def)))
             $res = array();
-        if($def['typename'] != 'timestamp')
+
+        if ($def['typename'] != 'timestamp')
             $res['typename'] = $this->dbType();
-        if($def['type_specific'] != '-1')
+
+        if ($def['type_specific'] != '-1')
             $res['typename'] = $this->dbType();
+
         return (empty($res) ? false : $res);
     }
 
     public function invalid(&$value)
     {
         $err = array();
-        if(NULL !== $value && $value !== '')
+        if (NULL === $value || '' === $value)
+        {
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else if ('NOW()' !== strtoupper($value))
         {
             $val = $value;
             if(!g('Functions')->isInt($value))
@@ -1428,21 +1770,27 @@ class FTimestamp extends Field
                     $err['invalid'] = true;
             }
         }
-        elseif(!$this->checkAutoValue($value))
-            $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
-            return ($av);
-        if (null === $value)
+        if (null === $value || '' === $value)
+        {
             return 'NULL';
-        else if (!g('Functions')->isInt($value))
-            $value = strtotime($value);
-        $value = date('Y-m-d H:i:s', $value);
-        return "'$value'";
+        }
+        else if ('NOW()' === strtoupper($value))
+        {
+            return 'NOW()';
+        }
+        else
+        {
+            if (!g('Functions')->isInt($value))
+                $value = strtotime($value);
+            // it's query-safe
+            $value = date('Y-m-d H:i:s', $value);
+            return "'$value'";
+        }
     }
 
     public function dbType()
@@ -1472,30 +1820,36 @@ class FBool extends Field implements IBoolean
     {
         $err = array();
         $val = $value;
-        if(NULL !== $val)
+        if (NULL === $value || '' === $value)
+        {
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else
         {
             if(null === ($val = g('Functions')->anyToBool($val)))
                 $err['invalid'] = true;
         }
-        elseif(!$this->checkAutoValue($val))
-            $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
 
     public function dbString($value)
     {
-        if(NULL !== ($av = $this->autoValue()))
-            return ($av);
+        if (null === $value || '' === $value)
+        {
+            return 'NULL';
+        }
         else
         {
-            $value = g('Functions')->anyToBool($value) ? 'true' : 'false';
+            return g('Functions')->anyToBool($value) ? 'true' : 'false';
         }
-        return $value;
     }
 
     public function dbType()
     {
-        return ('BOOLEAN');
+        return 'BOOL';
     }
 }
 
@@ -1520,6 +1874,7 @@ class FId extends Field
         )))
             $precison = 4;
         $this->_rules['precision'] = $precision;
+        $this->auto(array($this, 'autoValueNextSeq'));
     }
 
     public function checkType($def)
@@ -1556,13 +1911,18 @@ class FId extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if(NULL !== $value && $value !== '')
+        if (NULL === $value || '' === $value)
+        {
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else
         {
             if(!g('Functions')->isInt($value))
                 $err['invalid'] = true;
         }
-        elseif(!$this->checkAutoValue($value))
-            $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
 
@@ -1574,15 +1934,32 @@ class FId extends Field
             switch($this->_rules['precision'])
             {
                 case 2:
-                    return ('SMALLINT');
+                    return ('INT2');
                 break;
                 case 4:
-                    return ('INTEGER');
+                    return ('INT4');
                 break;
                 case 8:
-                    return ('BIGINT');
+                    return ('INT8');
                 break;
             }
+    }
+
+
+    /**
+     * Callback used by autoValue to get next value from sequencer
+     * @author m.augustynowicz
+     */
+    public function autoValueNextSeq($action, $field, & $value)
+    {
+        if ('insert' !== $action || null !== $value)
+        {
+            return null;
+        }
+        else
+        {
+            return $this->seqValue('next');
+        }
     }
 
     public function seqValue($which = 'curr')
@@ -1595,7 +1972,14 @@ class FId extends Field
 
     public function columnDefinition()
     {
-        return ('"' . $this->getName() . '" ' . $this->dbType() . ($this->notNull() ? ' NOT NULL' : '') . ('' == $this->defaultValue(false) ? '' : ' DEFAULT ' . $this->defaultValue()));
+        $sql = '"' . $this->getName() . '" ' . $this->dbType();
+
+        if ($this->notNull())
+        {
+            $sql .= ' NOT NULL';
+        }
+
+        return $sql;
     }
 }
 
@@ -1775,6 +2159,34 @@ class FFile extends FString
                 $size *= 1024;
         }
         return $size;
+    }
+
+    /**
+     * Invalidate file field
+     * @author j.rozanski
+     * @param not_known $value uploaded file array or md5 string
+     */
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(is_array($value))
+        {
+            if($value['error'] != UPLOAD_ERR_OK)
+            {
+                if($value['error'] == UPLOAD_ERR_NO_FILE)
+                {
+                    if($this->notNull())
+                        $err['notnull'] = true;
+                }
+                else
+                    $err['invalid'] = true;
+            }
+        }
+        elseif(is_string($value))
+        {
+            return parent::invalid($value);
+        }
+        return ($this->_errors($err, $value));
     }
 }
 

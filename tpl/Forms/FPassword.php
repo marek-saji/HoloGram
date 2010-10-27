@@ -22,7 +22,7 @@ $____local_variables = array_merge($____local_variables, array(
 
 // first input
 $____local_variables = array_merge($____local_variables, array(
-    'id'            => ($id0 = $f->uniqueId($id)),
+    'id'            => ($id0 = $id),
     'name_suffix'   => '[0]',
     'err_handling'  => false
 ));
@@ -30,7 +30,7 @@ $attr0 = $t->inc('Forms/FPassword_single', $____local_variables);
 
 // second
 $____local_variables = array_merge($____local_variables, array(
-    'id'            => ($id1 = $f->uniqueId($id)),
+    'id'            => ($id1 = $f->uniqueId()),
     'name_suffix'   => '[1]',
     'class'         => (@$____local_variables['class'] . ' repetition'),
     'err_handling'  => true
