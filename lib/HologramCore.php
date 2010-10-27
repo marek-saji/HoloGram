@@ -1638,8 +1638,23 @@ abstract class Controller extends HgBase implements IController
     public function getName()
     {
         return($this->__name);
-    }    
-    
+    }
+
+
+    /**
+     * Get name ment for navigation (highlighting menu item etc)
+     *
+     * When overwritten, it can be used to interpersonate different controller
+     * @author m.augustynowicz
+     *
+     * @return string
+     */
+    public function getNavName()
+    {
+        return $this->getName();
+    }
+
+
     /**
      * Prints Controller-centered backtrace.
      * DEPRECATED in favour of Debug::trace()

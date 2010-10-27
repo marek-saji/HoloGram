@@ -71,9 +71,5 @@ class PagesController extends Component
         $this->inc($this->_layout);
     }
 
-    public function displayName()
-    {
-        return $this->getName();
-    }
 }
 
