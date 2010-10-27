@@ -61,7 +61,7 @@ hg['nyroModalInit'].f = function()
             // strangely enough, IE<8 does
             if ($.browser.msie && parseInt($.browser.version) >= 8)
             {
-                modal.find('form')
+                modal.find('form :input').not('textarea')
                     .keydown(function(e){
                         if (13 == e.keyCode)
                         {
