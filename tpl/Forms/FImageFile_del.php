@@ -19,12 +19,19 @@ extract(array_merge(
 if (!@$image['id'])
     return false;
 
-echo '<p>';
-$this->inc('uploaded_image', array(
-    $image,
-    'size' => $image_size
-));
-echo '</p>';
+@$____local_variables['class'] .= ' image';
+?>
+
+<p class="current-value <?=$____local_variables['class']?>">
+    <?php
+    $this->inc('uploaded_image', array(
+        $image,
+        'size' => $image_size
+    ));
+    ?>
+</p>
+
+<?php
 
 return $t->inc('Forms/FBool', $____local_variables);
 

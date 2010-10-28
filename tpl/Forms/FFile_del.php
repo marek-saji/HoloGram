@@ -10,7 +10,14 @@ extract(array_merge(
     ),
     $____local_variables
 ), EXTR_REFS|EXTR_PREFIX_INVALID, 'param');
+?>
 
-echo '<p>' . $filename . '</p>';
+<p class="current-value <?=$____local_variables['class']?>">
+    <?php
+    echo $filename;
+    ?>
+</p>
+
+<?php
 return $t->inc('Forms/FBool', $____local_variables);
 

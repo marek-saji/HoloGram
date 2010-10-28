@@ -1170,18 +1170,14 @@ class FInt extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if (NULL === $value || '' === $value)
+        if(NULL !== $value && $value !== '')
         {
-            if ($this->notNull())
-            {
-                $err['notnull'] = true;
-            }
-        }
-        else
-        {
-            if (!g('Functions')->isInt($value))
+            $value = preg_replace('! !', '', $value);
+            if(!g('Functions')->isInt($value))
                 $err['invalid'] = true;
         }
+        elseif(!$this->checkAutoValue($value))
+            $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
 
@@ -1396,6 +1392,8 @@ class FFloat extends Field
             $res = array();
         if($def['typename'] != 'float' && $def['typename'] != 'float' . $this->_rules['precision'])
             $res['typename'] = $this->dbType();
+        else
+            unset($res['typename']);
         if($def['type_specific'] != '-1')
             $res['typename'] = $this->dbType();
         return (empty($res) ? false : $res);

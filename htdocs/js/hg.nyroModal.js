@@ -53,24 +53,25 @@ hg['nyroModalInit'].f = function()
         // focus form inputs if any
         endShowContent: function(eltrs,settings){
             if (hg['nyroModalInit'].ajax_i)
+                hg('ajaxDOMReady')(hg['nyroModalInit'].ajax_i);
+
+            var modal = $('#nyroModalContent');
+
+            // IE>=8 does not send the form when return is hit
+            // strangely enough, IE<8 does
+            if ($.browser.msie && parseInt($.browser.version) >= 8)
             {
-                var ajax_i = hg['nyroModalInit'].ajax_i;
-                hg('ajaxDOMReady')(ajax_i);
-                //content.addClass(hg['ajax'].data[ajax_i].class); // bad fix...
-            }
-            $('#nyroModalContent')
-                .find('form')
-                    // make sure form is sent when pressing enter
-                    // (apparently it did not on IE8)
+                modal.find('form :input').not('textarea')
                     .keydown(function(e){
                         if (13 == e.keyCode)
                         {
                             $(this).submit();
                         }
-                    })
-                .end()
-                .find(':input:first')
-                    .focus();
+                    });
+            }
+
+            modal.find(':input:first').focus();
+
             hg['nyroModalInit'].ajax_i = null;
         },
         // .. and re-show them afterwards
