@@ -1176,7 +1176,7 @@ class FInt extends Field
             if(!g('Functions')->isInt($value))
                 $err['invalid'] = true;
         }
-        elseif(!$this->checkAutoValue($value))
+        elseif(!$this->autoValue($value))
             $err['notnull'] = true;
         return ($this->_errors($err, $value));
     }
