@@ -778,7 +778,7 @@ class Kernel
 
             $this->lang->available(); // fill the cache
 
-            $this->_getTranslations($lang);
+            $this->_getTranslations($this->lang->get());
 
             $this->first_controller = $this->get(
                 $this->conf['first_controller']['type'],'controller',
@@ -2600,7 +2600,6 @@ abstract class Component extends Controller
                                 . $f->camelify($input);
                     if (method_exists($this,$callback))
                     {
-                        //$variable_to_pass_by_reference = @$post[$input];
                         $new_errors = $this->$callback($post[$input]);
                         if (!empty($new_errors))
                         {
