@@ -121,7 +121,7 @@ class Request extends HgBase
      * Port podany w adresie URL
      * @var integer
      */
-    protected $_port = 80;
+    protected $_port = false;
 
     /**
      * Base Uri. First part of request uri not parsed to {@uses $_tree}.
@@ -399,7 +399,7 @@ class Request extends HgBase
                 21  => 'ftp',
                 70  => 'gopher',
             );
-            if (@$services[$this->_port] != $this->_protocol)
+            if ($this->_port && @$services[$this->_port] != $this->_protocol)
             {
                 $host .= ':' . $this->_port;
             }
