@@ -2985,9 +2985,4 @@ abstract class PermanentController extends Component
         return '';
     }
 
-
-    public function actionDefault(array $params)
-    {
-    }
-
 }
