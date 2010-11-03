@@ -564,14 +564,42 @@ JS;
     /**
      * Display pretty formatted and collapsable var_dump()
      * @todo make it awesome.
+     * @author m.augustynowicz
+     *
+     * @param mixed the same args as var_dump()
+     *
+     * @return mixed the same args as var_dump()
      */
     public function dump()
     {
         if (!$this->allowed())
             return;
 
+        static $has_cool_var_dump = null;
+        if (null === $has_cool_var_dump)
+        {
+            $ini_val = ini_get('xdebug.overload_var_dump');
+            if (false !== $ini_val)
+            {
+                // xdebug-2.1
+                $has_cool_var_dump = g('Functions')->anyToBool($ini_val);
+            }
+            else
+            {
+                // in previous versions, you can't really disable it
+                $has_cool_var_dump = function_exists('xdebug_enable');
+            }
+        }
+
         $argv = func_get_args();
-        return call_user_func_array('var_dump', $argv);
+
+        if (!$has_cool_var_dump)
+            echo '<pre>';
+        $result = call_user_func_array('var_dump', $argv);
+        if (!$has_cool_var_dump)
+            echo '</pre>';
+
+        return $result;
     }
 
     /**
