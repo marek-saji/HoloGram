@@ -29,7 +29,7 @@ class DataSetController extends PagesController
             $table->init();
     }
 
-    public function defaultAction(array $params)
+    public function actionDefault(array $params)
     {
         $sql  = "SELECT rels.relname, dsc.description\n";
         $sql .= "FROM pg_class rels\n";        

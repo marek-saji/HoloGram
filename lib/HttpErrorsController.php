@@ -24,7 +24,7 @@ class HttpErrorsController extends PagesController
      * @params array $params from URL
      *         [0] int $error_code
      */
-    public function defaultAction(array $params)
+    public function actionDefault(array $params)
     {
         $error_code = @$params[0];
         switch ($error_code)

@@ -49,7 +49,7 @@ function g($name='', $type="class", $args=array())
  * Possible callbacks in classes implementing this interface:
  *
  * action{ActionName}(array $params)
- *      action other than defaultAction that can be called from process().
+ *      action that can be called from process().
  *      launching an action() sets $this->_template to lowercased action name,
  *      You can override this using _setTemplate().
  *      @return void
@@ -1407,11 +1407,14 @@ abstract class Controller extends HgBase implements IController
         return true;
     }
 
+    /**
+     * @todo DEPRECATED (defaultAction) marked for deletion 2010-11-03
+     */
     public function defaultAction(array $params)
     {
         $this->redirect('HttpErrors/error404');
     }
-    
+
     public function assign($a, $value=null)
     {
         if (is_array($a))
@@ -1832,9 +1835,20 @@ abstract class Controller extends HgBase implements IController
 
         switch ($action)
         {
+            /**
+             * @todo DEPRECATED (defaultAction) marked for deletion 2010-11-03
+             */
             case 'default' :
-                $method = 'defaultAction';
-                break;
+                if (!method_exists($this, 'actionDefault'))
+                {
+                    g()->debug->addInfo(
+                        "deprecated {$this->getName()}::defaultAction",
+                        true,
+                        "`defaultAction' name convention has been deprecated and will be removed in future. Rename it in `{$this->getName()}' to `actionDefault' instead"
+                    );
+                    $method = 'defaultAction';
+                    break;
+                }
             default : 
                 $method = 'action'.ucfirst($action);
         }
@@ -2971,7 +2985,8 @@ abstract class PermanentController extends Component
         return '';
     }
 
-    public function defaultAction(array $params)
+
+    public function actionDefault(array $params)
     {
     }
 

@@ -28,7 +28,7 @@ class LogController extends PagesController
      *
      * @return void
      */
-    public function defaultAction(array $params)
+    public function actionDefault(array $params)
     {
         $log_model = g('Log', 'model');
         $ds = $log_model->rel('Owner');
