@@ -121,7 +121,7 @@ class Request extends HgBase
      * Port podany w adresie URL
      * @var integer
      */
-    protected $_port = 80;
+    protected $_port = null;
 
     /**
      * Base Uri. First part of request uri not parsed to {@uses $_tree}.
@@ -200,6 +200,9 @@ class Request extends HgBase
 
             if (!$base_uri)
                 $base_uri = dirname($_SERVER['SCRIPT_NAME']);
+
+            // will be overwritten, if port given explicitly
+            $this->_port = $_SERVER['SERVER_PORT'];
         }
         else
         {
