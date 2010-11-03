@@ -1754,8 +1754,6 @@ abstract class Controller extends HgBase implements IController
     }
 
 
-    }
-
     public function redirect($url='',$with_controllers=true, $with_base_uri=true)
     {
         if (is_array($url))
@@ -3340,11 +3338,6 @@ abstract class PermanentController extends Component
     public function getExtUri()
     {
         return '';
-    }
-
-
-    public function actionDefault(array $params)
-    {
     }
 
 }
