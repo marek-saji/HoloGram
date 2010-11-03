@@ -1170,14 +1170,21 @@ class FInt extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if(NULL !== $value && $value !== '')
+
+        // note that this will cast $value to string
+        $value = preg_replace('/ /', '', $value);
+
+        if ('' !== $value)
         {
-            $value = preg_replace('! !', '', $value);
-            if(!g('Functions')->isInt($value))
+            if (!g('Functions')->isInt($value))
                 $err['invalid'] = true;
         }
-        elseif(!$this->autoValue($value))
-            $err['notnull'] = true;
+        else
+        {
+            if ($this->notNull())
+                $err['notnull'] = true;
+        }
+
         return ($this->_errors($err, $value));
     }
 
