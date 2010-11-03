@@ -8,15 +8,9 @@ g()->load('Pages', 'Controller');
  */
 class LogController extends PagesController
 {
-    /**
-     * FIXME Dirty, dirty hack for including paginator
-     */
-    public function process(Request $req)
+    protected function _prepareActionDefault(array &$params)
     {
         $this->addChild('Paginator', 'p')->config(null, 20);
-        parent::process($req);
-        if(!$this->_launched_action)
-            $this->launchDefaultAction();
     }
 
 
