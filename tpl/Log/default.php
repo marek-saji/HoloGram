@@ -13,6 +13,7 @@ if (!isset($rows))
 
 $v->setTitle('Browse logs');
 
+$v->addCss($this->file('log', 'css'));
 ?>
 
 <section class="log listing">
