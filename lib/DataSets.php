@@ -1129,6 +1129,14 @@ interface IModel extends IDataSet
 /**
 * Base class of data Models
 * FIXME : specify the IModel and use it!
+*
+*
+* Possible callbacks in classes extending this class:
+*
+* * validate{FieldName}(& $value)
+*
+*   Used in Model::validateField().
+*
 */
 abstract class Model extends DataSet implements IModel
 {
@@ -1229,6 +1237,49 @@ abstract class Model extends DataSet implements IModel
         }
 
         return parent::getRow($filter);
+    }
+
+
+    /**
+     * Validate model field
+     * @author m.augustynowicz
+     *
+     * @param string $field_name validating non-existing field
+     *        will end up throwing an error
+     * @param mixed $value reference to the value
+     *
+     * @return array errors
+     */
+    public function validateField($field_name, & $value)
+    {
+        if (!isset($this[$field_name]))
+        {
+            $up = new HgException("Field {$field_name} does not exist in $this");
+            throw $up;
+        }
+
+        $all_errors = array();
+
+
+        // model's callback validation
+
+        $callback = '_validate'.g('Functions')->camelify($field_name);
+        if (method_exists($this, $callback))
+        {
+            $all_errors['callback'] = $this->$callback($value);
+        }
+
+        if (@$all_errors['callback']['stop_validation'])
+        {
+            unset($all_errors['callback']['stop_validation']);
+        }
+        else
+        {
+            // field object's validation
+            $all_errors['field'] = $this[$field_name]->invalid($value);
+        }
+
+        return call_user_func_array('array_merge', $all_errors);
     }
 
         
@@ -1557,7 +1608,7 @@ abstract class Model extends DataSet implements IModel
         $error = array();
         foreach ($values as $name => $val)
         {
-            if ($err = $this[$name]->invalid($val))
+            if ($err = $this->validateField($name, $val))
                 $error[$name] = $err;
             else
                 $set[] = $this[$name]->generator() . "=" . $this[$name]->dbString($val);
@@ -1820,24 +1871,24 @@ abstract class Model extends DataSet implements IModel
                     if (!array_key_exists($name, $data))
                     {
                         $null = null;
-                        if($tmp = $field->invalid($null)) //reference to $data[$name] is NULL,
+                        if($tmp = $this->validateField($name, $null)) //reference to $data[$name] is NULL,
                             $error[$name]= $tmp;                     //but the call may fill it with
                         if (null !== $null)
                             $data[$name] = $null;
                     }
                     else
                     {
-                        if($tmp = $field->invalid($data[$name])) //reference to $data[$name] is NULL,
+                        if($tmp = $this->validateField($name, $data[$name])) //reference to $data[$name] is NULL,
                             $error[$name]= $tmp;                     //but the call may fill it with some automatic value. @TODO Really?!?.\
                     }
 
                 }
                 elseif(array_key_exists($name,$data) && !isset($data[$name]) && $action=='update') // key exists and value is null
                 {
-                    if($tmp = $field->invalid($data[$name]))
+                    if($tmp = $this->validateField($name, $data[$name]))
                         $error[$name]= $tmp;
                 }
-                elseif(isset($data[$name]) && $tmp = $field->invalid($data[$name]))
+                elseif(isset($data[$name]) && $tmp = $this->validateField($name, $data[$name]))
                 {
                     $error[$name] = $tmp;
                     continue;

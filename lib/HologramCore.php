@@ -7,28 +7,46 @@
  * @package hologram2
  */
 
+
+
 /**
- * Plik implementujacy klase z wyjatkami
+ * HoloGram exceptions
  * @package hologram2
  */
 require_once(HG_DIR.'lib/class.HgException.php');
 
+
+
 /**
- * Magiczna funkcja "na wszelki wypadek" do ladowania klas, jesli nie istnieja
+ * Autoloading's performance is not really great, so we'll throw exceptions
+ * if anybody tries that
  * @author m.augustynowicz
  * @uses $kernel
- * @param string $name nazwa zadanej funkcji
+ *
+ * @param string $name class or interface name
+ *
  * @return void
  */
 function __autoload($name)
 {
-    global $kernel;
-    if (is_object($kernel) && $kernel->conf['allow_debug'])
-        print("System Error #000, autoload called: no $name found! ZOMG!");
     throw new Exception("System Error #000, autoload called: no $name found! ZOMG!");
 }
 
-function g($name='', $type="class", $args=array())
+
+
+/**
+ * Object Factory, wrapper for Kernel::get()
+ * @author p.piskorski
+ * @author m.augustynowicz
+ * @uses $kernel
+ *
+ * @param string $name class name (without suffix)
+ * @param string $type class name suffix
+ * @param array $args
+ *
+ * @return HgBase
+ */
+function g($name='', $type='class', $args=array())
 {
     global $kernel;
     if (empty($kernel))
@@ -38,65 +56,76 @@ function g($name='', $type="class", $args=array())
 }
 
 
+// lcfirst() has been added in php-5.3
+if (!function_exists('lcfirst'))
+{
+    /**
+     * Lower case first letter in a string
+     * @author m.augustynowicz
+     *
+     * @param string $string
+     *
+     * @return string
+     */
+    function lcfirst($string)
+    {
+        if (is_string($string))
+            $string[0] = strtolower($string[0]);
+        return $string;
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////
-///////////////////////////interfejsy///////////////////////////////////
+////////////////////////// interfaces //////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
 
 /**
- * Interface for classes used to process user's requests.
+ * Interface for classes that can be used to process user's requests.
+ *
  *
  * Possible callbacks in classes implementing this interface:
  *
- * action{ActionName}(array $params)
- *      action that can be called from process().
- *      launching an action() sets $this->_template to lowercased action name,
- *      You can override this using _setTemplate().
- *      @return void
+ * * action{ActionName}(array $params)
  *
- * prepareAction{ActionName}(array &$params)
- *      called by PagesController process() before possible diving deeper into
- *      request that would happen if URL would look like this:
- *      Ctrl1/actionName:params/Ctrl1'sChild
- *      Usually it's called just before onAction()
- *      @return void
+ *   action other than defaultAction that can be called with launchAction().
+ *   launching an action sets $this->_template to lowercased action name,
+ *   You can override this using _setTemplate().
  *
- * onAction($action, array &$params)
- *      called in process() before action method,
- *      @return boolean determinating if you want launch the action
+ *   - $params are request params
+ *   - return value is ignored
  *
- * onActionRouted2{ChildName}()
- *      called before launching child processs() and before onActionRouted()
- *      @return boolean determinating if you want launch child's process()
- *
- * onActionRouted($child_name)
- *      called before launching child's process()
- *      @return boolean determinating if you want launch child's process()
- *
- * validate{FormName}(&$post)
- *      called to validate POST send to the form
- *      ($post is this form's part of $_POST)
- *      @returns array of errors. it can contain special key [stop_validation]
- *      if you don't want to launch default (model's) validation methods
- *      afterwards
- *
- * validate{FormName}{FieldName}(&$value)
- *      called to validate POST data for specified form field
- *      @returns the same as validate{FormName}
+ * For (lot of) more callbacks see Component
  */
 interface IController
 {
     /**
-    * Wykonuje akcje zadana przez request. Po wykonaniu operacji z req->calls powinien zniknac 
-    * element o kluczu 0.
-    */
-    public function process(Request $req);
-    
+     * Process request (create components, launch actions)
+     */
+    public function process(Request $req=null);
+
     /**
-    * The default action that is executed if the url points to this controller.
-    * 
-    */
-    public function launchDefaultAction(array &$params = array());
+     * Default action is launched, when no other is specified.
+     * @param array $params request params
+     * @return bool|int
+     *         ===false if action does not exist;
+     *         ===true if exists and was launched;
+     *         ===1 if exists, but was not launched
+     */
+    public function launchDefaultAction(array &$params=array());
+
+    /**
+     * Launch any action
+     * @param null|string $action action to launch,
+     *        null or empty string will launch default action
+     * @param array $params request params
+     * @return bool|int
+     *         ===false if action does not exist;
+     *         ===true if exists and was launched;
+     *         ===1 if exists, but was not launched
+     */
+    public function launchAction($action, array &$params=array());
 
     /**
      * Getter for launched action name
@@ -104,135 +133,184 @@ interface IController
      * @return string|null
      */
     public function getLaunchedAction($collapse_default=false);
-    
+
     /**
-    * Renderuje controler. Zwraca odpowiadajacy mu kod xhtml (albo inny). 
-    */
+     * Render controller (without lauout and such)
+     * @return string rendered code (html, xml, text etc)
+     */
     public function render();
-    
+
     /**
-    * Rejestruje komponent w liscie elementow wymagajacych odswiezenia w kernelu.
-    */
-    public function needRefresh();
-    
-    /**
-    * @param $actions array badz pojedyncza akcja okreslona relatywnie do bierzacego kontrolera
-    * @example 
-    *     $this->link(array('table/paginate', 'user/id=6'));
-    */
-    public function href($actions='');
-    
+     * Getter for controller's name
+     * @return string controller name
+     */
     public function getName();
-    
+
+    /**
+     * Getter for controller's parent
+     * @return IController controller's parent
+     */
     public function getParent();
-    
+
     /**
-    * Adds a child controller (a subcontroller)
-    * @param Controller|string $controller to add
-    *        (object or name to pass to Kernel::get())
-    * @param null|string|array $name_or_args if string passed as $controller,
-    *        this will be used to initialize $controller,
-    *        null -- use lowercased $controller as name
-    *        string -- use as name
-    *        array -- pass to $controller's constructor
-    * @return the $controller itself (to allow chainig)
-    */
+     * Adds a child controller (a subcontroller)
+     *
+     * usages: addChild(string)
+     *         addChild(string, array)
+     *         addChild(IController)
+     * @param IController|string $controller to add
+     *        (object or name to pass to Kernel::get())
+     * @param null|string|array $name_or_args
+     *        null -- use lowercased $controller as name;
+     *        string -- use as name for $controller;
+     *        array -- pass to $controller's constructor;
+     * @return the $controller itself (to allow chainig)
+     */
     public function addChild($controller, $name_or_args=null);
-    
+
     /**
-    * Checks if given controlelr 
-    * @param $controller A controller to look for, or a string with controller name. 
-    * @return boolean false if $controller not found among the subcontrollers. 
-    *    Otherwise the name of the found controller is returned.
-    */
+     * Checks if given controller is a child of current one
+     * @param IController|string $controller controller to look for,
+     *        or controller name.
+     * @return bool|string false if $controller is not subcontroller;
+     *         otherwise name of the found controller is returned
+     */
     public function isChild($controller);
-        
+
+    /**
+     * Getter for all the children
+     * @return array all of controller's children
+     */
     public function getChildren();
-    
+
+    /**
+     * Getter for one of the children
+     * @param string $name name of requested child
+     * @return IController|null child object, or null if none found
+     */
     public function getChild($name);
 
     /**
-     * Getter of main displaying controller
+     * Getter for controller that handles layout in current request
+     * @return IController
      */
     public function displayingCtrl();
+
+    /**
+     * Getter for permanent controllers
+     * @param string $name permanent controller name
+     *        as defined in conf[permanent_controllers]
+     * @return PermanentController
+     */
+    public function getPermaCtrl($name);
 }
 
 
+
+/**
+ * Interface of controller that handles authentication of users
+ */
 interface IUserController extends IController
 {
     public function actionLogin(array $params);
-    
+
     public function actionLogout(array $params);
 }
 
+
+
+/**
+ * Interface for class that handles authorization and authentication.
+ * It is available via g()->auth
+ */
 interface IAuth
 {
-    // authentificationon
-
     /**
+     * Check whether we are logged in
      * @return boolean true if some user is logged in
      */
     public function loggedIn();
 
     /**
-     * @return bool|int logged-in user's id
+     * Return logged in user's id
+     * @return bool|mixed logged-in user's id (type depends on UserModel)
      *         or false when no user is logged in
      */
     public function id();
 
     /**
+     * Return logged in user's display name
      * @return bool|mixed logged-in users's display name
      *         or false when no user is logged in
      */
     public function displayName();
 
+
     /**
-     * @return boolean
+     * Get logged-in users's data.
+     * @param string $field field name, available fields will differ
+     *        accross implementations
+     * @return mixed field's value, null when field is not available
+     *         or user is not logged-in
+     */
+    public function get($field);
+
+
+    /**
+     * Authenticate against given credentials
+     * @param array $auth_data authentication credentials
+     * @return bool whether authentication was successfull
      */
     public function login(array $auth_data);
+
     /**
-     * @return string
+     * Get last operation's error
+     * @return string error identifier (not user-friendly)
      */
     public function getLastError();
 
+    /**
+     * De-authenticate logged-in user
+     * @return void
+     */
     public function logout();
 
-    // authorisation
-
     /**
-     * @todo domyślić sytuację, w której $target, bądź $user są obiektami
-     *
-     * @param string|Controller $ctrl
-     * @param string $action
-     * @param string|array|Object $target
-     * @param string|array|Object $user
-     * @return boolean will return false if unsure
+     * Check whether configuration grands access to requested action
+     * @param string|IController|array $ctrl controller url or object,
+     *        or array with [url] key and optionally others
+     * @param string $action action name
+     * @param null|string|array|Object $target target object actions it to
+     *        be performed on. Object identifier, array with it's data;
+     *        behaviour depends on implementation
+     * @param null|string|array|Object $user user that tries to perform the
+     *        action. Identifier, array with it's data or object;
+     *        null for currently logged-in user
+     * @return bool will return false if unsure (launching Component's
+     *         callbacks is recommented
      */
     public function hasAccess($ctrl, $action=null, $target=null, $user=null);
-
-    // user's data getter
-
-    public function get($field);
 
 }
 
 
+
 /**
  * Implementations of ILang should conform BCF47
- * {@url http://en.wikipedia.org/wiki/IETF_language_tag}
- * 
- * @author m.augustynowicz
+ * @url http://en.wikipedia.org/wiki/IETF_language_tag
  */
 interface ILang
 {
     /**
      * Gets currently set user's language
+     * @return string language code
      */
     public function get();
 
     /**
      * Stores user's languages choice
-     * @return false if language is invalid, previous value otherwise
+     * @return bool|string false if language is invalid,
+     *         previous value otherwise
      */
     public function set($lang);
 
@@ -266,10 +344,10 @@ interface ILang
 
 
 /**
-* Interfejs widoku. 
-* Zadaniem widoku jest wygenerowanie dokumentu w odpowiedzi na zapytanie. 
+* Interfejs widoku.
+* Zadaniem widoku jest wygenerowanie dokumentu w odpowiedzi na zapytanie.
 * Widok powinien zapewniac poszczegolnym komponentom systemu (kontrolerom) bezkonfliktowe
-* wspoldzielenie zasobow definiowanych przez wybrane medium. W szczegolnosci, w 
+* wspoldzielenie zasobow definiowanych przez wybrane medium. W szczegolnosci, w
 * przypadku strony xhtml zasobami mozna nazwac:
 *  - naglowek
 *    - podpiecie styli CSS z plikow zewnetrznych
@@ -278,54 +356,54 @@ interface ILang
 *    - meta tagi (glownie keywords i description)
 *    - tytul (zasob? ustawiajacy najczesciej ma na to wylacznosc! trudno generycznie wspoldzielic)
 *  - body
-* W celu realizacji tego zadania widok ma kilka funkcji umozliwiajacych dodawanie poszczegolnych deklaracji i 
+* W celu realizacji tego zadania widok ma kilka funkcji umozliwiajacych dodawanie poszczegolnych deklaracji i
 * ogolnie - zarzadzanie ich zbiorem (np. dodawanie (i kasowanie?) plikow css i sprawdzanie, czy jakis
 * css juz zostal podpiety).
-* Widokowi odpowiada najbardziej podstawowy szablon strony, zawierajacy doctype, naglowek i puste body. 
+* Widokowi odpowiada najbardziej podstawowy szablon strony, zawierajacy doctype, naglowek i puste body.
 * W przypadku widoku fragmenty html moga byc zaszyte w kodzie i nie powinno to byc traktowane jako
-* zlamanie zasad programowania metoda MVC. 
+* zlamanie zasad programowania metoda MVC.
 */
 interface IView
 {
     /**
     * Dodaje znacznik link.
     * @param def jest w postaci array ( $ident => $definition ), gdzie $definition jest tablica
-    *        asocjacyjna z kluczami (opcjonalnymi) 
+    *        asocjacyjna z kluczami (opcjonalnymi)
                 title, href, type, media, rel, rev, hreflang.
     */
     public function addLink($name,$def);
-    
+
     /**
     * Dodaje link do pliku css. Efektem przypomina szczegolne wywolanie addLink.
     */
     public function addCss($file, $media='all');
-    
+
     /**
-    * Dodaje css wbudowany w html. 
+    * Dodaje css wbudowany w html.
     * @param array( $key => $definition), gdzie $key jest selectorem CSS.
     */
     public function addInlineCss($css_code);
-    
+
     /**
-    * Dodaje zewnetrzny skrypt. 
+    * Dodaje zewnetrzny skrypt.
     */
     public function addJs($file);
-    
+
     /**
-    * Dodaje skrypt wbudowany w strone. 
+    * Dodaje skrypt wbudowany w strone.
     */
     public function addInlineJs($js_code);
-    
+
     /**
     * Dodaje instrukcje wywolywane po zaladowaniu DOM'u
     */
     public function addOnLoad($js_code);
-    
+
     public function addKeyword($word);
     public function setDescription($desc);
     public function setTitle($title);
     public function getTitle();
-    
+
     public function getMeta($tag);
     public function setMeta($tag,$value);
 
@@ -342,7 +420,7 @@ interface IView
      * @return void
      */
     public function addHeader($header, $value=null);
-    
+
     /**
      * Add code between <head></head> signs
      *
@@ -359,7 +437,7 @@ interface IView
      * @return void
      */
     public function setEncoding($enc=NULL);
-    
+
     /**
      * Sets page language.
      *
@@ -372,23 +450,23 @@ interface IView
     /**
      * Adds HTML head's profile.
      * Used mainly for microformats' XMDPs.
-     * 
+     *
      * @param string $uri URI to profile document
      */
     public function addProfile($uri);
-    
+
     /**
     * Prezentuje strone. Wysyla do przegladarki wszystkie informacje potrzebne do wyswietlenia
     * albo zaktualizwoania strony.
     */
     public function present();
-    
+
     /**
-    * Zalacza podkontroler. Ta metoda powinna byc uzywana przez kontrolery do wstawiania 
+    * Zalacza podkontroler. Ta metoda powinna byc uzywana przez kontrolery do wstawiania
     * w okreslonym miejscu szablonu zawartosci podkontrolera.
-    */   
+    */
     public function inc($controller);
-    
+
 }
 
 
@@ -413,14 +491,14 @@ class NonConnectedDb
 {
     private $__connection_params;
     private $__true_db;
-    
+
     public function __construct($params)
     {
         list($connection_params) = $params;
         $this->__connection_params = $connection_params;
         $this->__true_db = NULL;
     }
-    
+
     public function __call($name,$args)
     {
         if ('config'===$name)
@@ -451,7 +529,7 @@ class NonConnectedDb
 
 /**
 * Frontend bazy danych z leniwym laczeniem - dopiero wykonanie jakiejs operacji
-* na bazie powoduje polaczenie z nia. 
+* na bazie powoduje polaczenie z nia.
 *
 * @todo Moze nalezy zrobic do tego INTERFEJS!!
 */
@@ -464,12 +542,12 @@ class DataBase
 
     private $__debug = 0;
     const debug_css = 'font-size:11px; background-color: white; color: black; border: #888 solid; border-width: 1px 0; margin: .5ex 1em;';
-    
+
     public function __construct($db_resource)
     {
         $this->__db = $db_resource;
     }
-    
+
     /**
      * @todo check if pg_query succeeded
      */
@@ -481,14 +559,14 @@ class DataBase
         $this->__trans_counter++;
         $this->_printInDebugPost(__FUNCTION__, array());
    }
-    
+
     public function failTrans()
     {
         $this->_printInDebugPre(__FUNCTION__, array());
         $this->__trans_failed = true;
         $this->_printInDebugPost(__FUNCTION__, array());
     }
-    
+
     /**
      * @todo check if pg_query succeeded
      * @todo how to deal with negative trans_counter?
@@ -512,7 +590,7 @@ class DataBase
         }
         $this->_printInDebugPost(__FUNCTION__, array());
     }
-    
+
     public function getOne($query, $row=0, $field=0)
     {
         $argv = func_get_args();
@@ -523,7 +601,7 @@ class DataBase
         $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }
-    
+
     public function getAll($query)
     {
         $argv = func_get_args();
@@ -534,7 +612,7 @@ class DataBase
         $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
     }
-    
+
     public function getRow($query, $number=0)
     {
         $argv = func_get_args();
@@ -555,8 +633,8 @@ class DataBase
             $result = pg_fetch_all_columns($resource, $number);
         $this->_printInDebugPost(__FUNCTION__, $argv, $result);
         return $result;
-    }    
-    
+    }
+
     public function execute($query)
     {
         if ($print_in_debug = ('get' != substr(g('Functions')->getCaller('function'),0,3)))
@@ -713,7 +791,6 @@ JS;
 class Kernel
 {
     private $__instances;
-    private $__refresh;
     protected $_session; //
     protected $_log = null;
     public $db;
@@ -735,18 +812,18 @@ class Kernel
      * @var boolean
      */
     protected $_rendering = false;
-    
+
     /**
     */
     public function __construct()
-    {    
+    {
         ob_start();
         session_start();
-        
+
         $this->readConfigFiles();
         if (empty($this->conf))
             die('System Error #001');
-        
+
         $this->_session = &$_SESSION[$this->conf['SID']]['KERNEL'];
         $this->session = &$_SESSION[$this->conf['SID']]['GLOBAL'];
         $this->infos = &$this->_session['infos'];
@@ -763,11 +840,10 @@ class Kernel
     * - Tworzy pierwszy kontroler
     * - Wywoluje jego metode process($req) (byc mozer wielokrotnie, jezeli dopuszczamy wywolanie kilku akcji na raz.
     * - Inicjuje renderowanie strony
-    * - 
     */
     public function run()
     {
-        try 
+        try
         {
             $this->debug = $this->get('Debug');
             $this->req = $this->get('Request');
@@ -819,11 +895,11 @@ class Kernel
             }
         }
     }
-    
-        
+
+
     /**
     * Laduje plik php. Jezeli plik jest w katalogu wdrozenia, to ma priorytet przed plikiem z biblioteki Hologramu.
-    * Obsluga classes override. 
+    * Obsluga classes override.
     * @param assert When true, the function works in assert mode - it stops the script execution on fail.
     * @return mixed If the call succeedes, the name of the actually loaded class is returned, if not - the function
     *         either throws an error (assert=true), or returns boolean false (assert=false)
@@ -864,7 +940,7 @@ class Kernel
                 break;
             }
         }
-        
+
         if (!$fn)
         {
             if (!$assert)
@@ -883,7 +959,7 @@ class Kernel
 
         return $class;
     }
-    
+
 
     /**
      * Objects factory
@@ -949,28 +1025,8 @@ class Kernel
 
         return $object;
     }
-    
-    
-    /**
-    * Rejestruje kontroler w liscie elementow wymagajacych odswiezenia w kernelu.
-    */
-    public function register4Refresh(Controller $controller)
-    {
-        $this->__refresh[$controller->level()][]=$controller;
-    }
-    
-    /**
-    * Zwraca zgromadzona liste nieswiezych kontrolerow.
-    */
-    public function getRottenControllers()
-    {
-        $res = array();
-        foreach($this->__refresh as &$r)
-            $res = array_merge($res, $r);
-        return($res);
-    }
-    
-    
+
+
     /**
     * Dodaje informacje do wyświetlenia użytkownikowi.
     * @author m.augustynowicz
@@ -992,7 +1048,7 @@ class Kernel
         $message = vsprintf($message, $args);
         if ($ident)
             $this->infos[$class][$ident] = $message;
-        else 
+        else
             $this->infos[$class][] = $message;
         if (g()->debug->allowed())
         {
@@ -1028,7 +1084,7 @@ class Kernel
     /**
     * Zwraca zawartosc bufora z rzeczami wyslanymi do przegladarki w trakcie przetwarzania
     * akcji. Najczesciej znajdowac sie tam beda debugi.
-    * @return Zwraca zawartosc bufora z rzeczami wyslanymi przed nadaniem naglowkow strony. 
+    * @return Zwraca zawartosc bufora z rzeczami wyslanymi przed nadaniem naglowkow strony.
     */
     public function getPrerenderEcho()
     {
@@ -1050,7 +1106,7 @@ class Kernel
                 printf("<pre><strong>prerender echoes (fallback display)</strong>\n%s</pre>", $display_me);
         }
     }
-    
+
     /**
      * Reads configuration files (*conf*php) from config directories.
      *
@@ -1098,7 +1154,7 @@ class Kernel
 
             Functions::arrayMergeRecursive($this->conf, $confAll, false);
         }
-    }    
+    }
 
 
     /**
@@ -1150,7 +1206,7 @@ class Kernel
 
     public function redirect($url, $with_base_uri=true)
     {
-        if (!preg_match('!^[a-z]+://!', $url)) 
+        if (!preg_match('!^[a-z]+://!', $url))
             // add host part if $url starts with a slash
             if($with_base_uri)
                 $url = g()->req->getBaseUri(false).ltrim($url,'/');
@@ -1166,23 +1222,23 @@ class Kernel
             header('Location: '.$url, true, 301);
         exit;
     }
-    
+
 }
 
 
 /**
 * Klasa bazowa wszystkich klas Hologramu (za wyjatkiem Kernel). Zapewnia ladowanie i pobieranie instancji
 * innych klas za posrednictwem kernela w notacji $this->NazwaKlasy, albo $this->NazwaKlasy($args).
-* Domyslnie, wszystkie klasy dziedziczace sa singletonami. Zadekladowanie w ktorejs klasie pochodnej 
+* Domyslnie, wszystkie klasy dziedziczace sa singletonami. Zadekladowanie w ktorejs klasie pochodnej
 * statycznej zmiennej $singleton = false powoduje, ze klasa przestaje byc singletonem. Wtedy kazde odwolanie
 * do metody get() zwraca nowa instancje.
 */
-class HgBase 
+class HgBase
 {
     static $singleton=true;
 
     protected $_trans_sources = array();
-    
+
     public function __construct(array $params = array())
     {
         if (!in_array(get_class($this), $this->_trans_sources))
@@ -1207,7 +1263,7 @@ class HgBase
         //$args = func_get_args();
         return($this);
     }
-    
+
     /**
      * sets lang to be used in translations
      * @author b.matuszewski
@@ -1320,9 +1376,9 @@ class HgBase
 /**
 * Event sygnalizowany, gdy akcja jest przekazywana do innego kontrolera.
 * Jezeli w klasie jest metoda onActionRouted2[$nazwa], gdzie $nazwa jest
-* rowna 
+* rowna
 */
-abstract class Controller extends HgBase implements IController 
+abstract class Controller extends HgBase implements IController
 {
     private $__parent;
     private $__name;
@@ -1335,12 +1391,20 @@ abstract class Controller extends HgBase implements IController
 
     protected $_default_action = 'default';
 
+    /**
+     * @var Component component that should handle rendering.
+     *      should be one of $__components
+     */
+    protected $_subrenderer = null;
+
     protected $_template = '';
+    protected $_action_to_launch = null;
     protected $_launched_action = null;
+    protected $_params = null;
 
     /**
-    * Tworzy kontroler. Do $this->_session przypisuje referencje do klucza w $_SESSION. 
-    * Do rzeczy znajdujacych sie pod tym kluczem domyslnie ma dostep tylko jego wlasciciel.    
+    * Tworzy kontroler. Do $this->_session przypisuje referencje do klucza w $_SESSION.
+    * Do rzeczy znajdujacych sie pod tym kluczem domyslnie ma dostep tylko jego wlasciciel.
     */
     public function __construct($args=array())
     {
@@ -1362,28 +1426,28 @@ abstract class Controller extends HgBase implements IController
         {
             throw new HgException("Bad args in ".get_class($this)." constructor.");
         }
-            
+
         if(strpos('/',$name)!==false)
             throw new HgException("You cannot create subcontrollers! Bad args in ".get_class($this)." constructor.");
 
-            
+
         if ($parent)
         {
             if (!$parent instanceof IController)
                 throw new HgException("An non controller given as parent.");
             if ($parent->getChild($name))
-                throw new HgException("Cannot use subcontroller name '$name' again.");        
+                throw new HgException("Cannot use subcontroller name '$name' again.");
         }
         $this->__name = $name;
         $this->__parent = $parent;
-        
+
         $this->_session = &$_SESSION[g()->conf['SID']][$this->path()];
         $this->_conf = &g()->conf['controllers'][$this->path()];
 
         array_unshift($this->_trans_sources, strtolower($name));
-    }   
+    }
 
-    public function onAction($action, array &$params)
+    protected function _onAction($action, array &$params)
     {
         if (g()->debug->allowed() && g()->isRendering())
         {
@@ -1393,7 +1457,7 @@ abstract class Controller extends HgBase implements IController
         $has_access = $this->hasAccess($action, $params, false);
         if (g()->debug->allowed())
         {
-            printf('<p class="debug">Permission to <em>%s</em>, action <em>%s</em><small>(%s)</small> %s by <em>%s</em></p>',
+            printf('<p class="debug">Permission to <em>%s::%s<small>(%s)</small></em> %s by <em>%s</em></p>',
                 $this->path(), $action, print_r($params, true),
                 $has_access ? 'granted' : 'denied',
                 is_int($has_access) ? 'configuration' : 'callback'
@@ -1407,12 +1471,64 @@ abstract class Controller extends HgBase implements IController
         return true;
     }
 
+
+    /**
+     * Checking permissions.
+     *
+     * Uses Kernel's Auth and $this->hasAccessTo{ActionName}() callbacks
+     * @author m.augustynowicz
+     *
+     * @param string $action name
+     * @param array $params what will be passed to the action
+     * @param boolean $just_checking pass false if you inteded to launch
+     *        that action (it may cause displaying some "error denied"
+     *        user messages and such)
+     * @return boolean/int does logged-in user has access to this action?
+     *         true when access granted by callback,
+     *         1 when from config,
+     *         false when access denied by callback
+     *         0 when from config
+     */
+    public function hasAccess($action, array &$params = array(), $just_checking=true)
+    {
+        static $cache = array();
+
+        $cache_key = json_encode($action)
+                   . json_encode($params);
+        $ret = & $cache[$cache_key];
+        if (null !== $ret)
+            return $ret;
+
+        if (g()->auth->hasAccess($this, $action, $params))
+        {
+            $ret = 1;
+        }
+        else
+        {
+            // or maybe we have any callback for checking this?
+            if($this->_default_action === $action)
+                $callback = 'hasAccessToDefault';
+            else
+                $callback = 'hasAccessTo' . ucfirst($action);
+
+            if (!method_exists($this, $callback))
+                $ret = 0;
+            else if ($this->$callback($params, $just_checking))
+                $ret = true;
+            else
+                $ret = false;
+        }
+
+        return $ret;
+    }
+
+
     /**
      * @todo DEPRECATED (defaultAction) marked for deletion 2010-11-03
      */
     public function defaultAction(array $params)
     {
-        $this->redirect('HttpErrors/error404');
+        $this->redirect(array('HttpErrors','error404'));
     }
 
     public function assign($a, $value=null)
@@ -1483,7 +1599,7 @@ abstract class Controller extends HgBase implements IController
                    $this->path(), get_class($this),
                    $____tpl, $____file );
         }
-        
+
         if ('.php' !== strrchr($____file,'.'))
         {
             throw new HgException('Non-PHP template extension.');
@@ -1507,14 +1623,14 @@ abstract class Controller extends HgBase implements IController
         }
         return $ret;
     }
-    
+
     /**
      * Specifies URI to given file owned $this class.
      * First it checks if ClassBaseName/$file exists (base i.e. without suffix)
      * then it tries with it's parent etc.
      *
      * All files except templates ($type=='tpl') are looked for in htdocs
-     * directories. 
+     * directories.
      *
      * @author m.augustynowicz
      *
@@ -1538,7 +1654,7 @@ abstract class Controller extends HgBase implements IController
                 $file .= '.'.$type;
                 $base_bases = array('htdocs/'.$type.'/%s');
                 break;
-            case 'gfx': 
+            case 'gfx':
                 // filename suffix is not added here.
                 $base_bases = array('htdocs/gfx/%s');
                 break;
@@ -1592,8 +1708,8 @@ abstract class Controller extends HgBase implements IController
             return $fn;
         else
             return "$base$type/$n$file";
-    }    
-    
+    }
+
     public function path()
     {
         $parent = $this->getParent();
@@ -1611,33 +1727,13 @@ abstract class Controller extends HgBase implements IController
         $name .= ($name?'/':'').$this->getName();
 		return $name;
     }
-    
+
     public function getParent()
     {
         return($this->__parent);
     }
-    
 
-    public function needRefresh()
-    {
-        g()->register4Refresh($this);
-    }
-    
-    
-    /**
-    * @param $actions array badz pojedyncza akcja okreslona relatywnie do bierzacego kontrolera
-    * @example 
-    *     $this->link(array('table/paginate', 'user/id=6'));
-    */
-    public function href($actions='')
-    {
-        if (!is_array($actions))
-            $actions = array($actions);
-        if ($url = $this->url())
-            $url .= '/';
-        return g()->req->getBaseUri().$url.implode(';'.$url,$actions);
-    }
-    
+
     public function getName()
     {
         return($this->__name);
@@ -1658,63 +1754,51 @@ abstract class Controller extends HgBase implements IController
     }
 
 
-    /**
-     * Prints Controller-centered backtrace.
-     * DEPRECATED in favour of Debug::trace()
-     * @todo remove this?
-     * @author p.piskorski
-     */
-    public function dumpBranch()
-    {
-        $dbbt = debug_backtrace();
-        array_shift($dbbt);
-        $currc = NULL;
-        $line = 0;
-        
-        echo "<table border=\"2px\" frame=\"border\" rules=\"groups\" style=\"font-family:monospace\">\n<colgroup style=\"width:50px\" /><colgroup /><colgroup />\n<tr style=\"background-color:#eee\"><th>no.</th><th>function</th><th>called</th></tr><tbody>";
-        foreach($dbbt as $trace)
-        {
-            $file = '&nbsp;';
-            if (isset($trace['file']))
-                $file =  substr($trace['file'],strpos($trace['file'],'lib'))."  {$trace['line']}";
-        
-            if (!isset($trace['object']))
-            {
-                $line ++;
-                echo "<tr><td>".substr(100+$line,1)."</td><td>{$trace['function']}()</td><td style=\"font-style:italic\"> $file</td></tr>\n";
-                continue;
-            }
-            if ($trace['object'] instanceof Kernel)
-            {
-                $line ++;
-                echo "<tr><td colspan=\"3\" style=\"padding-bottom:10px; font-size:large; text-indent:50px;\"><strong>".$currc->path().'</strong> <small>['.get_class($currc)."]</small></td></tr></tbody><tbody>";
-                echo "<tr><td>".substr(100+$line,1)."</td><td>{$trace['class']} {$trace['type']} {$trace['function']}()</td><td style=\"font-style:italic\"> $file</td></tr>\n";
-                $line ++;
-                //$currc = $trace['object'];                
-                continue;
-            }
-            if (!$trace['object'] instanceof IController)
-                continue;
-            if (NULL === $currc)
-                $currc = $trace['object'];
-            if ($currc !== $trace['object'])
-            {
-                $currc = $trace['object'];
-            }
-            $line ++;
-            echo "<tr><td>".substr(100+$line,1)."</td><td>{$trace['class']} {$trace['type']} {$trace['function']}()</td><td style=\"font-style:italic\"> $file</td></tr>\n";
-        }
-        //echo "<tr><td colspan=\"3\" style=\"padding:5px\"><strong>".$currc->path().'</strong> <small>['.get_class($currc)."]</small></td></tr>";
-        echo "</tbody></table>";
     }
-    
+
     public function redirect($url='',$with_controllers=true, $with_base_uri=true)
     {
         if (is_array($url))
             $url = call_user_func_array(array($this,'url2c'), $url);
         g()->redirect($url, $with_base_uri);
     }
-    
+
+
+    /**
+     * Let one of children handle rendering
+     *
+     * @param string|Controller $ctrl whether name or object of controller
+     *        that should be used to render the page. Have to be a valid child
+     *        of $this
+     * @return boolean false, when $ctrl is not a valid child
+     */
+    protected function _passRenderingTo($ctrl)
+    {
+        if ($ctrl instanceof Controller)
+        {
+            if (!$this->isChild($ctrl))
+                return false;
+            else
+                $child = $ctrl;
+        }
+        else
+        {
+            $child = $this->getChild($ctrl);
+        }
+
+        if ($child)
+        {
+            $this->_subrenderer = $child;
+            return true;
+        }
+        else
+        {
+            $this->_subrenderer = null;
+            return false;
+        }
+    }
+
+
     /**
      * Sets template that will be used to render the component
      * @author m.augustynowicz
@@ -1738,23 +1822,48 @@ abstract class Controller extends HgBase implements IController
         $this->_template = $tpl;
         $this->_action = $tpl; // legacy
         return false !== $this->file($tpl,'tpl');
-    }    
+    }
+
 
     /**
+     * Launch default action
      * @author m.augustynowicz
-     * @todo somehow merge this with launchDefaultAction() without breaking things
-     * @param string $action action to launch
-     * @param array $params reference to request params
-     * @param ... rest of params is passed along with $params
-     * @return boolean false if action does not exist
+     *
+     * @param array $params
+     * @return boolean false if action does not exist (not really possible)
      */
-    public function launchAction($action, array &$params)
+    public function launchDefaultAction(array &$params=array())
     {
-        if (!$action || $this->_default_action === $action)
-            return $this->launchDefaultAction($params);
+        return $this->launchAction($this->_default_action, $params);
+    }
 
-        $this->_params = $params;
 
+    /**
+     * Launch any action
+     * @author m.augustynowicz
+     *
+     * @param null|string $action action to launch,
+     *        null or empty string will launch default action
+     * @param array $params
+     * @return bool|int
+     *         ===false if action does not exist;
+     *         ==true if exists;
+     *         ===1 if exists, but was not launched
+     *              (_onAction() returned ==false)
+     */
+    public function launchAction($action, array &$params=array())
+    {
+        // null or empty string means default action
+        if (!$action)
+        {
+            $action = $this->_default_action;
+        }
+
+        $method = $this->_getActionMethod($action);
+
+        $ret = true;
+
+        // launching second action in one Component?
         if (@$this->_launched_action && g()->debug->allowed())
         {
             g()->addInfo(null, 'debug',
@@ -1762,26 +1871,27 @@ abstract class Controller extends HgBase implements IController
                     $action, $this->path(), $this->_launched_action );
         }
 
-        $method = 'action'.ucfirst($action);
-        $ret = true;
+        $this->_launched_action = $action;
+        $this->_params = $params;
 
+        // open debug output block
         if (g()->debug->allowed())
         {
-            printf('<div class="debug-action-output"><h3>%s, action %s</h3>',
-                   $this->path(), $action );
+            printf('<div class="debug-output-block"><h3>%s, action %s(%s)%s</h3>',
+                $this->path(), $action, print_r($params, true),
+                $action === $this->_default_action ? ' <small>(default)</small>' : ''
+            );
         }
 
-        $this->_launched_action = $action;
-
-        if (!method_exists($this, $method))
+        if (false === $method)
         {
             echo '<p><strong>method does not exist</strong></p>';
             $ret = false;
         }
-        else if (method_exists($this,"onAction")
-                 && false === $this->onAction($action,$params) )
+        else if (method_exists($this,"_onAction")
+                 && false === $this->_onAction($action,$params) )
         {
-            echo '<p><strong>not launching -- onAction() returned false</strong></p>';
+            echo '<p><strong>not launching -- _onAction() returned false</strong></p>';
             $ret = 1;
         }
         else
@@ -1790,6 +1900,7 @@ abstract class Controller extends HgBase implements IController
             $this->$method($params);
         }
 
+        // close debug output block
         if (g()->debug->allowed())
             printf('</div>');
 
@@ -1814,69 +1925,6 @@ abstract class Controller extends HgBase implements IController
         $this->_template = '';
         $ret = $this->launchAction($action, $params);
         $this->_launched_action = $real_action;
-        return $ret;
-    }
-
-
-
-
-    /**
-     * @todo somehow merge this with launchDefaultAction() without breaking things
-     */
-    public function launchDefaultAction(array &$params= array())
-    {
-        $this->_params = g()->req->getParams();
-        g('Functions')->arrayMergeRecursive($this->_params,$params);
-        $params = $this->_params;
-
-        $ret = true;
-
-        $action = $this->_default_action;
-
-        switch ($action)
-        {
-            /**
-             * @todo DEPRECATED (defaultAction) marked for deletion 2010-11-03
-             */
-            case 'default' :
-                if (!method_exists($this, 'actionDefault'))
-                {
-                    g()->debug->addInfo(
-                        "deprecated {$this->getName()}::defaultAction",
-                        true,
-                        "`defaultAction' name convention has been deprecated and will be removed in future. Rename it in `{$this->getName()}' to `actionDefault' instead"
-                    );
-                    $method = 'defaultAction';
-                    break;
-                }
-            default : 
-                $method = 'action'.ucfirst($action);
-        }
-
-        if (g()->debug->allowed())
-            printf('<div class="debug-action-output"><h3>%s, default action %s</h3>', $this->path(), $action);
-
-        if (!method_exists($this, $method))
-        {
-            echo '<p>method does not exist</p>';
-            $ret = false;
-        }
-        else if (method_exists($this,"onAction")
-                 && false === $this->onAction($action,$params) )
-        {
-            echo '<p>not launching -- onAction() returned false</p>';
-            $ret = 1;
-        }
-        else
-        {
-            $this->_setTemplate($action);
-            $this->_launched_action = $action;
-            $this->$method($this->_params);
-        }
-
-        if (g()->debug->allowed())
-            printf('</div>');
-
         return $ret;
     }
 
@@ -1927,45 +1975,6 @@ abstract class Controller extends HgBase implements IController
     }
 
 
-    /**
-     * @param string $current
-     * @param string Request $req
-     * @param boolean $really_route or maybe just check whether it would route?
-     *
-     * @return boolean
-     */
-    protected function _routeAction($current, Request $req, $really_route=true)
-    {
-        if (NULL === ($child = $this->getChild($current)))
-            return(false);
-
-        if (!$really_route)
-            return true;
-        
-        if (method_exists($this,$callback = "onActionRouted2$current"))
-            if (false === $this->$callback())
-                return true;
-        if (method_exists($this,"onActionRouted"))
-            if (false === $this->onActionRouted($current))
-                return true;
-                
-        $child->process($req);
-        
-        return(true);
-    }
-    
-
-    protected function _handle(&$req, &$current, $route=true)
-    {
-        if ($route && $this->_routeAction($current,$req))
-            return true;
-            
-        $action = $current;
-        $params = (array) $req->getParams();
-        return $this->launchAction($action, $params);
-    }    
-    
-    
     /**
      * Link to action in current controller
      * @author m.augustynowicz
@@ -2118,6 +2127,7 @@ abstract class Controller extends HgBase implements IController
         return $this->url2c(null, $act, $params);
     }
 
+
     /**
      * Build a URL to specified controller(s)
      *
@@ -2144,46 +2154,58 @@ abstract class Controller extends HgBase implements IController
         else
             // set of controllers
             $controllers = func_get_args();
-            
+
         $url = array();
         foreach ($controllers as $c)
         {
             @list($ctrl, $act, $params) = $c;
 
+            // validate types of parameters
+
             if (null === $ctrl)
                 $ctrl = $this->url();
             else if ($ctrl instanceof IController)
                 $ctrl = $ctrl->url();
-            /**
-             * @todo remove this, when sure nobody uses it (created 2010-01)
-             */
-            if (is_array($act) && g()->debug->allowed())
-                trigger_error('Passed array as action to url2c()', E_USER_NOTICE);
+
+            if (!is_string($act) && null !== $act)
+                throw new HgException('Action passed to url2c should be a string &#8212; '.gettype($act).' given.');
 
             if (null === $params)
                 $params = (array) $params;
             else if (!is_array($params))
                 throw new HgException('Params passed to url2c should be an array &#8212; '.gettype($params).' given.');
 
-            foreach ($params as $name => & $val)
+
+            // get controller's meta (action + params)
+
+            $c_meta = g()->req->encodeVal($params);
+            if ('' !== $c_meta)
+                $c_meta = g()->conf['link_split'] . $c_meta;
+            if ($act)
             {
-                $val = g()->req->encodeVal($val);
-                if (!is_int($name))
-                    $val = g()->req->encodeVal($name).'='.$val;
+                $act = lcfirst($act);
+                $c_meta = '/' . $act . $c_meta;
             }
-            $params = join(',',$params);
-            if ($params !== '')
-                $params = g()->conf['link_split'].$params;
-            if (!empty($act) && !empty($ctrl))
-                $act = "/$act";
-            $ctrl = trim($ctrl,'/');
-            $url[] = $ctrl.$act.$params;
+
+
+            // store meta in array under it's path
+
+            $r_url = & $url;
+            $path = explode('/', $ctrl);
+            foreach ($path as $elem)
+            {
+                $elem = ucfirst($elem);
+                $r_url = & $r_url[$elem];
+            }
+            $r_url[null] = $c_meta;
         }
-        $url = join(';',$url);
+        $this->_buildStringURLFromArray($url);
+
         g()->req->enhanceURL($url);
         return g()->req->getBaseUri($with_host).$url;
     }
-    
+
+
     /**
      * Acts like url2a, but uses url2cInside instead
      *
@@ -2200,7 +2222,7 @@ abstract class Controller extends HgBase implements IController
     }
 
     /**
-     * Build a URL. 
+     * Build a URL.
      * Function uses current request tree, modifies it using given parameters and
      * builds new URL based on it.
      *
@@ -2219,7 +2241,7 @@ abstract class Controller extends HgBase implements IController
     public function url2cInside($ctrl, $act='', array $params=array())
     {
         $new_tree = array('children'=>array());
-        
+
         if (is_array($ctrl))
             $controllers = func_get_args();
         else
@@ -2266,15 +2288,44 @@ abstract class Controller extends HgBase implements IController
             if(!empty($params))
                 $rtree['params'] = array_merge_recursive($rtree['params'],$params);
         }
-    
+
         $current_tree = g()->req->getWhole();
-        
+
         g('Functions')->arrayMergeRecursive($current_tree,$new_tree);
 
         $url = g()->req->getTreeBasedUrl($current_tree);
         g()->req->enhanceURL($url);
         return g()->req->getBaseUri().$url;
     }
+
+
+    /**
+     * Create string url from array format, used internally in {@see url2c()}
+     * @author m.augustynowicz
+     *
+     * @param array $url current node in an array
+     * @param string $curr_path path to current node
+     *
+     * @return void method works on reference to $url
+     */
+    protected function _buildStringURLFromArray(array &$url, $curr_path='')
+    {
+        foreach ($url as $name => & $node)
+        {
+            $node_meta = & $node[null];
+            unset($node[null]);
+
+            $node_path = $curr_path . $name . '/';
+            $this->_buildStringURLFromArray($node, $node_path);
+            if ($node)
+                $node = '/' . $node;
+
+            $node = $name . $node_meta . $node;
+        }
+
+        $url = implode(';'.$curr_path, $url);
+    }
+
 
     /**
      * Makes a controller.
@@ -2310,15 +2361,46 @@ abstract class Controller extends HgBase implements IController
         }
         return $controller;
     }
+
+
+    /**
+     * Checks wheteher given name is a valid action of current component
+     * @author m.augustynowicz
+     *
+     * @param string $action_name
+     *
+     * @return bool|string false, when not valid action,
+     *         string with action's method name otherwise.
+     */
+    protected function _getActionMethod($action_name)
+    {
+        switch ($action_name)
+        {
+            case null :
+            case 'default' :
+                $method = 'defaultAction';
+                break;
+            default :
+                $method = 'action' . ucfirst($action_name);
+        }
+
+        if (method_exists($this, $method))
+            return $method;
+        else
+            false;
+    }
+
 }
+
+
 
 /**
 * Kontroler pniowy. Wspolna cecha kontrolerow pniowych jest posiadanie
 * jednego childa (kontrolera podrzednego). Domyslnie, przetwarzanie akcji
 * w kontrolerze pniowym polega na transparentnym przekazaniu akcji do
-* jego jedynego childa, podobnie domyslny render polega na przekazaniu 
-* wyniku renderowania childa. 
-* 
+* jego jedynego childa, podobnie domyslny render polega na przekazaniu
+* wyniku renderowania childa.
+*
 */
 abstract class TrunkController extends Controller
 {
@@ -2330,25 +2412,35 @@ abstract class TrunkController extends Controller
         $controller = $this->_makeController($controller, $name_or_args);
         $this->__child = $controller;
         $this->__child_name = $controller->getName();
-    }    
-    
+        return $controller;
+    }
+
     public function isChild($controller)
     {
         if ($controller instanceof IController)
-            return($controller === $this->__child ? $this->__child_name : false);
-        if (is_string($controller))
-            if ($controller === $this->__child_name)
-                return($controller);
+        {
+            if ($controller === $this->__child)
+                return $controller;
             else
-                return(false);
+                return false;
+        }
+
+        if (is_string($controller))
+        {
+            if ($controller === $this->__child_name)
+                return $controller;
+            else
+                return false;
+        }
+
         throw new HgException('$controller must be either a string or an IController');
     }
-        
+
     public function getChildren()
     {
         return array($this->__child_name => $this->__child);
     }
-    
+
     public function getChild($name)
     {
         if ($this->isChild($name))
@@ -2368,12 +2460,25 @@ abstract class TrunkController extends Controller
         else
             return $this->__child;
     }
-    
-    public function process(Request $req)
+
+
+    /**
+     * Getter for permanent controllers
+     * @param string $name permanent controller name
+     *        as defined in conf[permanent_controllers]
+     * @return PermanentController
+     */
+    public function getPermaCtrl($name)
+    {
+        return $this->__child->getPermaCtrl($name);
+    }
+
+
+    public function process(Request $req=null)
     {
         $this->__child->process($req);
     }
-    
+
 
     public function present()
     {
@@ -2396,9 +2501,63 @@ abstract class TrunkController extends Controller
 
 }
 
+
+
 /**
-* Visual controller that represents a part of the HTML body.
-*/
+ * Visual controller that represents a part of the HTML body.
+ *
+ * process() has been split into two rounds: first we decide what action
+ * should be launched for this component and all his children (preparing),
+ * then we launch tem (launching).
+ *
+ *
+ * Possible callbacks used during processing the request:
+ *
+ * * _prepareAction{ActionName}(array $params)
+ *
+ *   Called in prepare round for action that will be launched later.
+ *
+ *   - $params is a reference to request params
+ *   - return value ignored.
+ *
+ * * _onRoutingTo{ComponentName}(bool $in_request);
+ *
+ *   Called in prepare round for each component.
+ *
+ *   - $in_request determines wheter component is present in
+ *     the request (URL)
+ *   - return false to prevent component from processing
+ *
+ * * _onAction(string $name, array &$params);
+ *
+ *   Called in launch round before launching action. It already exists in
+ *   Controller, so be sure you call parent::_onAction(), when overloading.
+ *
+ *   - $name stores name of the action that is about to be launched
+ *   - $params is a reference to request params
+ *   - return false to prevent action from being launched
+ *
+ *
+ *
+ * Possible callbacks used in form validation:
+ *
+ * * validate{FormName}(array &$post)
+ *
+ *   Called to validate POST send to the form
+ *
+ *   - $post is this form's part of $_POST
+ *   - returns array of errors. it can contain special key [stop_validation]
+ *     if you don't want to launch build-in (model's) validation methods
+ *     afterwards
+ *
+ * * validate{FormName}{FieldName}(mixed &$value)
+ *
+ *   Called to validate POST data for specified form field.
+ *
+ *   - $value is a value of the field, taken from POST (therefore it can
+ *     be string or an array of strings)
+ *   - returns the same as validate{FormName}
+ */
 abstract class Component extends Controller
 {
     public static $singleton=false;
@@ -2425,64 +2584,14 @@ abstract class Component extends Controller
         $this->validate();
     }
 
-    public function onAction($action, array &$params)
+    protected function _onAction($action, array &$params)
     {
-        if (parent::onAction($action, $params))
+        if (parent::_onAction($action, $params))
             return ! (g()->req->isAjax() && !@empty($_POST['validate_me']));
         else
             return false;
     }
 
-    /**
-     * Checking permissions.
-     *
-     * Uses Kernel's Auth and $this->hasAccessTo{ActionName}() callbacks
-     * @author m.augustynowicz
-     *
-     * @param string $action name
-     * @param array $params what will be passed to the action
-     * @param boolean $just_checking pass false if you inteded to launch
-     *        that action (it may cause displaying some "error denied"
-     *        user messages and such)
-     * @return boolean/int does logged-in user has access to this action?
-     *         true when access granted by callback,
-     *         1 when from config,
-     *         false when access denied by callback
-     *         0 when from config
-     */
-    public function hasAccess($action, array &$params = array(), $just_checking=true)
-    {
-        static $cache = array();
-
-        $cache_key = json_encode($action)
-                   . json_encode($params);
-        $this_cache = & $cache[$cache_key];
-        if (null !== $this_cache)
-            return $this_cache;
-
-        if (g()->auth->hasAccess($this, $action, $params))
-        {
-            $ret = 1;
-        }
-        else
-        {
-            // or maybe we have any callback for checking this?
-            if($this->_default_action === $action)
-                $callback = 'hasAccessToDefault';
-            else
-                $callback = 'hasAccessTo' . ucfirst($action);
-
-            if (!method_exists($this, $callback))
-                $ret = 0;
-            else if ($this->$callback($params, $just_checking))
-                $ret = true;
-            else
-                $ret = false;
-        }
-
-        $this_cache = $ret;
-        return $ret;
-    }
 
     public function validate()
     {
@@ -2660,9 +2769,7 @@ abstract class Component extends Controller
                             throw new HgException("Model declared in Component variable \$forms does not exist!");
                         foreach ($fields as $field)
                         {
-                            if (! $model_field = $model->getField($field))
-                                throw new HgException("Field `$field' does not exist in $model declared in Component variable \$forms does not exist!");
-                            $err = $model_field->invalid($post[$input]);
+                            $err = $model->validateField($field, $post[$input]);
                             if($err)
                             {
                                 foreach ($err as &$err_text)
@@ -2703,29 +2810,211 @@ abstract class Component extends Controller
             }
         } // foreach post as form=>post
     }
-    
-    /** 
-    * Processes the request. First of all, the Component looks for a child named after the current request word. 
-    * If it founds one, the child receives the requiest for further processing. If it doesn't, an action is looked for.
-    * If neither a child nor an action is found, a 404 error is issued.
-    * @param $res #Request object. 
-    * 
-    */
-    public function process(Request $req)
+
+
+    /**
+     * Process request (create components, launch actions etc)
+     *
+     * note: not really used, as this happens in LibraryController
+     * @author m.augustynowicz
+     *
+     * @param Request $req
+     */
+    public function process(Request $req=null)
     {
-        if (!$req->dive())
+        $this->prepareActions($req);
+        $this->launchActions($req);
+    }
+
+
+    /**
+     * Decide whitch action will be launched, launch callbacks
+     * @author m.augustynowicz
+     * @param Request $req
+     */
+    public function prepareActions(Request $req=null)
+    {
+        // begin debug output block
+        if (g()->debug->allowed())
         {
-            $this->launchDefaultAction();
+            printf('<div class="debug-output-block"><h3>preparing %s</h3>',
+                   $this->path() );
+        }
+
+        // find an action to launch
+
+        $dived = null!==$req && $req->dive();
+
+        // action already set
+        if (null !== $this->_action_to_launch)
+        {
+            if ($this->_getActionMethod($this->_action_to_launch))
+            {
+                if ($dived && false !== $req->seekTo($this->_action_to_launch))
+                {
+                    $this->_params = $req->getParams();
+                }
+                else
+                {
+                    $this->_params = array();
+                }
+            }
+            else
+            {
+                trigger_error('Incorrect action set to be launched: '
+                            . $this->_action_to_launch,
+                        E_USER_WARNING);
+                $this->_action_to_launch = null;
+            }
+        }
+
+        // try to get action from request
+        if ($dived && null === $this->_action_to_launch)
+        {
+            while ($req_node = $req->next())
+            {
+                if ($this->_getActionMethod($req_node))
+                {
+                    $this->_action_to_launch = $req_node;
+                    $this->_params = $req->getParams();
+                    break;
+                }
+            }
+        }
+
+        if ($dived)
+        {
+            $req->emerge();
+        }
+
+        // fallback to default action
+        if (null === $this->_action_to_launch)
+        {
+            $this->_action_to_launch = $this->_default_action;
+            $this->_params = (null===$req) ? array() : $req->getParams();
+        }
+
+        if (g()->debug->allowed())
+        {
+            printf('<p>found action %s(%s)</p>',
+                   $this->_action_to_launch, print_r($this->_params, true) );
+        }
+
+
+        // prepare this component's action
+
+        $method = '_prepareAction' . ucfirst($this->_action_to_launch);
+        if (method_exists($this, $method))
+        {
+            if (g()->debug->allowed())
+            {
+                printf('<div class="debug-output-block"><h4>launching %s(%s)</h3>',
+                       $method, print_r($this->_params, true) );
+            }
+
+            $this->$method($this->_params);
+
+            if (g()->debug->allowed())
+            {
+                printf('</div>');
+            }
+        }
+
+        // prepare childrens' actions
+
+        $dived = null!==$req && $req->dive();
+        $f = g('Functions');
+        foreach ($this->__components as & $child)
+        {
+            // whether component is present in request
+            $in_request = $dived && false !== $req->seekTo($child->getName());
+
+            // _onRoutingToChildName callback
+
+            $child_name = $f->camelify($child->getName());
+            if (method_exists($this, $callback = "_onRoutingTo$child_name"))
+            {
+                if (g()->debug->allowed())
+                {
+                    printf('<div class="debug-output-block"><h4>launching %s(%s)</h3>',
+                           $callback, print_r($in_request, true) );
+                }
+
+                $route = $this->$callback($in_request);
+
+                if (g()->debug->allowed())
+                {
+                    printf('</div>');
+                }
+
+                if (!$route)
+                    continue;
+            }
+
+            $child->prepareActions($in_request ? $req : null);
+        }
+        unset($component);
+        if ($dived)
+        {
+            $req->emerge();
+        }
+
+        // end debug output block
+        if (g()->debug->allowed())
+        {
+            printf('</div>');
+        }
+    }
+
+
+    /**
+     * Launch actions selected in prepareActions()
+     * @author m.augustynowicz
+     * @param Request $req
+     */
+    public function launchActions(Request $req=null)
+    {
+        // begin debug output block
+        if (g()->debug->allowed())
+        {
+            printf('<div class="debug-output-block"><h3>launching things in %s</h3>',
+                   $this->path() );
+        }
+
+        if (!$this->_action_to_launch)
+        {
+            throw new HgException('Called launchActions(), but no action has been selected.');
             return;
         }
-        
-        while ($current = $req->next())
+
+        // launch actions for all the components
+
+        $dived = null!==$req && $req->dive();
+        foreach ($this->__components as & $child)
         {
-            if (!$this->_handle($req,$current))
-                $this->redirect('HttpErrors/error404');
+            if (!$child->_action_to_launch)
+                continue;
+
+            $in_request = $dived && false !== $req->seekTo($child->getName());
+            $child->launchActions($in_request ? $req : null);
         }
-        $req->emerge();
-    }       
+        unset($component);
+        if ($dived)
+        {
+            $req->emerge();
+        }
+
+        // and my own action
+        $this->launchAction($this->_action_to_launch, $this->_params);
+
+
+        // close debug output block
+        if (g()->debug->allowed())
+        {
+            printf('</div>');
+        }
+    }
+
 
     /**
     * Adds a subcontroller.
@@ -2742,27 +3031,31 @@ abstract class Component extends Controller
     public function addChild($controller, $name_or_args=null)
     {
         $controller = $this->_makeController($controller, $name_or_args);
-        
+
         if ($this->isChild($controller->getName()))
             throw new HgException("This component already has a child named ".$controller->getName());
         $this->__components[$controller->getName()] = $controller;
-        return($controller);
+        return $controller;
     }
 
     public function isChild($controller)
     {
         if ($controller instanceof IController)
-            return(array_search($controller,$this->__components));
+        {
+            return array_search($controller,$this->__components);
+        }
+
         if (is_string($controller))
         {
             if (array_key_exists($controller, $this->__components))
-                return($controller);
+                return $controller;
             else
-                return(false);
+                return false;
         }
+
         throw new HgException('$controller must be either a string or an IController');
     }
-    
+
     /**
     * Includes a template or a controller. If $____tpl is a name of a components child, then the child is included.
     * @param $____tpl either a child name, a controller, or a template name
@@ -2775,7 +3068,7 @@ abstract class Component extends Controller
         else
             return parent::inc($____tpl, $____local_variables);
     }
-        
+
     /**
     * Retrieves children array
     */
@@ -2783,7 +3076,7 @@ abstract class Component extends Controller
     {
         return($this->__components);
     }
-    
+
     /**
     * Retrieves a child, if one is found.
     * @param $name name of the child to look for
@@ -2809,7 +3102,65 @@ abstract class Component extends Controller
     {
         return g()->first_controller->displayingCtrl();
     }
-    
+
+
+    /**
+     * Getter for permanent controllers
+     * @param string $name permanent controller name
+     *        as defined in conf[permanent_controllers]
+     * @return PermanentController
+     */
+    public function getPermaCtrl($name)
+    {
+        return g()->first_controller->getPermaCtrl($name);
+    }
+
+
+    /**
+     * Get param from this component's parent, if it's of certain type
+     * and certain action is to be launched.
+     * @author m.augustynowicz
+     *
+     * @param string $parent_name name of the parent
+     * @param string|null $parent_action name of action, null or empty string
+     *        for default action
+     * @param int|string $key param name or numeric key
+     *
+     * @return string|null|false
+     *         - param value;
+     *         - null if param is not set
+     *         - false when parent is not of requested type;
+     */
+    public function getParentParam($parent_name, $parent_action=null, $key=0)
+    {
+        $parent = $this->getParent();
+
+        // null and empty strings denotes default action
+        if (!$parent_action)
+        {
+            $parent_action = $this->_default_action;
+        }
+
+        // check whether parent matches
+        if ($parent_name != $parent->getName())
+        {
+            return false;
+        }
+
+        // check whether parent's action matches
+        // we use _action_to_launch as at this point parent's action hasn't
+        // been launched yet
+        if ($parent_action != $parent->_action_to_launch)
+        {
+            return false;
+        }
+
+
+        // returns null when $key is not set
+        return $parent->getParam($key);
+    }
+
+
     /**
     * Renders a component. A template named after the controller name is included.
     */
@@ -2820,7 +3171,14 @@ abstract class Component extends Controller
             printf('<!-- %s::render() BEGIN -->', $this->path() );
         }
 
-        $this->inc($this->_template);
+        if (null === $this->_subrenderer)
+        {
+            $this->inc($this->_template);
+        }
+        else
+        {
+            $this->_subrenderer->render();
+        }
 
         if (g()->debug->on('view'))
         {
@@ -2963,7 +3321,6 @@ abstract class Component extends Controller
         $this->forms = $fixed;
         $this->_forms_are_ok = true;
     }
-    
 
 }
 
@@ -2991,3 +3348,4 @@ abstract class PermanentController extends Component
     }
 
 }
+

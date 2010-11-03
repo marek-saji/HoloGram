@@ -646,7 +646,8 @@ class Request extends HgBase
         $this->__updateRTree();
         return true;
     }
-    
+
+
     /**
      * Returns parameters of a node.
      * @uses {$_rtree}
@@ -675,16 +676,34 @@ class Request extends HgBase
 
     /**
      * Encodes value in url, for building links.
-     * @param string $val
-     * @return string encoded value
+     *
+     * @param string|array $val scalar value or array with parameters
+     *
+     * @return string encoded value or set of values
      */
     public function encodeVal($val)
     {
+        // encode set of values
+        if (is_array($val))
+        {
+            foreach ($val as $name => & $value)
+            {
+                $value = $this->encodeVal($value);
+                if (!is_int($name))
+                    $value = $this->encodeVal($name) . '=' . $value;
+            }
+            return implode(',', $val);
+        }
+
+        // encode one value
+
         // triple encod is a must, apache tends to freak out otherwise
         $val = @urlencode(urlencode(urlencode($val)));
         if ($this->_link_split_encoded)
+        {
             $val = str_replace(g()->conf['link_split'],
                                $this->_link_split_encoded, $val);
+        }
         return $val;
     }
 
@@ -816,11 +835,12 @@ class Request extends HgBase
      * @return mixed found element's value
      *               or false, it it does not exist
      */
-    private function __seekTo($key, array &$arr = null)
+    public function seekTo($key, array &$arr = null)
     {
         if (null === $arr)
             $arr = & $this->_rtree['children'];
-        for (reset($arr) ; key($arr)!=$key && false!==key($arr) ; next($arr) );
+        for (reset($arr) ; key($arr)!=$key && null!==key($arr) ; next($arr) );
+        $this->_current = $key;
         return current($arr);
     }
 
@@ -839,7 +859,7 @@ class Request extends HgBase
         {
             $this->_rtree = & $this->_rtree['children'][$k];
         }
-        $this->__seekTo($this->_current);
+        $this->seekTo($this->_current);
     }
 
 
@@ -861,7 +881,7 @@ class Request extends HgBase
         }
         else
         {
-            $this->__seekTo($this->_current);
+            $this->seekTo($this->_current);
             $fn($this->_rtree['children']);
             $this->_current = key($this->_rtree['children']);
         }

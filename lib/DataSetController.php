@@ -12,7 +12,7 @@ class DataSetController extends PagesController
 	public $forms = array('models' => true);
 
 
-    public function onAction($action, array & $params)
+    protected function _onAction($action, array & $params)
     {
         if (!g()->debug->allowed())
         {
@@ -22,7 +22,7 @@ class DataSetController extends PagesController
     }
 
 
-    public function process(Request $req)
+    public function process(Request $req=null)
     {
         parent::process($req);
         if($table=$this->getChild('Page'))
@@ -123,7 +123,7 @@ class DataSetController extends PagesController
         return(true);
     }
     
-    public function prepareShow($args)
+    public function _prepareActionShow($args)
     {
         $this->_isSupportedDs($args);
         $this->addChild($tab = g('Table','controller',array('name'=>'Page','parent'=>$this, 'subject'=>$this->_ds)));

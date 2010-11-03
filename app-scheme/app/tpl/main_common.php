@@ -27,12 +27,6 @@ $v->setTitle($title);
 if (g()->req->isAjax())
     return;
 
-/**
- * Dear webdev,
- * can we move this to Hologram?
- */
-$v->addHeader('X-UA-Compatible', 'IE=8');
-
 
 //$v->addKeyword('');
 //$v->setDescription('');

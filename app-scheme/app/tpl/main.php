@@ -75,23 +75,22 @@ $t->inc('infos');
 </footer> <!-- #foot -->
 
 <?php
-if (PROD_ENV == ENVIRONMENT) :
-    /** @todo fill up UA code and uncomment */
-    /** @todo think of more custom vars, see http://code.google.com/apis/analytics/docs/tracking/gaTrackingCustomVariables.html */
+if (null !== @g()->conf['keys']['google analytics']) :
 ?>
-<!--
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
 document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
 </script>
 <script type="text/javascript">
 try {
-var pageTracker = _gat._getTracker("UA-1337666-0");
+var pageTracker = _gat._getTracker("<?=g()->conf['keys']['google analytics']?>");
 pageTracker._trackPageview();
+<?php
+/** @todo think of more custom vars, see http://code.google.com/apis/analytics/docs/tracking/gaTrackingCustomVariables.html */
+?>
 pageTracker._setCustomVar(1, 'authorized', '<?=g()->auth->loggedIn()?'yes':'no'?>', 1);
 } catch(err) {}</script>
--->
 
 <?php
-endif; // prod environment
+endif; // google analytics
 

@@ -17,7 +17,7 @@ class DebugController extends TrunkController
      * @author m.augustynowicz
      * @return true allowing access
      */
-    public function onAction($action, array & $params)
+    protected function _onAction($action, array & $params)
     {
         return true;
     }
@@ -33,17 +33,19 @@ class DebugController extends TrunkController
      *
      * @param Request $req set to currently handled node (should be root)
      */
-    public function process(Request $req)
+    public function process(Request $req=null)
     {
         if (g()->conf['allow_debug'] = $this->_session['allow_debug'])
             error_reporting(E_ALL|E_STRICT);
         else
             // @todo it sure looks like potential "wtf? white screen" situation"
             error_reporting(0);
+
         g()->debug->config();
 
         if (!isset($this->_conf['sub']['type']))
             throw new HgException("sub controller type not defined for debug controller");
+
         $this->addChild(
             g($this->_conf['sub']['type'],
                 'controller',
@@ -52,45 +54,50 @@ class DebugController extends TrunkController
                     'parent' => $this,
                 )
             )
-        ); 
+        );
+
+        // launch action of this controller
 
         $name = ucfirst($this->getName());
-
-
-        $redirect_me = false;
+        $anything_launched = false;
         while ($current = $req->next())
         {
             if (ucfirst($current)==$name)
             {
-                $redirect_me = true;
+                $anything_launched = true;
                 if ($req->dive())
                 {
                     while ($current = $req->next())
                     {
-                        if (!$this->_handle($req,$current))
+                        $params = $req->getParams();
+                        if (false === $this->launchAction($current, $params))
+                        {
                             $this->redirect('HttpErrors/Error404');
-                        $this->_launched_action = null; // to avoid warnings
+                        }
+                        // debug controller can launch more than one action,
+                        // so to avoid warnings:
+                        $this->_launched_action = null;
                     }
                     $req->emerge();
                 }
-            }        
+            }
         }
-        // pretty mutch the same as while($req->prev()) but faster:
+        // HACK pretty mutch the same as while($req->prev()) but faster
         $req->emerge();
 
+
         // redirect to path without Debug
-        
-        if ($redirect_me)
+
+        if ($anything_launched)
         {
-            $new_url = explode(';',$req->getUrlPath());
-            $regex = '!(^|/)'.preg_quote(ucfirst($this->getName())).'[:/]!';
-            foreach ($new_url as $k => &$new_part)
-            {
-                if (preg_match($regex, $new_part))
-                    unset($new_url[$k]);
-            }
-            $new_url = join(';',$new_url);
-            if (!$new_url)
+            $new_url = preg_replace(
+                    '!;?\b'.preg_quote($name).'([^;]*);?!',
+                    '',
+                    trim($req->getUrlPath(),'/')
+                );
+            if ($new_url)
+                $new_url = '/' . $new_url;
+            else
                 $new_url = $req->getReferer();
 
             $this->redirect($new_url,false);
@@ -98,8 +105,8 @@ class DebugController extends TrunkController
 
         parent::process($req);
     }
-    
-    
+
+
     /**
      * Display toolbar, then prerender echoe, then real content
      * @author m.augustynowicz
@@ -129,18 +136,19 @@ class DebugController extends TrunkController
         }
 
         parent::present();
-    }    
-    
-    
+    }
+
+
     /**
      * Don't do anything by default. Just in case.
      * @author m.augustynowicz
      */
     public function defaultAction(array $params)
     {
-        
+
     }
-    
+
+
     /**
      * Enable debug mode
      * @author p.piskorski
@@ -159,7 +167,7 @@ class DebugController extends TrunkController
         }
     }
 
-    
+
     /**
      * Disable debug mode
      * @author p.piskorski
@@ -222,10 +230,17 @@ class DebugController extends TrunkController
         echo '</pre>';
     }
 
+
+    /**
+     * Produce URLs that can be handled by process()
+     * @param string $act action name
+     * @param array $params action's params
+     * @return string
+     */
     public function url2a($act='', array $params=array())
-	{
+    {
         return parent::url2c(ucfirst($this->getName()), $act, $params);
-	}
+    }
 
 }
 

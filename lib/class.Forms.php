@@ -380,25 +380,33 @@ class Forms extends HgBase
         $tpl = & $input_def['tpl'];
         if (null === $tpl)
         {
+            $ctrl_class = get_class($this->__ctrl);
+            $form_def = "{$ctrl_class}::\$forms[{$this->__short_ident}][{$name}]";
+
+            $error_prefix = "Template is not defined in {$form_def} definition and ";
             if (empty($models))
             {
-                throw new HgException("Template is not defined in controller variable \$forms definition and no models given.");
+                throw new HgException($error_prefix . 'no models given.');
             }
             else if (sizeof($models) > 1)
             {
-                throw new HgException("Template is not defined in controller variable \$forms definition and more than one models given.");
+                throw new HgException($error_prefix . 'more than one models given.');
             }
-
             $fields = reset($models);
             if (sizeof($fields) > 1)
             {
-                throw new HgException("Template is not defined in controller variable \$forms definition and more than one field of a model given!");
+                throw new HgException($error_prefix . 'more than one field of a model given.');
             }
+            unset($err_prefix);
 
             $model_name = key($models);
             $field_name = reset($fields);
             $model = g($model_name, 'model');
             $field = $model[$field_name];
+            if (!$field)
+            {
+                throw new HgException("{$form_def} supposed to render {$model_name}'s {$field_name} field, but it does not exist.");
+            }
             $tpl = 'Forms/' . $field->type();
         }
 

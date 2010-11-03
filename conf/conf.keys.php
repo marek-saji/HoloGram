@@ -9,6 +9,10 @@ $conf['keys'] = array(
         'private' => null,
     ),
 
+    // Google Analytics (domain-specific)
+    // http://google.com/analytics/
+    'google analytics' => null,
+
     // Google Maps (domain-specific)
     // http://code.google.com/apis/maps/signup.html
     'google maps' => null,
