@@ -35,8 +35,8 @@ class TableController extends Component
      * @author m.augustynowicz
      *
      * @param string $action action name
-     * @param array $params request params 
-     * 
+     * @param array $params request params
+     *
      * @return boolean true. allow access
      */
     protected function _onAction($action, array &$params)
