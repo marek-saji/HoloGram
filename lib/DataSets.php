@@ -1206,8 +1206,10 @@ abstract class Model extends DataSet implements IModel
         $callback = '_validate'.g('Functions')->camelify($field_name);
         if (method_exists($this, $callback))
         {
-            $all_errors['callback'] = $this->$callback($value);
+            if ($errors = $this->$callback($value))
+                $all_errors['callback'] = $errors;
         }
+
 
         if (@$all_errors['callback']['stop_validation'])
         {
@@ -1216,10 +1218,14 @@ abstract class Model extends DataSet implements IModel
         else
         {
             // field object's validation
-            $all_errors['field'] = $this[$field_name]->invalid($value);
+            if ($errors = $this[$field_name]->invalid($value))
+                $all_errors['field'] = $errors;
         }
 
-        return call_user_func_array('array_merge', $all_errors);
+        if ($all_errors)
+            return call_user_func_array('array_merge', $all_errors);
+        else
+            return false;
     }
 
         
