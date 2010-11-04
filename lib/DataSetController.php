@@ -123,7 +123,7 @@ class DataSetController extends PagesController
         return(true);
     }
     
-    public function _prepareActionShow($args)
+    public function _prepareActionShow(array &$args)
     {
         $this->_isSupportedDs($args);
         $this->addChild($tab = g('Table','controller',array('name'=>'Page','parent'=>$this, 'subject'=>$this->_ds)));
@@ -146,7 +146,6 @@ class DataSetController extends PagesController
             ),
             '1' =>*/
 
-        $this->prepareShow($args);
         $diff = $this->_ds->checkModelInDb();
 		if (true !== $diff && (false === $diff || !empty($diff['not_in_base']) || !empty($diff['def_diff'])))
 		    //$this->assign('model_invalid',true);
