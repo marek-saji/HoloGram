@@ -1470,5 +1470,29 @@ class Functions extends HgBase
         }
         return $ct;
     }
+    
+    /**
+     * geneteretes <a target="_blank"></a> tag for given url
+     * if the url does not start with 'http://' or 'https://'
+     * the 'http://' prefix is added to href="" attr
+     *
+     * @author b.matuszewski
+     *
+     * @param string $url - url
+     * @param null|string - value of <a></a> tag, if null $url will be taken instead
+     *
+     * @returns string - generated <a></a> tag
+     */
+    public function externalUrl($url, $label=null)
+    {
+        if(!preg_match('!(^http://)|(^https://)!', $url))
+            $href = 'http://' . $url;
+        else
+            $href = $url;
+        $target = '_blank';
+        $attr = compact('href', 'target');
+        $value = $label ? $label : $url;
+        return $this->tag('a', $attr, $value);
+    }
 }
 
