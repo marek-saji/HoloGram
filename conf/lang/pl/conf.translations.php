@@ -21,7 +21,9 @@ $conf['translations'] = array(
 
 'log' => array(
 
-    '((log level:%s))' => array(
+    'anonymous' => 'niezalogowany',
+
+    '((enum log_level: %s))' => array(
         'info' => 'informacja',
         'warn' => 'ostrzeżenie',
         'error' => 'błąd',

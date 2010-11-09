@@ -13,7 +13,6 @@ class LogController extends PagesController
             'model' => 'Log',
             'inputs' => array(
                 'user_login' => array(
-                    '_tpl'=>'Forms/FString',
                     'login' => 'User',
                 ),
                 'from' => array('timestamp' => 'Log'),
