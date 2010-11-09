@@ -678,18 +678,22 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     }
                 }
                 $this_cond = sprintf('%s %s %s', $field, $operator, $value);
-                switch ($operator)
+                if('IN' == $operator)
                 {
-                    case 'IN' :
-                    case 'NOT IN' :
-                        if ('()'===$value)
-                        {
-                            $cond[] = sprintf('/* %s */ false', $this_cond);
-                            break;
-                        }
-                    default :
-                        $cond[] = '(' . $this_cond . ')';
+                    if ('()'===$value)
+                    $cond[] = '()' === $value ?
+                        sprintf('/* %s */ false', $this_cond) :
+                        '(' . $this_cond . ')';
                 }
+                elseif('NOT IN' == $operator)
+                {
+                    if ('()'===$value)
+                    $cond[] = '()' === $value ?
+                        sprintf('/* %s */ true', $this_cond) :
+                        '(' . $this_cond . ')';
+                }
+                else
+                    $cond[] = '(' . $this_cond . ')';
             }
             $condition = join("\nAND ", $cond);
         }
