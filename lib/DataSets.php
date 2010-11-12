@@ -1103,7 +1103,7 @@ class Join extends DataSet
             list($model_name, $name) = $model_with_name;
 
 
-        $relation = $this->_relations[$model_name]['_def']['model'];
+        $relation = @$this->_relations[$model_name]['_def']['model'];
         if ($relation)
         {
             // $model_name is a relation name
@@ -1119,7 +1119,7 @@ class Join extends DataSet
 
         foreach ($sources as & $source)
         {
-            if ($model && $source->getName() != $model && $source->alias() != $model)
+            if (@$model && $source->getName() != $model && $source->alias() != $model)
                 continue;
 
             $field = $source->getField($name);
