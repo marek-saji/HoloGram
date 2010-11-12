@@ -354,8 +354,6 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         if (NULL===$field_keys)
             return($this->_whitelist);
 
-        $fields = $this->getFields();
-        
         $new_whitelist = array();
         
         foreach($field_keys as $alias => $column)
@@ -374,16 +372,18 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             }
             if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','count distinct','avg','sum')))
                 throw new HgException('Unknown aggregate function: '.$aggregate.' !');
-            if(isset($fields[$field]))
+
+            $field_object = $this->getField($field);
+            if ($field_object)
             {
                 if($aggregate)
-                    $new_whitelist[$alias] = new FoFunc($aggregate,$fields[$field]);
+                    $new_whitelist[$alias] = new FoFunc($aggregate,$field_object);
                 else
                 {
                     if(is_int($alias))
-                        $new_whitelist[] = $fields[$field];
+                        $new_whitelist[] = $field_object;
                     else
-                        $new_whitelist[$alias] = $fields[$field];
+                        $new_whitelist[$alias] = $field_object;
                 }
             }
         }
@@ -394,21 +394,40 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             $this->_whitelist = $new_whitelist;
         return $this;
     }
-    
+
+
     /**
-    * Sets and returns GROUP BY fields
-    */
+     * Sets and returns GROUP BY fields
+     * @author m.augustynowicz using getField() instead of getField()
+     *
+     * @param array $field_keys list of field selectors;
+     *        if null given, returns current groupby
+     * @param bool $merge merge new groupby with existing one?
+     *
+     * @return DataSet $this
+     */
     public function groupBy($field_keys=NULL, $merge=false)
     {
         if (NULL===$field_keys)
             return($this->_groupby);
+
+        $new = array();
+        foreach ($field_keys as $field_selector)
+        {
+            $field = $this->getField($field_selector);
+            if ($field)
+                $new[$field->generator()] = $field;
+        }
+
         if ($merge)
-            $this->_groupby = array_merge($this->_groupby,array_intersect_key(array_flip($field_keys),$this->getFields()));
+            $this->_groupby = array_merge($this->_groupby, $new);
         else
-            $this->_groupby = array_intersect_key(array_flip($field_keys),$this->getFields());
+            $this->_groupby = $new;
+
         return $this;
-    }    
-    
+    }
+
+
     /**
     * Generates selecting query according to current settings of a data set.
     * @param $pages determines wether to include limit and offset statements in the query, or not.
@@ -817,24 +836,9 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             {
                 if (is_string($field))
                 {
-                    $fields = $this->getFields();
-                    if (!isset($fields[$field]))
-                    {
-                        $return = true;
-                        foreach ($this->_whitelist as $f=>$c)
-                        {
-                            if ($f == $field)
-                            {
-                                $field = $c;
-                                $return = false;
-                                break;
-                            }
-                        }
-                        if ($return)
-                            return false;
-                    }
-                    else
-                        $field = $fields[$field];
+                    $field = $this->getField($field);
+                    if (!$field)
+                        return false;
                 }
                 // "generate" key
                 $key = $field->generator();
@@ -868,16 +872,6 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         }
     }
 
-    /**
-    * Retrieves a field
-    * @param $name Name of the searched field.
-    * @return Returns a field with a given name, or NULL if such field doens't exists
-    */
-    public function getField($name)
-    {
-        $f = $this->getFields();
-        return($f[$name]);
-    }     
 
     /**
      * Field getter via ArrayAccess interface
@@ -948,9 +942,8 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     
     protected function _getGroupByFields()
     {
-        $current = array_intersect_key($this->getFields(),$this->_groupby);
         $res = '';
-        foreach ($current as $c)
+        foreach ($this->_groupby as $c)
             $res .= "  ".$c->generator().",\n";
         if (!empty($res))
             $res[strlen($res)-2]=' ';
@@ -1081,6 +1074,59 @@ class Join extends DataSet
         return $f_array;
 
         //FIXME: to trzeba zaliasowac zeby merge nie nadpisal pol o takiej samej nazwie
+    }
+
+    /**
+     * Retrieves a field with a given name.
+     * @author m.augustynowicz
+     *
+     * @param $name The name of retrieved field.
+     *
+     *              Can be:
+     *
+     *              - field name
+     *              - an alias (from whitelist).
+     *
+     *              It can be prefixed (joined by dot, e.g. `Owner.id`) with:
+     *
+     *              - model name
+     *              - relation name
+     *              - model alias
+     *
+     * @return IField|null Field or NULL if no such field is defined
+     */
+    public function getField($name)
+    {
+        $model_name = null;
+        $model_with_name = explode('.', $name, 2);
+        if (sizeof($model_with_name) > 1)
+            list($model_name, $name) = $model_with_name;
+
+
+        $relation = $this->_relations[$model_name]['_def']['model'];
+        if ($relation)
+        {
+            // $model_name is a relation name
+            $sources = array($relation);
+            $model_name = null;
+        }
+        else
+        {
+            $sources = array($this->_first);
+            foreach ($this->_joins as $join)
+                $sources[] = $join['ds'];
+        }
+
+        foreach ($sources as & $source)
+        {
+            if ($model && $source->getName() != $model && $source->alias() != $model)
+                continue;
+
+            $field = $source->getField($name);
+            if (null !== $field)
+                return $field;
+        }
+        return null;
     }
     
     public function generator()
@@ -1314,22 +1360,48 @@ abstract class Model extends DataSet implements IModel
     {
         return(count($this->_fields));
     }
-    
+
+
     /**
-    * Retrieves a field with a given name.
-    * @param $name The name of retrieved field.
-    * @return Field or NULL if no such field is defined
-    */
+     * Retrieves a field with a given name.
+     * @author m.augustynowicz
+     *
+     * @param $name The name of retrieved field.
+     *
+     *              Can be:
+     *
+     *              - field name
+     *              - an alias (from whitelist).
+     *
+     * @return IField|null Field or NULL if no such field is defined
+     */
     public function getField($name)
     {
-        if (array_key_exists($name,$this->_fields))
-            return($this->_fields[$name]);
-        else
+        // select with whitelist alias
+        if (array_key_exists($name, $this->_whitelist))
         {
-            $fields = $this->getFields();
-            return (isset($fields[$name]))?$fields[$name]:NULL;
+            $wl_field = & $this->_whitelist[$name];
+            if ($wl_field instanceof IField)
+                return $wl_field;
         }
+
+        foreach ($this->_fields as & $field)
+        {
+            /**
+             * DEPRECATED legacy code, marked for deletion 2010-11-04
+             */
+            // select by generated sql query
+            if ($field->generator() === $name)
+                return $field;
+
+
+            // select by name
+            if ($field->getName() === $name)
+                return $field;
+        }
+        return null;
     }
+
 
     /**
     * Prepares a Relation object.
