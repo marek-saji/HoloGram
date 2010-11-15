@@ -616,6 +616,10 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 $key = $field->generator();
                 if($suff)
                     $field = $field->generator().$suff;
+                if($nulls_first === null )
+                    unset($this->_nulls_first[$key]);
+                else
+                    $this->_nulls_first[$key] = (bool) $nulls_first;
             }
             // get/reset
             if (is_bool($action))
@@ -637,10 +641,6 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 $this->_order[$key] = compact('field', 'dir');
                 return $key;
             }
-            if($nulls_first === null)
-                unset($this->_nulls_first[$key]);
-            else
-                $this->_nulls_first[$key] = (bool) $nulls_first;
         }
     }
 
