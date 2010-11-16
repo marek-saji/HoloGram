@@ -7,17 +7,17 @@ abstract class DeveloperController extends PagesController
     protected $_files = array(__FILE__);
     protected $_title = null;
 
-
-    public function onAction($action, array & $params)
+    public function __construct(array $args)
     {
-        if (!g()->debug->allowed())
-        {
-            $this->redirect(array('HttpErrors', 'error404'));
-        }
-
         g()->db->lastErrorMsg(); // will initialize db
 
-        return true;
+        parent::__construct($args);
+    }
+
+
+    public function hasAccess($action, array &$params = array(), $just_checking=true)
+    {
+        return g()->debug->allowed(); // allow only in debug mode
     }
 
 
@@ -26,7 +26,7 @@ abstract class DeveloperController extends PagesController
      *
      * @param array $params none used
      */
-    public function defaultAction(array $params)
+    public function actionDefault(array $params)
     {
         $actions = array();
         foreach ($this->_files as & $file)
