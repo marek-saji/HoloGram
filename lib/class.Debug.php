@@ -217,10 +217,9 @@ class Debug extends HgBase
      * @param string $msg Message to display.
      * @param integer|array $trace if array given, it's being used instead
      *        of debug_backtrace(), if integer - debug_backtrace() gets shifted
-     * @param bool $show_context shall we show context (it may be quite big!)
      * @return void
      */
-    public function trace($msg = '', $trace=array(), $show_context=true)
+    public function trace($msg = '', $trace=array())
     {
         static $files = array();
 
@@ -390,21 +389,6 @@ JS;
                 printf('<button title="suprised? ask saji how to get this working {;" onclick="hgDebugPost(\'/edit.php\', \'fn=%s&amp;l=%d\');">edit</button>', $call['file'], $call['line']);
                 echo '</pre>';
                 echo '</td></tr>';
-            }
-
-            if ($show_context && @$call['context'])
-            {
-                echo '<tr><td '.$cell_style.' colspan="2">';
-                if (! (defined('ENVIRONMENT') && ENVIRONMENT == LOCAL_ENV))
-                    print '(if you\'d be working in local environment, you could view context here)';
-                else if ((!g()->req) || g()->req->isAjax())
-                    print '(if it was not an AJAX call, you could view context here)';
-                else
-                {
-                    echo '<a href="javascript:void(0)" onclick="css=this.nextSibling.style; css.display=css.display==\'none\'?\'block\':\'none\'">toggle context visibility</a><pre style="display:none">';
-                    print_r($call['context']);
-                }
-                echo '</pre></td></tr>';
             }
 
             echo '</tbody>';

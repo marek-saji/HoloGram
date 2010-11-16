@@ -747,7 +747,7 @@ JS;
             g()->debug->dump($result);
             print "</pre>";
             print '<div style="display:none">';
-            g()->debug->trace(1, null, false);
+            g()->debug->trace(1, null);
             print "</div>";
             print "</div>";
             if ($msg = $this->lastErrorMsg())
