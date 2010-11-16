@@ -1119,8 +1119,13 @@ class Join extends DataSet
 
         foreach ($sources as & $source)
         {
-            if (@$model && $source->getName() != $model && $source->alias() != $model)
+            if ($model_name &&
+                $source->getName() != $model_name &&
+                $source->alias() != $model_name
+               )
+            {
                 continue;
+            }
 
             $field = $source->getField($name);
             if (null !== $field)

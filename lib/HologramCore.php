@@ -976,8 +976,17 @@ class Kernel
     {
         $argc = func_num_args();
 
-        if (empty($name))
-            return($this);
+        if ($argc == 0)
+            return $this;
+        else if (empty($name))
+        {
+            trigger_error(
+                'Tried to manufacture empty-named with '
+                        .__CLASS__.'::'.__FUNCTION__,
+                E_USER_ERROR
+            );
+        }
+
         if (is_array($resource_type))
         {
             $args = $resource_type;
