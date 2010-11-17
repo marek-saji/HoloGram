@@ -1072,9 +1072,13 @@ class Join extends DataSet
         //FIXME: to trzeba zaliasowac zeby merge nie nadpisal pol o takiej samej nazwie
     }
 
+
     /**
      * Retrieves a field with a given name.
      * @author m.augustynowicz
+     *
+     * @todo when re-writing relations remember to allow fetching
+     *       fields by relation name.
      *
      * @param $name The name of retrieved field.
      *
@@ -1086,7 +1090,6 @@ class Join extends DataSet
      *              It can be prefixed (joined by dot, e.g. `Owner.id`) with:
      *
      *              - model name
-     *              - relation name
      *              - model alias
      *
      * @return IField|null Field or NULL if no such field is defined
@@ -1099,19 +1102,9 @@ class Join extends DataSet
             list($model_name, $name) = $model_with_name;
 
 
-        $relation = @$this->_relations[$model_name]['_def']['model'];
-        if ($relation)
-        {
-            // $model_name is a relation name
-            $sources = array($relation);
-            $model_name = null;
-        }
-        else
-        {
-            $sources = array($this->_first);
-            foreach ($this->_joins as $join)
-                $sources[] = $join['ds'];
-        }
+        $sources = array($this->_first);
+        foreach ($this->_joins as $join)
+            $sources[] = $join['ds'];
 
         foreach ($sources as & $source)
         {
@@ -1129,7 +1122,8 @@ class Join extends DataSet
         }
         return null;
     }
-    
+
+
     public function generator()
     {
         $gen = $this->_first->generator();
