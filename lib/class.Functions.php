@@ -1279,7 +1279,12 @@ class Functions extends HgBase
     public function xmlAttr(array $attr)
     {
         foreach ($attr as $a => &$val)
-            $val = htmlspecialchars($a).'="'.htmlspecialchars($val).'"';
+        {
+            if (false !== strpos($val, '"'))
+                $val = htmlspecialchars($a).'=\''.htmlspecialchars($val, ENT_NOQUOTES).'\'';
+            else
+                $val = htmlspecialchars($a).'="'.htmlspecialchars($val, ENT_COMPAT).'"';
+        }
         return join(' ', $attr);
     }
 
