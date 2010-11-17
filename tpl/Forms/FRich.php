@@ -46,5 +46,5 @@ $t->inc('wysiwyg/init', $wysiwyg_parmas);
 if (!@$____local_variables['disabled'])
     @$____local_variables['class'] .= ' richedit';
 
-$t->inc('Forms/FString_area', $____local_variables);
+$t->inc('Forms/FMultilineString', $____local_variables);
 

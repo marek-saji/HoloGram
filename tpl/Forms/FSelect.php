@@ -38,9 +38,7 @@ if($disabled)
 $attrs['id'] = $id;
 $attrs['name'] = $ident . $name_prefix . '[' . $input . ']' . $name_suffix;
 
-$attrs_html = '';
-foreach($attrs as $name => $value)
-    $attrs_html .= sprintf(' %s="%s"', $name, htmlentities($value));
+$attrs_html = $f->xmlAttr($attrs);
 if(isset($select_array))
 {
     g()->debug->addInfo('deprecated select_array', '$select_array variable has been assigned, but FSelect now accepts only local variable $values');

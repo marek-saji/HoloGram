@@ -77,6 +77,8 @@ class Forms extends HgBase
     private $__model;
     private $__ctrl;
     private $__form;
+
+    protected static $_models_cache = array();
     
     
     /**
@@ -165,14 +167,20 @@ class Forms extends HgBase
         $data = @ $this->__ctrl->data[$this->__short_ident][$input];
         $errors = $this->_getErrors($input);
 
+        $additional_attrs = (array) @$additional_params['attrs'];
+        $hg_attrs = (array) @$input_def['data-attrs'];
+        $additional_params['attrs'] = array_merge($hg_attrs, $additional_attrs);
+
         $hg_params = array(
-            'input_def' => $input_def,
+            'input_def' => & $input_def,
             'ident'     => $input_def['form_ident'],
             'input'     => $input_def['input_name'],
             'id'        => $input_def['id'],
             'ajax'      => $input_def['ajax'],
             'data'      => $data,
             'errors'    => $errors,
+            'model_objects' => $input_def['model_objects'],
+            'field_objects' => $input_def['field_objects'],
         );
         $params = array_merge($hg_params, $additional_params);
 
@@ -377,6 +385,69 @@ class Forms extends HgBase
 
         $models = & $input_def['models'];
 
+        static $html5data_rules = array(
+            'min_length' => -1,   // take lower value
+            'max_length' => +1,   // take higher value
+            'notnull'    => +1,   // take higher value (true>false)
+            'defval'     => true, // combine all values
+        );
+        $input_def['data-attrs'] = array();
+
+        $input_def['model_objects'] = array();
+        $input_def['field_objects'] = array();
+        if ($models)
+        {
+            foreach ($models as $model_name => $fields)
+            {
+                if (!isset(self::$_models_cache[$model_name]))
+                     self::$_models_cache[$model_name] = g($model_name, 'model');
+                $model = & self::$_models_cache[$model_name];
+                $input_def['model_objects'][$model_name] = & $model;
+                if ($fields)
+                {
+                    foreach ($fields as $field_name)
+                    {
+                        $field = & $model[$field_name];
+                        $input_def['field_objects'][] = & $field;
+
+                        // export some of the rules to the client using html5 data-* attributes
+
+                        $rules = $field->rules();
+                        foreach ($html5data_rules as $rule_name => $cmp_multiplier)
+                        {
+                            if (!isset($rules[$rule_name]))
+                                continue;
+
+                            $attr = & $input_def['data-attrs']['data-'.$rule_name];
+                            $rule_html = $rules[$rule_name];
+                            if (is_string($rule_html) || !is_scalar($rule_html))
+                                $rule_html = htmlspecialchars($rule_html);
+
+                            if (true === $cmp_multiplier)
+                            {
+                                if (!isset($attr))
+                                    $attr = array($rule_html);
+                                else
+                                    $attr[] = $rule_html;
+                            }
+                            else if (!isset($attr) ||
+                                     $attr > $rules[$rule_name] * $cmp_multiplier
+                                    )
+                            {
+                                $attr = $rule_html;
+                            }
+
+                            unset($attr);
+                        }
+                    }
+                    unset($field);
+                }
+            }
+            unset($model);
+            foreach ($input_def['data-attrs'] as &$attr)
+                $attr = json_encode($attr);
+        }
+
         $tpl = & $input_def['tpl'];
         if (null === $tpl)
         {
@@ -401,7 +472,7 @@ class Forms extends HgBase
 
             $model_name = key($models);
             $field_name = reset($fields);
-            $model = g($model_name, 'model');
+            $model = & $input_def['model_objects'][$model_name];
             $field = $model[$field_name];
             if (!$field)
             {
