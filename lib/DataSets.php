@@ -360,20 +360,20 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         {
             if(is_array($column))
             {
-                $field = (string) $column[0];
+                $field = $column[0];
                 $aggregate = $column[1];
                 if (is_int($alias))
-                    $alias = $aggregate.' '.str_replace('"','',$field);
+                    $alias = $aggregate.' '.str_replace('"','', (string) $field);
             }
             else
             {
-                $field = (string) $column;
+                $field = $column;
                 $aggregate = false;
             }
             if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','count distinct','avg','sum')))
                 throw new HgException('Unknown aggregate function: '.$aggregate.' !');
 
-            $field_object = $this->getField($field);
+            $field_object = is_object($field) ? $field : $this->getField($field);
             if ($field_object)
             {
                 if($aggregate)
@@ -697,18 +697,20 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     }
                 }
                 $this_cond = sprintf('%s %s %s', $field, $operator, $value);
-                switch ($operator)
+                if('IN' == $operator)
                 {
-                    case 'IN' :
-                    case 'NOT IN' :
-                        if ('()'===$value)
-                        {
-                            $cond[] = sprintf('/* %s */ false', $this_cond);
-                            break;
-                        }
-                    default :
-                        $cond[] = '(' . $this_cond . ')';
+                    $cond[] = '()' === $value ?
+                        sprintf('/* %s */ false', $this_cond) :
+                        '(' . $this_cond . ')';
                 }
+                elseif('NOT IN' == $operator)
+                {
+                    $cond[] = '()' === $value ?
+                        sprintf('/* %s */ true', $this_cond) :
+                        '(' . $this_cond . ')';
+                }
+                else
+                    $cond[] = '(' . $this_cond . ')';
             }
             $condition = join("\nAND ", $cond);
         }
