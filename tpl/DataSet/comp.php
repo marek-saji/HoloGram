@@ -5,7 +5,7 @@
        foreach($sql as $num => $option) {?>
     <label><input type="checkbox" name="part[<?=$num;?>]" selected="<?=@$_POST['part'][$num]?>" /><?=$option;?></label>
 <?     } ?>
-   <input type="submit" value="Wykonaj" />
+   <input type="submit" value="Wykonaj" autofocus="autofocus" />
 <? }
    elseif(isset($match)) {?><p>Definicja modelu i tabeli jest jednakowa</p>
 <? } ?>
