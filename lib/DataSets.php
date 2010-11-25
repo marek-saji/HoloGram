@@ -1103,6 +1103,17 @@ class Join extends DataSet
         if (sizeof($model_with_name) > 1)
             list($model_name, $name) = $model_with_name;
 
+        if (!$model_name)
+        {
+            // select with whitelist alias
+            if (array_key_exists($name, $this->_whitelist))
+            {
+                $wl_field = & $this->_whitelist[$name];
+                if ($wl_field instanceof IField)
+                    return $wl_field;
+            }
+        }
+
 
         $sources = array($this->_first);
         foreach ($this->_joins as $join)
