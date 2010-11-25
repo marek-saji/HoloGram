@@ -128,6 +128,10 @@ class Forms extends HgBase
     public function create($action='', array $additional_params=array())
     {
         $f = g('Functions');
+        var_dump($additional_params);
+
+        if(!empty($additional_params['ident']))
+            $this->__ident = $additional_params['ident'];
 
         $params = array_merge(array(
             'id' => $f->uniqueId(),
