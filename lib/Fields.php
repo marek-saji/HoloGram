@@ -2191,7 +2191,22 @@ class FFile extends FString
         }
         elseif(is_string($value))
         {
-            return parent::invalid($value);
+            // store max and min length as they are meant to be used as foregin key
+
+            $prev_rules = array(
+                'min_length' => $this->_rules['min_length'],
+                'max_length' => $this->_rules['max_length']
+            );
+            $this->_rules['min_length'] = $this->_rules['max_length'] = null;
+
+            $return = parent::invalid($value);
+
+            $this->_rules = array_merge(
+                $this->_rules,
+                $prev_rules
+            );
+
+            return $return;
         }
         return ($this->_errors($err, $value));
     }
