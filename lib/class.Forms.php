@@ -129,6 +129,9 @@ class Forms extends HgBase
     {
         $f = g('Functions');
 
+        if(!empty($additional_params['ident']))
+            $this->__ident = $additional_params['ident'];
+
         $params = array_merge(array(
             'id' => $f->uniqueId(),
             'ident'=>$f->ASCIIfyText($this->__ident),
