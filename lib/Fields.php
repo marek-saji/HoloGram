@@ -706,7 +706,7 @@ class FString extends Field
         $err = array();
         if(NULL !== $value && $value !== '')
         {
-            $length = strlen($value);
+            $length = mb_strlen($value, 'utf-8');
             //null is not the same as an empty string
             //if(isset($this->_rules['notnull']) && $this->_rules['notnull'] && !$length)
             //  return true;
