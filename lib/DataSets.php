@@ -1101,14 +1101,16 @@ class Join extends DataSet
         $model_name = null;
         $model_with_name = explode('.', $name, 2);
         if (sizeof($model_with_name) > 1)
-            list($model_name, $name) = $model_with_name;
+            list($model_name, $field_name) = $model_with_name;
+        else
+            $field_name = $name;
 
         if (!$model_name)
         {
             // select with whitelist alias
-            if (array_key_exists($name, $this->_whitelist))
+            if (array_key_exists($field_name, $this->_whitelist))
             {
-                $wl_field = & $this->_whitelist[$name];
+                $wl_field = & $this->_whitelist[$field_name];
                 if ($wl_field instanceof IField)
                     return $wl_field;
             }
@@ -1116,20 +1118,28 @@ class Join extends DataSet
 
 
         $sources = array($this->_first);
+
         foreach ($this->_joins as $join)
             $sources[] = $join['ds'];
 
         foreach ($sources as & $source)
         {
-            if ($model_name &&
-                $source->getName() != $model_name &&
-                $source->alias() != $model_name
-               )
+            if ($source instanceof Model)
             {
-                continue;
-            }
+                if ($model_name &&
+                    $source->getName() != $model_name &&
+                    $source->alias() != $model_name
+                   )
+                {
+                    continue;
+                }
 
-            $field = $source->getField($name);
+                $field = $source->getField($field_name);
+            }
+            else
+            {
+                $field = $source->getField($name);
+            }
             if (null !== $field)
                 return $field;
         }
