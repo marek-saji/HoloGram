@@ -7,6 +7,15 @@ body.js .nojs
 }
 
 /**
+ * Hide elements added for computer sematics
+ * (e.g. for satysfying microformats)
+ */
+.computer-semantic
+{
+    display:                none;
+}
+
+/**
  * hg.tooltip
  */
 
@@ -18,6 +27,7 @@ body.js .nojs
 /**
  * hg.gmaps
  */
+
 .gmap /* legacy */
 {
     overflow:               auto;
