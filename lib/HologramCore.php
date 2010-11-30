@@ -2965,7 +2965,7 @@ abstract class Component extends Controller
                     printf('</div>');
                 }
 
-                if (!$route)
+                if (false === $route) // null still routes
                     continue;
             }
 
