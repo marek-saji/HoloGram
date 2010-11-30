@@ -134,7 +134,7 @@ class LogModel extends Model
         }
         else
         {
-            $id = $this->getData('log_id');
+            $log_id = $this->getData('log_id');
 
             // merge $values and $new_values
             $values_rows = array();
@@ -145,7 +145,7 @@ class LogModel extends Model
                     if ('_' == $k[0])
                         continue;
                     $values_rows[$k] = array(
-                        'log_id' => $id,
+                        'log_id' => $log_id,
                         'property' => $k,
                         'value' => $v
                     );
@@ -157,7 +157,7 @@ class LogModel extends Model
                     {
                         if ('_' == $k[0])
                             continue;
-                        $values_rows[$k]['log_id'] = $id;
+                        $values_rows[$k]['log_id'] = $log_id;
                         $values_rows[$k]['property'] = $k;
                         $values_rows[$k]['new_value'] = $v;
                     }
