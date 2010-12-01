@@ -2358,7 +2358,7 @@ abstract class Controller extends HgBase implements IController
             else
             {
                 if (null === $name_or_args)
-                    $name_or_args = strtolower($controller);
+                    $name_or_args = ucfirst($controller);
                 $args = array(
                     'name'   => $name_or_args,
                     'parent' => $this
@@ -2965,7 +2965,7 @@ abstract class Component extends Controller
                     printf('</div>');
                 }
 
-                if (!$route)
+                if (false === $route) // null still routes
                     continue;
             }
 
