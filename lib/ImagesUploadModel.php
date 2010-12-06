@@ -47,6 +47,8 @@ class ImagesUploadModel extends Model
         $this->_addField(new FString('original_mime', false, null, 0, 16));
         $this->_addField(new FString('title', false, null, 0, 64));
         $this->_addField(new FString('description', false, null, 0, 512));
+        $this->_addField(new FInt('original_width', 4, true));
+        $this->_addField(new FInt('original_height', 4, true));
 
         $this->_pk('id');
         $this->whiteListAll();
@@ -107,6 +109,9 @@ class ImagesUploadModel extends Model
                     throw new HgException($this->trans('Destination format defined incorrectly: %s.', $image_files['format']));
 
                 $this->_file = $data['file'];
+                $size = getimagesize($this->_file['tmp_name']);
+                $data['original_width'] = $size[0];
+                $data['original_height'] = $size[1];
 
                 if(!($hash = @$data['id']))
                     do
