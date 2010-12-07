@@ -2594,6 +2594,7 @@ class FoBinary extends FCustomBoolean implements IEvalField, IBoolean
             '>=',
             '<=',
             '<>',
+            '!=',
             'LIKE',
             'ILIKE'
         )))
