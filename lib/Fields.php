@@ -2559,12 +2559,13 @@ class FoBinaryChain extends FoChain implements IBoolean
     public function generator()
     {
         $curr = reset($this->_operands);
-        $res = '';
+        $res = "(\n";
         if($curr)
             $res .= $curr->generator();
-            //else //var_dump($this);
         while($curr = next($this->_operands))
-            $res .= "\n{$this->_glue} " . $curr->generator();
+            $res .= "\n{$this->_glue}\n" . $curr->generator();
+        $res = str_replace("\n", "\n  ", $res);
+        $res .= "\n)";
         return ($res);
     }
 }
