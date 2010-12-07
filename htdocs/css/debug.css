@@ -3,6 +3,7 @@
 {
     margin: 0;
     padding: 0;
+    text-align: left;
 }
 #pre-display_stuff
 {
@@ -103,6 +104,7 @@
 {
     font-size: 10pt !important;
     position: relative;
+    text-align: left;
 }
 #debug_toolbar > *,
 #debug_toolbar > * > h4
@@ -159,6 +161,7 @@
     position: static;
     padding: 0;
     border: none;
+    text-align: right;
 }
 #debug_toolbar #debug_toolbox > *
 {
@@ -171,7 +174,8 @@
     top: -.1em; /* to be safe */
     z-index: 999;
 }
-#debug_toolbar #debug_toolbox:hover > *
+#debug_toolbar #debug_toolbox:hover > *,
+#debug_toolbar #debug_toolbox li > a
 {
     display: block;
 }

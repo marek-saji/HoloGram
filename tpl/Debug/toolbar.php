@@ -8,7 +8,14 @@ $v->addCss($this->file('debug','css'));
 <div id="debug_toolbar" style="background-color:#cca; width:100%; border:thin solid #886; border-width: thin 0;">
     <dl id="debug_info">
         <dt>app v</dt>
-        <dd><?=g()->conf['version']?></dd>
+        <dd>
+            <?=g()->conf['version']?>
+            <?php
+            $release_date = filemtime(APP_DIR . 'conf/conf.version.php');
+            if ($release_date)
+                echo strftime('<small>(%F_%T)</small>', $release_date);
+            ?>
+        </dd>
     </dl>
     <div id="debug_switcher">
         <h4>debug:</h4>
