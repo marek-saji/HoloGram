@@ -644,7 +644,7 @@ class Functions extends HgBase
         $argv = func_get_args();
         foreach ($argv as $arg)
         {
-            if (!is_float($arg) && !preg_match('/[+-]?[0-9]*\.?[0-9]*/', $arg))
+            if (!is_float($arg) && !preg_match('/^[+-]?[0-9]*\.?[0-9]*$/', $arg))
                 return false;
         }
         return true;
