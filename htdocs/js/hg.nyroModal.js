@@ -79,6 +79,7 @@ hg['nyroModalInit'].f = function()
             if (hg['unhideFlashes'])
                 hg('unhideFlashes')();
             document.title = prev_title;
+            $('.modalClose').unbind('click');
         },
         // ajax related things
         ajax: {

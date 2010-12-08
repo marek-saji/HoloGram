@@ -175,8 +175,8 @@ abstract class DeveloperController extends PagesController
                 $action = 'update';
                 $count = & $upd_count;
                 $row = array_merge(
-                    $row,
-                    array_intersect_key($existing, $filter_fields)
+                    $existing,
+                    $row
                 );
             }
             if (true !== $err = $model->sync($row, true, $action))
