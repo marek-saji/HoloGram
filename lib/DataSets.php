@@ -374,7 +374,18 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 throw new HgException('Unknown aggregate function: '.$aggregate.' !');
 
             $field_object = is_object($field) ? $field : $this->getField($field);
-            if ($field_object)
+            if (!$field_object)
+            {
+                if ($this instanceof IModel)
+                    $this_name = sprintf("`%s' model", $this->getName());
+                else
+                    $this_name = sprintf("`<code>%s</code>'", $this->alias());
+                trigger_error(
+                    "Whitelisting invalid field `{$field}' in {$this_name} mode. Ignoring it.",
+                    E_USER_WARNING
+                );
+            }
+            else
             {
                 if($aggregate)
                     $new_whitelist[$alias] = new FoFunc($aggregate,$field_object);
