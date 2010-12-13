@@ -2029,8 +2029,9 @@ abstract class Controller extends HgBase implements IController
             $attrs = array();
         else
         {
-            $attrs = $argv[0][3];
+            $attrs = & $argv[0][3];
             unset($argv[0][3]);
+            $argv[0] = array_values($argv[0]); // re-index
         }
 
         $attrs['href'] = call_user_func_array(array($this,'url2c'), $argv);
@@ -2165,7 +2166,7 @@ abstract class Controller extends HgBase implements IController
         $url = array();
         foreach ($controllers as $c)
         {
-            @list($ctrl, $act, $params) = $c;
+            @list($ctrl, $act, $params, $with_host) = $c;
 
             // validate types of parameters
 
