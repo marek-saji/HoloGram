@@ -421,7 +421,7 @@ class Functions extends HgBase
      */
     function truncateHTML($string, $length, $suffix='&hellip;')
     {
-        if (!class_exists('tidy',false))
+        if (!class_exists('tidy',false) || !g()->conf['use_tidy'])
         {
             static $error_displayed = false;
             if (!$error_displayed)
