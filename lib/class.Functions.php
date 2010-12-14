@@ -1517,7 +1517,7 @@ class Functions extends HgBase
     public function correctForm($number, array $forms)
     {
     	if(!array_key_exists(1, $forms) || !array_key_exists(2, $forms) || !array_key_exists(5, $forms))
-    		throw new HgException('Incorrect using of Functions::correctGrammaticForm()');
+    		throw new HgException('Incorrect using of Functions::correctForm()');
 
 		if($number == 0)
 			return $forms[5];
@@ -1526,11 +1526,17 @@ class Functions extends HgBase
 			return $forms[1];
 
 		$last_digits = (string)$number;
-		$last_digits = array(
+		$last_digits_arr = array(
 			0 => (int)$last_digits[strlen($last_digits) - 1],
-			1 => (int)@$last_digits[strlen($last_digits) - 2]
 		);
-	
+
+		if(strlen($last_digits) < 2)
+		    $last_digits_arr[1] = 0;
+	    else
+		    $last_digits_arr[1] = (int)$last_digits[strlen($last_digits) - 2];
+
+	    $last_digits = &$last_digits_arr;
+
 		switch($last_digits[1])
 		{
 			case 1:
