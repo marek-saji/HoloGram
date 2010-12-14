@@ -1517,31 +1517,38 @@ class Functions extends HgBase
     public function correctForm($number, array $forms)
     {
     	if(!array_key_exists(1, $forms) || !array_key_exists(2, $forms) || !array_key_exists(5, $forms))
-    		throw new HgException('Incorrect using of Functions::correctGrammaticForm()');
+    		throw new HgException('Incorrect using of Functions::correctForm()');
 
-		$last_digits = (string)$number;
-		$last_digits = array(
-			0 => (int)$last_digits[strlen($last_digits) - 1],
-			1 => (int)@$last_digits[strlen($last_digits) - 2]
-		);
+		if($number == 0)
+			return $forms[5];
 
 		if($number == 1)
 			return $forms[1];
-		else
+
+		$last_digits = (string)$number;
+		$last_digits_arr = array(
+			0 => (int)$last_digits[strlen($last_digits) - 1],
+		);
+
+		if(strlen($last_digits) < 2)
+		    $last_digits_arr[1] = 0;
+	    else
+		    $last_digits_arr[1] = (int)$last_digits[strlen($last_digits) - 2];
+
+	    $last_digits = &$last_digits_arr;
+
+		switch($last_digits[1])
 		{
-			switch($last_digits[1])
-			{
-				case 1:
-					return $forms[5];
-				default:
-					switch($last_digits[0])
-					{
-						case 2: case 3: case 4:
-							return $forms[2];
-						default:
-							return $forms[5];
-					}
-			}
+			case 1:
+				return $forms[5];
+			default:
+				switch($last_digits[0])
+				{
+					case 2: case 3: case 4:
+						return $forms[2];
+					default:
+						return $forms[5];
+				}
 		}
     }
 }
