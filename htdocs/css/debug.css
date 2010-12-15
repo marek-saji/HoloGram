@@ -179,3 +179,17 @@
 {
     display: block;
 }
+
+#foot_debug .errors_count
+{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    background-color: white;
+    color: black;
+    padding: .5em;
+    -webkit-border-top-right-radius: .5em;
+    -moz-border-radius-topright: .5em;
+    border-top-right-radius: .5em;
+}
+
