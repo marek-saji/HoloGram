@@ -603,11 +603,12 @@ JS;
             echo '<div class="errors_count">';
             echo "<em>Oh dear, there has been some errors:</em>\n";
             ksort($this->_error_counts);
+            echo "<dl>";
             foreach ($this->_error_counts as $errtype => $count)
             {
-                printf("%s: <strong>%d</strong>", $errtype, $count);
+                printf("<dt>%s</dt><dd>%d</dd>", $errtype, $count);
             }
-            echo "\n";
+            echo "</dl>";
             static $motivational_texts = array(
                 'make a world better place, fix them!',
                 'develop responsively, get rid of them!',
