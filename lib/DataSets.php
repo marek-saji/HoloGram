@@ -373,7 +373,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','count distinct','avg','sum')))
                 throw new HgException('Unknown aggregate function: '.$aggregate.' !');
 
-            if($field === 'null')
+            if($field === null)
                 $field_object = 'null';
             else
                 $field_object = is_object($field) ? $field : $this->getField($field);
