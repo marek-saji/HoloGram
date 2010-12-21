@@ -731,7 +731,7 @@ abstract class Field implements IModelField
                     $code = $this->_mess->get($this, 'invalid');
             }
         }
-        return ($error);
+        return (g()->first_controller->trans($error));
     }
 
     protected function _filterNulls($val)
