@@ -187,9 +187,11 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                 .find('.validatables_container')
                     .each(function(){
                         var me = $(this);
-                        var invalid = me.find('.invalid').length;
-                        me.toggleClass('invalid', invalid)
-                          .toggleClass('valid',  !invalid);
+                        var invalid = (0 != me.find('.invalid').length);
+                        me
+                            .add($(me.data('also-hightlight-when-invalid')))
+                                .toggleClass('invalid', invalid)
+                                .toggleClass('valid',  !invalid);
                     });
 
         } // opts.success
