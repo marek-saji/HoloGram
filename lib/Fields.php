@@ -2289,7 +2289,8 @@ class FoFunc extends FAnyType implements IEvalField
             'MAX($int:FInt)',
             'MAX($int:FBool)',
             'MAX($int:FString)',
-            'MAX($int:FTimestamp)'
+            'MAX($int:FTimestamp)',
+            'MAX($int:FFloat)',
         ),
         'count' => array(
             'res' => 'FString',
