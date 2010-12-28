@@ -373,11 +373,26 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','count distinct','avg','sum')))
                 throw new HgException('Unknown aggregate function: '.$aggregate.' !');
 
-            $field_object = is_object($field) ? $field : $this->getField($field);
-            if ($field_object)
+            if($field === null)
+                $field_object = 'null';
+            else
+                $field_object = is_object($field) ? $field : $this->getField($field);
+
+            if(!$field_object)
+            {
+                if($this instanceof IModel)
+                    $this_name = sprintf("`%s' model", $this->getName());
+                else
+                    $this_name = sprintf("`<code>%s</code>'", $this->alias());
+                trigger_error(
+                    "Whitelisting invalid field `{$field}' in {$this_name} mode. Ignoring it.",
+                    E_USER_WARNING
+                );
+            }
+            else
             {
                 if($aggregate)
-                    $new_whitelist[$alias] = new FoFunc($aggregate,$field_object);
+                    $new_whitelist[$alias] = new FoFunc($aggregate, $field_object);
                 else
                 {
                     if(is_int($alias))
@@ -926,15 +941,24 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     protected function _getWhitelistedFields()
     {
         $res = array();
-        foreach ($this->_whitelist as $f=>$c)
+
+        foreach($this->_whitelist as $f => $c)
         {
-            $sql = $c->generator();
-            if ($sql != $f && ($c instanceOf FoFunc || !is_int($f)))
-                $sql .= " AS \"$f\"";
+            if($c !== 'null')
+            {
+                $sql = $c->generator();
+                if($sql != $f && ($c instanceof FoFunc || !is_int($f)))
+                    $sql .= " AS \"$f\"";
+            }
+            else
+                $sql = 'null AS "' . $f . '"';
+
             $res[] = $sql;
         }
-        if (!$res)
+
+        if(!$res)
             return "NULL";
+
         return join(",\n", $res);
     }
     
@@ -1395,10 +1419,20 @@ abstract class Model extends DataSet implements IModel
      */
     public function getField($name)
     {
-        // select with whitelist alias
-        if (array_key_exists($name, $this->_whitelist))
+        $model_with_name = explode('.', $name, 2);
+        if (sizeof($model_with_name) <= 1)
+            $field_name = $name;
+        else
         {
-            $wl_field = & $this->_whitelist[$name];
+            list($model_name, $field_name) = $model_with_name;
+            if ($this->getName() != $model_name)
+                return null;
+        }
+
+        // select with whitelist alias
+        if (array_key_exists($field_name, $this->_whitelist))
+        {
+            $wl_field = & $this->_whitelist[$field_name];
             if ($wl_field instanceof IField)
                 return $wl_field;
         }
@@ -1414,7 +1448,7 @@ abstract class Model extends DataSet implements IModel
 
 
             // select by name
-            if ($field->getName() === $name)
+            if ($field->getName() === $field_name)
                 return $field;
         }
         return null;

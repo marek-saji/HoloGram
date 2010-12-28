@@ -59,6 +59,7 @@ abstract class DeveloperController extends PagesController
      *   - create*()
      *   - populate*()
      *   - add*()
+     *   - update*()
      * @author m.augustynowicz
      *
      * @param array $params accepts "die" parameter
@@ -68,7 +69,7 @@ abstract class DeveloperController extends PagesController
         $this->_devActionBegin($params, __FUNCTION__);
 
         $all_methods = get_class_methods($this);
-        foreach (array('create', 'populate', 'add') as $suffix)
+        foreach (array('create', 'populate', 'add', 'update') as $suffix)
         {
             printf('<hr /><h2>%s* actions</h2>', $suffix);
             $regex = '/^action'.ucfirst($suffix).'/';
@@ -175,8 +176,8 @@ abstract class DeveloperController extends PagesController
                 $action = 'update';
                 $count = & $upd_count;
                 $row = array_merge(
-                    $row,
-                    array_intersect_key($existing, $filter_fields)
+                    $existing,
+                    $row
                 );
             }
             if (true !== $err = $model->sync($row, true, $action))

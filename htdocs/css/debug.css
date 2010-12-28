@@ -3,6 +3,7 @@
 {
     margin: 0;
     padding: 0;
+    text-align: left;
 }
 #pre-display_stuff
 {
@@ -103,6 +104,7 @@
 {
     font-size: 10pt !important;
     position: relative;
+    text-align: left;
 }
 #debug_toolbar > *,
 #debug_toolbar > * > h4
@@ -159,6 +161,7 @@
     position: static;
     padding: 0;
     border: none;
+    text-align: right;
 }
 #debug_toolbar #debug_toolbox > *
 {
@@ -171,7 +174,40 @@
     top: -.1em; /* to be safe */
     z-index: 999;
 }
-#debug_toolbar #debug_toolbox:hover > *
+#debug_toolbar #debug_toolbox:hover > *,
+#debug_toolbar #debug_toolbox li > a
 {
     display: block;
 }
+
+#foot_debug .errors_count
+{
+    position: fixed;
+    z-index: 2147483647; /* I like to be on the top */
+    bottom: 0;
+    left: 0;
+    background-color: white;
+    color: black;
+    padding: .5em;
+    -webkit-border-top-right-radius: .5em;
+    -moz-border-radius-topright: .5em;
+    border-top-right-radius: .5em;
+}
+#foot_debug .errors_count dl,
+#foot_debug .errors_count dl dt,
+#foot_debug .errors_count dl dd
+{
+    padding: 0;
+    margin: 0;
+}
+#foot_debug .errors_count dl dt,
+#foot_debug .errors_count dl dd
+{
+    display: inline;
+}
+#foot_debug .errors_count dl dd
+{
+    padding: 0 1em 0 .5em;
+    font-weight: bold;
+}
+

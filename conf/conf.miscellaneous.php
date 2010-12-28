@@ -2,7 +2,8 @@
 
 	$conf = array(
 
-	  'svn_blame_disable' => true
+	  'svn_blame_disable' => true,
+	  'use_tidy' => true,
 	);
 
 

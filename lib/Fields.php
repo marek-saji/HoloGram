@@ -731,7 +731,7 @@ abstract class Field implements IModelField
                     $code = $this->_mess->get($this, 'invalid');
             }
         }
-        return ($error);
+        return (g()->first_controller->trans($error));
     }
 
     protected function _filterNulls($val)
@@ -806,7 +806,8 @@ abstract class FStringBase extends Field
         }
         else
         {
-            $length = strlen($value);
+            $value = str_replace("\r\n", "\n", $value);
+            $length = mb_strlen($value, 'utf-8');
             //null is not the same as an empty string
             //if(isset($this->_rules['notnull']) && $this->_rules['notnull'] && !$length)
             //  return true;
@@ -2506,12 +2507,20 @@ class FoBinaryChain extends FoChain implements IBoolean
 {
     /**
      * Constructor. Requires first two links of the chain. One can add other links with subsequent calls to also().
-     * @param $arg_1 The first argument
-     * @param $operator operator, currently one of: 'and','or'.
-     * @param @arg_2 The second argument.
+     *
+     * @param mixed $arg_1 The first operand; or operator if no other arguments given
+     * @param string $operator operator, currently one of: 'and','or'.
+     * @param mixed $arg_2 The second operand
      */
-    public function __construct($arg_1, $operator, $arg_2)
+    public function __construct($arg_1, $operator='AND', $arg_2=null)
     {
+        if (func_num_args()<2)
+        {
+            $operator = & $arg_1;
+            unset($arg_1);
+            $arg_1 = null;
+        }
+
         //$args = func_get_args();
         switch(strtoupper($operator))
         {
@@ -2523,10 +2532,9 @@ class FoBinaryChain extends FoChain implements IBoolean
                 throw new HgException("operator $operator is not supported");
         }
         $this->_glue = strtoupper($operator);
-        if(empty($arg_1) || empty($arg_2))
-            throw new HgException("Cannot pass empty operands to the FoChain constructor");
         $this->also($arg_1);
-        $this->also($arg_2);
+        if (func_num_args() > 2)
+            $this->also($arg_2);
     }
 
     /**
@@ -2559,14 +2567,22 @@ class FoBinaryChain extends FoChain implements IBoolean
      */
     public function generator()
     {
-        $curr = reset($this->_operands);
-        $res = '';
-        if($curr)
-            $res .= $curr->generator();
-            //else //var_dump($this);
-        while($curr = next($this->_operands))
-            $res .= "\n{$this->_glue} " . $curr->generator();
-        return ($res);
+        if (empty($this->_operands))
+        {
+            $res = "false /* '{$this->_glue}' chain with no operands */";
+        }
+        else
+        {
+            $curr = reset($this->_operands);
+            $res = "(\n";
+            if($curr)
+                $res .= $curr->generator();
+            while($curr = next($this->_operands))
+                $res .= "\n{$this->_glue}\n" . $curr->generator();
+            $res = str_replace("\n", "\n  ", $res);
+            $res .= "\n)";
+        }
+        return $res;
     }
 }
 
@@ -2594,6 +2610,7 @@ class FoBinary extends FCustomBoolean implements IEvalField, IBoolean
             '>=',
             '<=',
             '<>',
+            '!=',
             'LIKE',
             'ILIKE'
         )))

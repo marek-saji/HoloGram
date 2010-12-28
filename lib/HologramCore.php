@@ -840,6 +840,8 @@ class Kernel
     * - Tworzy pierwszy kontroler
     * - Wywoluje jego metode process($req) (byc mozer wielokrotnie, jezeli dopuszczamy wywolanie kilku akcji na raz.
     * - Inicjuje renderowanie strony
+    *
+    * @return mixed whatever first controller returns.
     */
     public function run()
     {
@@ -883,6 +885,8 @@ class Kernel
             register_shutdown_function(array($this, 'possiblyDisplayPrerendererEcho'));
             $this->prerender_echo = ob_get_clean();
             $this->view->present();
+
+            return $this->first_controller->getLaunchedActionReturn();
         }
         catch(Exception $e)
         {
@@ -1409,6 +1413,12 @@ abstract class Controller extends HgBase implements IController
     protected $_template = '';
     protected $_action_to_launch = null;
     protected $_launched_action = null;
+
+    /**
+     * @var mixed whatever this controller's action returns
+     */
+    protected $_launched_action_return = null;
+
     protected $_params = null;
 
     /**
@@ -1833,6 +1843,18 @@ abstract class Controller extends HgBase implements IController
 
 
     /**
+     * Get return value of this controller's launched action
+     * @author m.augustynowicz
+     *
+     * @return mixed
+     */
+    public function getLaunchedActionReturn()
+    {
+        return $this->_launched_action_return;
+    }
+
+
+    /**
      * Launch default action
      * @author m.augustynowicz
      *
@@ -1904,7 +1926,7 @@ abstract class Controller extends HgBase implements IController
         else
         {
             $this->_setTemplate($action);
-            $this->$method($params);
+            $this->_launched_action_return = $this->$method($params);
         }
 
         // close debug output block
@@ -2029,8 +2051,9 @@ abstract class Controller extends HgBase implements IController
             $attrs = array();
         else
         {
-            $attrs = $argv[0][3];
+            $attrs = & $argv[0][3];
             unset($argv[0][3]);
+            $argv[0] = array_values($argv[0]); // re-index
         }
 
         $attrs['href'] = call_user_func_array(array($this,'url2c'), $argv);
@@ -2165,7 +2188,7 @@ abstract class Controller extends HgBase implements IController
         $url = array();
         foreach ($controllers as $c)
         {
-            @list($ctrl, $act, $params) = $c;
+            @list($ctrl, $act, $params, $with_host) = $c;
 
             // validate types of parameters
 
@@ -2478,6 +2501,19 @@ abstract class TrunkController extends Controller
         else
             return $this->__child;
     }
+
+
+    /**
+     * Get's (children's) return value of launched action
+     * @author m.augustynowicz
+     *
+     * @return mixed
+     */
+    public function getLaunchedActionReturn()
+    {
+        return $this->__child->getLaunchedActionReturn();
+    }
+
 
 
     /**

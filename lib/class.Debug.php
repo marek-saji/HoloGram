@@ -600,12 +600,27 @@ JS;
 
         if (!empty($this->_error_counts))
         {
+            echo '<div class="errors_count">';
             echo "<em>Oh dear, there has been some errors:</em>\n";
             ksort($this->_error_counts);
+            echo "<dl>";
             foreach ($this->_error_counts as $errtype => $count)
             {
-                printf("%s: <strong>%d</strong>", $errtype, $count);
+                printf("<dt>%s</dt><dd>%d</dd>", $errtype, $count);
             }
+            echo "</dl>";
+            static $motivational_texts = array(
+                'make a world better place, fix them!',
+                'develop responsively, get rid of them!',
+                'not yours? be a collegue and nag their autor about it',
+                'you can fix it! I believe in you!',
+                'you better look into it, it may be something serious!',
+                'Live the EXTREME !!!!!!! Don\'t touch em!',
+                'Cherish it!',
+                'this is HOLOGRAM!!!!!!'
+            );
+            echo $motivational_texts[rand(0, sizeof($motivational_texts)-1)];
+            echo '</div><!-- .errors_count -->';
         }
 
         echo '</pre>';
