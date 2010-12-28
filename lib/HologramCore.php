@@ -1084,13 +1084,15 @@ class Kernel
      * @param array $values when no $values2 given, set of event properties,
      *        when $values2 given -- set of old properties
      * @param array $new_values set of new properties
+     * @param int $user_id user id to use (when none supplied, signed-in
+     *        user's id will be used)
      *
      * @return void
      */
-    public function log($level, Controller $that, $id=null, $title=null,
-                        array $values=null, array $new_values=null )
+    public function log($level, Controller $that, $title=null, $id=null,
+                        array $values=null, array $new_values=null, $user_id=false )
     {
-        $this->_log->log($level, $that, $id, $title, $values, $new_values);
+        $this->_log->log($level, $that, $id, $title, $values, $new_values, $user_id);
     }
 
     
