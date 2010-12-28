@@ -818,6 +818,10 @@ class Kernel
     public function __construct()
     {
         ob_start();
+
+        if(!empty($_POST['PHPSESSID']))
+            session_id($_POST['PHPSESSID']);
+
         session_start();
 
         $this->readConfigFiles();
