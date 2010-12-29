@@ -1,6 +1,8 @@
-<?
+<?php
 if ('View' !== get_class($v))
     return; // only HTML view can handle this mighty toolbar!
+
+$conf = & g()->conf['debug'];
 
 
 $v->addCss($this->file('debug','css'));
@@ -84,14 +86,24 @@ $v->addCss($this->file('debug','css'));
             <?php endif; ?>
             <li><a href="javascript:(function(){function%20l(u,i,t,b){var%20d=document;if(!d.getElementById(i)){var%20s=d.createElement('script');s.src=u;s.id=i;d.body.appendChild(s)}s=setInterval(function(){u=0;try{u=t.call()}catch(i){}if(u){clearInterval(s);b.call()}},200)}l('http://leftlogic.com/js/microformats.js','MF_loader',function(){return!!(typeof%20MicroformatsBookmarklet=='function')},%20function(){MicroformatsBookmarklet()})})();" title="find microformats on this page">microformats</a></li>
         </ul>
-        <?php if (@g()->conf['alternative base URLs']) : ?>
-            <div>
+        <?php if (@$conf['shortcuts']) : ?>
+            <section>
+                <h5>shortcuts</h5>
+                <ul>
+                    <?php foreach ($conf['shortcuts'] as $label => $url) : ?>
+                        <li><?=$this->l2c($label, $url)?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
+        <?php if (@$conf['alternative base URLs']) : ?>
+            <section>
                 <h5>elseworlds</h5>
                 <ul>
                     <?php
                     $url = $this->url2c(g()->req->getUrlPath());
                     $here = $this->url2c(g()->req->getUrlPath(), '', array(), true); // with host
-                    foreach (g()->conf['alternative base URLs'] as $name => $base)
+                    foreach ($conf['alternative base URLs'] as $name => $base)
                     {
                         $there = rtrim($base,'/') . $url;
                         if ($here != $there)
@@ -99,7 +111,7 @@ $v->addCss($this->file('debug','css'));
                     }
                     ?>
                 </ul>
-            </div>
+            </section>
         <?php endif; ?>
     </div> <!-- #debug_toolbox -->
 </div> <!-- #debug_toolbar -->
