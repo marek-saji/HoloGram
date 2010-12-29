@@ -91,7 +91,11 @@ $v->addCss($this->file('debug','css'));
                 <h5>shortcuts</h5>
                 <ul>
                     <?php foreach ($conf['shortcuts'] as $label => $url) : ?>
-                        <li><?=$this->l2c($label, $url)?></li>
+                        <?php if (is_string($url)) : ?>
+                            <li><a href="<?=$url?>"><?=$label?></a></li>
+                        <?php else : ?>
+                            <li><?=$this->l2c($label, $url)?></li>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </ul>
             </section>
