@@ -125,7 +125,7 @@ class ImagesUploadModel extends Model
                 $data['extension'] = $image_files['format'];
                 $data['original_name'] = $this->_file['name'];
 
-                if($this->_file['type'] === 'application/octet-stream')
+                if (!$this->_file['type'] || $this->_file['type'] === 'application/octet-stream')
                 {
                     $ext = explode('.', $data['file']['name']);
                     $ext = $ext[count($ext) - 1];
@@ -182,9 +182,9 @@ class ImagesUploadModel extends Model
 
                 foreach($image_files['sizes'] as $i => $s)
                 {
+                    list($w, $h) = sscanf($s, "%dx%d");
                     if($func)
                     {
-                        list($w, $h) = sscanf($s, "%dx%d");
                         //photo uploaded by user is resizing and converting to PNG format
                         $size = $this->_calculateNewDimensions($w, $h);
                         $rgb = array();
