@@ -197,6 +197,14 @@ interface IController
     public function displayingCtrl();
 
     /**
+     * Checks whether component is request's main displaying controller.
+     * @author m.augustynowicz
+     *
+     * @return boolean
+     */
+    public function isDisplayingCtrl();
+
+    /**
      * Getter for permanent controllers
      * @param string $name permanent controller name
      *        as defined in conf[permanent_controllers]
@@ -2508,6 +2516,18 @@ abstract class TrunkController extends Controller
             return $this->__child->displayingCtrl();
         else
             return $this->__child;
+    }
+
+
+    /**
+     * Checks whether component is request's main displaying controller.
+     * @author m.augustynowicz
+     *
+     * @return boolean
+     */
+    public function isDisplayingCtrl()
+    {
+        return false;
     }
 
 
