@@ -296,7 +296,10 @@ JS;
         // remember kids, pixel measurement in css is evil. but it's debug mode!
         echo '<table style="font-size: 11px; border-spacing: 0; border: black double thin; border-width: 3px 3px 1px; margin: 1ex; background-color: white; text-align: left;">';
         if ($msg)
-            echo "<tr><td colspan=\"2\" style=\"background-color: #bbb\">$msg</td></tr>";
+        {
+            $attr_safe_msg = htmlspecialchars(strip_tags($msg));
+            echo "<tr><td colspan=\"2\" style=\"background-color: #bbb\" title=\"$attr_safe_msg\">$msg</td></tr>";
+        }
 
         $cell_style = 'style="border-bottom: thin solid black; padding: .1em; font-size: 11px"';
 
