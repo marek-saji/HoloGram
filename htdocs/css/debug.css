@@ -4,6 +4,8 @@
     margin: 0;
     padding: 0;
     text-align: left;
+    color: black;
+    background-color: transparent;
 }
 #pre-display_stuff
 {
@@ -23,20 +25,6 @@
     -webkit-border-radius: 1ex;
     border-radius: 1ex;
     text-align: left;
-}
-#pre-display_stuff code,
-#pre-display_stuff span,
-#pre-display_stuff pre,
-#pre-display_stuff div,
-#pre-display_stuff h1,
-#pre-display_stuff h2,
-#pre-display_stuff h3,
-#pre-display_stuff h4,
-#pre-display_stuff h5,
-#pre-display_stuff h6
-{
-    color: black;
-    background-color: transparent !important;
 }
 #pre-display_stuff a
 {
@@ -78,9 +66,25 @@
 #pre-display_stuff_content .debug-output-block
 {
     border-left: #ccc thin solid;
+    border-width: 0 0 0 .25em;
     padding-left: 1ex;
     margin: 0 0 1em 0;
 }
+#pre-display_stuff_content .debug-output-block.extends-PagesController.is-displaying-ctrl
+{   border-color: #7E18E3; }
+#pre-display_stuff_content .debug-output-block.extends-PagesController,
+#pre-display_stuff_content .debug-output-block.extends-Component
+{   border-color: #1D1D1D; }
+#pre-display_stuff_content .debug-output-block.extends-PermanentController
+{   border-color: #979797; }
+#pre-display_stuff_content .debug-output-block.preparing
+{   border-style: dotted; }
+#pre-display_stuff_content .debug-output-block.launching
+{   border-style: solid; }
+#pre-display_stuff_content .debug-output-block.ctrl
+{   border-left-width: .3em; }
+#pre-display_stuff_content .debug-output-block
+{   border-left-width: .15em; }
 #pre-display_stuff_content .debug-output-block > h1,
 #pre-display_stuff_content .debug-output-block > h2,
 #pre-display_stuff_content .debug-output-block > h3,

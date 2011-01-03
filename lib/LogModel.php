@@ -109,11 +109,13 @@ class LogModel extends Model
      * @param array $values when no $values2 given, set of event properties,
      *        when $values2 given -- set of old properties
      * @param array $new_values set of new properties
+     * @param int $user_id user id to use (when none supplied, signed-in
+     *        user's id will be used)
      *
      * @return void
      */
     public function log($level, Controller $that, $title=null, $id=null,
-                        array $values=null, array $new_values=null )
+                        array $values=null, array $new_values=null, $user_id=false )
     {
         $log_row = array();
         $log_row['level'] = $level;
@@ -122,6 +124,7 @@ class LogModel extends Model
         $log_row['target_id'] = $id;
         $log_row['title'] = $title;
         $log_row['with_old_values'] = (null !== $new_values);
+        $log_row['user_id'] = $user_id;
 
         g()->db->startTrans();
 
@@ -215,9 +218,12 @@ class LogModel extends Model
      *
      * @return void
      */
-    public function autoUserID()
+    public function autoUserID($action, $field, $value)
     {
-        return g()->auth->loggedIn() ? g()->auth->id() : null;
+        if ($value || !g()->auth->loggedIn())
+            return null;
+        else
+            return g()->auth->id();
     }
 
 

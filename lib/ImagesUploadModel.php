@@ -124,6 +124,26 @@ class ImagesUploadModel extends Model
                 $data['id'] = $hash;
                 $data['extension'] = $image_files['format'];
                 $data['original_name'] = $this->_file['name'];
+
+                if (!$this->_file['type'] || $this->_file['type'] === 'application/octet-stream')
+                {
+                    $ext = explode('.', $data['file']['name']);
+                    $ext = $ext[count($ext) - 1];
+                    if(strpos($_SERVER['SERVER_SOFTWARE'], '(Win32)'))
+                        $pos = strrpos($data['file']['tmp_name'], '\\') + 1;
+                    else
+                        $pos = strrpos($data['file']['tmp_name'], '/') + 1;
+        
+                    $dir = substr($data['file']['tmp_name'], 0, $pos);
+                    $file_name = substr($data['file']['tmp_name'], $pos);
+
+                    if(!@g()->conf['get_mime_type_by_suffix'])
+                        $mime = $this->getMIMETypeByFile($file_name, $dir);
+                    else
+                        $mime = $this->getMIMETypeBySuffix($ext);
+                    $this->_file['type'] = $mime;
+                }
+
                 $data['original_mime'] = $this->_file['type'];
 
                 switch($this->_file['type'])
@@ -162,9 +182,9 @@ class ImagesUploadModel extends Model
 
                 foreach($image_files['sizes'] as $i => $s)
                 {
+                    list($w, $h) = sscanf($s, "%dx%d");
                     if($func)
                     {
-                        list($w, $h) = sscanf($s, "%dx%d");
                         //photo uploaded by user is resizing and converting to PNG format
                         $size = $this->_calculateNewDimensions($w, $h);
                         $rgb = array();

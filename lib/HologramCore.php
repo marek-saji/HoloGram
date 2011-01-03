@@ -197,6 +197,14 @@ interface IController
     public function displayingCtrl();
 
     /**
+     * Checks whether component is request's main displaying controller.
+     * @author m.augustynowicz
+     *
+     * @return boolean
+     */
+    public function isDisplayingCtrl();
+
+    /**
      * Getter for permanent controllers
      * @param string $name permanent controller name
      *        as defined in conf[permanent_controllers]
@@ -818,6 +826,10 @@ class Kernel
     public function __construct()
     {
         ob_start();
+
+        if(!empty($_POST['PHPSESSID']))
+            session_id($_POST['PHPSESSID']);
+
         session_start();
 
         $this->readConfigFiles();
@@ -1084,13 +1096,15 @@ class Kernel
      * @param array $values when no $values2 given, set of event properties,
      *        when $values2 given -- set of old properties
      * @param array $new_values set of new properties
+     * @param int $user_id user id to use (when none supplied, signed-in
+     *        user's id will be used)
      *
      * @return void
      */
-    public function log($level, Controller $that, $id=null, $title=null,
-                        array $values=null, array $new_values=null )
+    public function log($level, Controller $that, $title=null, $id=null,
+                        array $values=null, array $new_values=null, $user_id=false )
     {
-        $this->_log->log($level, $that, $id, $title, $values, $new_values);
+        $this->_log->log($level, $that, $id, $title, $values, $new_values, $user_id);
     }
 
     
@@ -1906,7 +1920,9 @@ abstract class Controller extends HgBase implements IController
         // open debug output block
         if (g()->debug->allowed())
         {
-            printf('<div class="debug-output-block"><h3>%s, action %s(%s)%s</h3>',
+            $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
+            printf('<div class="debug-output-block %s extends-%s launching action"><h3>%s, action %s(%s)%s</h3>',
+                $displaying_ctrl_class, get_parent_class($this),
                 $this->path(), $action, print_r($params, true),
                 $action === $this->_default_action ? ' <small>(default)</small>' : ''
             );
@@ -2504,6 +2520,18 @@ abstract class TrunkController extends Controller
 
 
     /**
+     * Checks whether component is request's main displaying controller.
+     * @author m.augustynowicz
+     *
+     * @return boolean
+     */
+    public function isDisplayingCtrl()
+    {
+        return false;
+    }
+
+
+    /**
      * Get's (children's) return value of launched action
      * @author m.augustynowicz
      *
@@ -2891,8 +2919,9 @@ abstract class Component extends Controller
         // begin debug output block
         if (g()->debug->allowed())
         {
-            printf('<div class="debug-output-block"><h3>preparing %s</h3>',
-                   $this->path() );
+            $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
+            printf('<div class="debug-output-block %s extends-%3$s preparing ctrl"><h3>preparing %s <small>extends %s</small></h3>',
+                   $displaying_ctrl_class, $this->path(), get_parent_class($this) );
         }
 
         // find an action to launch
@@ -2962,8 +2991,9 @@ abstract class Component extends Controller
         {
             if (g()->debug->allowed())
             {
-                printf('<div class="debug-output-block"><h4>launching %s(%s)</h3>',
-                       $method, print_r($this->_params, true) );
+                $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
+                printf('<div class="debug-output-block %s extends-%s preparing action"><h4>launching %s(%s)</h3>',
+                       $displaying_ctrl_class, get_parent_class($this), $method, print_r($this->_params, true) );
             }
 
             $this->$method($this->_params);
@@ -2990,7 +3020,7 @@ abstract class Component extends Controller
             {
                 if (g()->debug->allowed())
                 {
-                    printf('<div class="debug-output-block"><h4>launching %s(%s)</h3>',
+                    printf('<div class="debug-output-block routing"><h4>launching %s(%s)</h3>',
                            $callback, print_r($in_request, true) );
                 }
 
@@ -3031,8 +3061,9 @@ abstract class Component extends Controller
         // begin debug output block
         if (g()->debug->allowed())
         {
-            printf('<div class="debug-output-block"><h3>launching things in %s</h3>',
-                   $this->path() );
+            $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
+            printf('<div class="debug-output-block %s extends-%3$s launching ctrl"><h3>launching things in %s <small>extends %s</small></h3>',
+                   $displaying_ctrl_class, $this->path(), get_parent_class($this) );
         }
 
         if (!$this->_action_to_launch)
@@ -3155,6 +3186,18 @@ abstract class Component extends Controller
     public function displayingCtrl()
     {
         return g()->first_controller->displayingCtrl();
+    }
+
+
+    /**
+     * Checks whether component is request's main displaying controller.
+     * @author m.augustynowicz
+     *
+     * @return boolean
+     */
+    public function isDisplayingCtrl()
+    {
+        return $this == $this->displayingCtrl();
     }
 
 
