@@ -63,7 +63,7 @@ $min  = $js_debug ? '.min' : '';
 /*
 // jQuery UI: widgets and stuff.
 $jqueryui_version = '1.7.2';
-if (g()->debug->on('disable','externalcdn'))
+if ($v->useExternalCDN())
 {
     $v->addJs($t->file('jquery-ui-'.$jqueryui_version.$min,'js'));
     $v->addCss($t->file('jquery-ui','css'));

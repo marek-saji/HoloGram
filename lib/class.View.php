@@ -68,7 +68,7 @@ class View extends HgBase implements IView
         // that, even when using extarnal CDNs
         $jquery_file = $this->_renderer->file(
                 'jquery-'.$jquery_version.$min, 'js', false );
-        if (g()->debug->on('disable','externalcdn'))
+        if (!$this->useExternalCDN())
         {
             $this->addJs($jquery_file);
         }
@@ -156,7 +156,7 @@ class View extends HgBase implements IView
             // http://code.google.com/p/html5shiv/
 
             $html5_shiv_file = $this->_renderer->file('html5','js');
-            if (g()->debug->on('disable','externalcdn'))
+            if (!$this->useExternalCDN())
             {
                 $attrs['src'] = $html5_shiv_file;
             }
@@ -450,7 +450,24 @@ class View extends HgBase implements IView
         $this->_profiles[$uri] = $uri;
     }
 
-    
+
+    /**
+     * Check wheteher we prefer to use external CDNs in favour of local files.
+     * @author m.augustynowicz
+     *
+     * @return bool
+     */
+    public function useExternalCDN()
+    {
+        if (g()->debug->on('disable','externalcdn'))
+            return false;
+        else if (isset(g()->conf['site']['use_external_cdn']))
+            return @g()->conf['site']['use_external_cdn'];
+        else
+            return true;
+    }
+
+
     /**
      * Generic tag code generator.
      *
