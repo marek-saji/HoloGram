@@ -241,7 +241,9 @@ class ImagesUploadModel extends Model
                     unlink($this->__upload_dir . 'tmp' . $hash);
                 }
 
-                if($image_files['store_original'] && is_uploaded_file($this->_file['tmp_name']))
+                $really_is_uploaded = is_uploaded_file($this->_file['tmp_name']);
+                $is_uploaded = (@$this->_file['impersonator']) || $really_is_uploaded;
+                if($image_files['store_original'] && $is_uploaded)
                 {
                     $im = $func($this->_file['tmp_name']);
                     $f($im, $this->_file['tmp_name']);
@@ -252,7 +254,10 @@ class ImagesUploadModel extends Model
                         printf('<p class="debug">creating <code>%s</code>', $path);
 
                     mkdir($this->__upload_dir . $data['model'] . '/' . $hash, 0700, true);
-                    move_uploaded_file($this->_file['tmp_name'], $path);
+                    if ($really_is_uploaded)
+                        move_uploaded_file($this->_file['tmp_name'], $path);
+                    else
+                        rename($this->_file['tmp_name'], $path);
                 }
                 elseif(is_uploaded_file($this->_file['tmp_name']))
                     unlink($this->_file['tmp_name']);
