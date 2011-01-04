@@ -78,10 +78,8 @@ class View extends HgBase implements IView
             $this->addJs($protocol.'://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
         }
         // make jquery more verbal about errors and warnings
-        /*
         if ($js_debug)
             $this->addJs('http://github.com/jamespadolsey/jQuery-Lint/raw/master/jquery.lint.js');
-         */
 
         // our core javascript code (lazy loading etc)
         $this->addJs($this->_renderer->file('hg.core','js'));
