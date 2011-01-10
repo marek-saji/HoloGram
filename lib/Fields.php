@@ -2317,6 +2317,7 @@ class FoFunc extends FAnyType implements IEvalField
         'avg' => array(
             'res' => 'FInt',
             'AVG($int:FInt)',
+            'AVG($int:FFloat)',
         ),        
         
     );
