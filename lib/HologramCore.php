@@ -1104,7 +1104,7 @@ class Kernel
     public function log($level, Controller $that, $title=null, $id=null,
                         array $values=null, array $new_values=null, $user_id=false )
     {
-        $this->_log->log($level, $that, $id, $title, $values, $new_values, $user_id);
+        $this->_log->log($level, $that, $title, $id, $values, $new_values, $user_id);
     }
 
     
