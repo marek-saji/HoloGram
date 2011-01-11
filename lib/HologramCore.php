@@ -1307,7 +1307,7 @@ class HgBase
      */
     public function __clone()
     {
-        $present_vars = get_class_vars($this);
+        $present_vars = get_class_vars(get_class($this));
         $singleton = @$present_vars['singleton'];
         if ($singleton)
             throw new HgException("Shit, I'm being cloned!");
