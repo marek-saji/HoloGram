@@ -518,18 +518,22 @@ JS;
                 return true;
         }
 
-        static $err_consts = array(
+        static $err_consts = null;
+        if (null === $err_consts)
+        {
+            $err_consts = array(
                 E_ERROR => 'ERROR',
                 E_WARNING => 'WARNING',
                 E_NOTICE => 'NOTICE',
                 E_USER_WARNING => 'USER WARNING',
                 E_USER_NOTICE => 'USER NOTICE',
                 E_STRICT => 'STRICT STANDARDS ERROR',
-                /* php-5.3
-                E_DEPRECATED => 'DEPRECATED',
-                E_USER_DEPRECATED => 'USER DEPRECATED',
-                 */
             );
+            if (defined('E_DEPRECATED'))
+                $err_consts[E_DEPRECATED] = 'DEPRECATED';
+            if (defined('E_USER_DEPRECATED'))
+                $err_consts[E_USER_WARNING] = 'USER DEPRECATED';
+        }
 
         if (!$errtype = @$err_consts[$errno])
             $errtype = '<a href="http://php.net/manual/en/errorfunc.constants.php">ERR#'.$errno.'</a>';
