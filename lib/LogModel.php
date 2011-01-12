@@ -124,7 +124,7 @@ class LogModel extends Model
         $log_row['target_id'] = $id;
         $log_row['title'] = $title;
         $log_row['with_old_values'] = (null !== $new_values);
-        $log_row['user_id'] = $user_id;
+        $log_row['user_id'] = & $user_id;
 
         g()->db->startTrans();
 
@@ -194,7 +194,7 @@ class LogModel extends Model
                 . $f->camelify($log_row['target_action']);
         if (method_exists($this, $callback))
         {
-            $this->$callback($level, $that, $title, $id, $values, $new_values);
+            $this->$callback($level, $that, $title, $id, $values, $new_values, $user_id);
         }
 
     }
