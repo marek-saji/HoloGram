@@ -77,9 +77,11 @@ class View extends HgBase implements IView
             $protocol = g()->req->isSSL() ? 'https' : 'http';
             $this->addJs($protocol.'://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
         }
+        /*
         // make jquery more verbal about errors and warnings
         if ($js_debug)
             $this->addJs('http://github.com/jamespadolsey/jQuery-Lint/raw/master/jquery.lint.js');
+         */
 
         // our core javascript code (lazy loading etc)
         $this->addJs($this->_renderer->file('hg.core','js'));
@@ -588,9 +590,14 @@ class View extends HgBase implements IView
      */
     protected function _renderBodyOpen()
     {
-        printf("<body class=\"%s %1\$s__%s\">\n",
+        $env_classes = '';
+        if (ENVIRONMENT <= DEV_ENV)
+            $env_classes .= 'env-lte-dev';
+
+        printf("<body class=\"%s %1\$s__%s %s\">\n",
                 $this->_renderer->getName(),
-                $this->_renderer->getLaunchedAction()
+                $this->_renderer->getLaunchedAction(),
+                $env_classes
             );
         // add js class to body, if javascript is present
         echo '<script type="text/javascript">document.getElementsByTagName("body")[0].className += " js";</script>';

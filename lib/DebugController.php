@@ -214,7 +214,7 @@ class DebugController extends TrunkController
 
             if ('fav' === $item)
             {
-                $items = @g()->conf['favorite debugs'];
+                $items = @g()->conf['debug']['favorite'];
                 if (!is_array($items))
                     $items = preg_split('/[, ]+/', (string)$items);
             }

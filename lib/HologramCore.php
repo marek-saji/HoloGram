@@ -551,6 +551,11 @@ class DataBase
     private $__debug = 0;
     const debug_css = 'font-size:11px; background-color: white; color: black; border: #888 solid; border-width: 1px 0; margin: .5ex 1em;';
 
+    /**
+     * @var int time, when query was launched, in microtime
+     */
+    protected $_query_start = null;
+
     public function __construct($db_resource)
     {
         $this->__db = $db_resource;
@@ -695,6 +700,7 @@ class DataBase
 
         printf('<div style="%s">', self::debug_css);
         print '<div style="margin: 0 2em;">';
+        $this->_query_start = microtime(true);
     }
 
     protected function _printInDebugPost($func, $args, $result=null)
@@ -704,6 +710,9 @@ class DataBase
             if ((!g()->debug->allowed()) || (!$this->__debug))
                 return;
         }
+
+        $query_time = microtime(true) - $this->_query_start;
+        $this->_query_start = null;
 
         echo '</div>';
         $query = @$args[0];
@@ -745,7 +754,8 @@ class DataBase
                     </script>
 JS;
             }
-            printf('<div>query returned %s: <a href="#dbdebug%d" onclick="return hgDebugDbToggle(this,\'pre\',0)">what?</a>',
+            printf('<div>query took %fms and returned %s: <a href="#dbdebug%d" onclick="return hgDebugDbToggle(this,\'pre\',0)">what?</a>',
+                    $query_time,
                     $result_desc,
                     ++$counter
                 );
@@ -798,6 +808,11 @@ JS;
 */
 class Kernel
 {
+    /**
+     * @var int time Kernel was constructed, in microseconds
+     */
+    protected $_start_time = null;
+
     private $__instances;
     protected $_session; //
     protected $_log = null;
@@ -825,6 +840,7 @@ class Kernel
     */
     public function __construct()
     {
+        $this->_start_time = microtime(true);
         ob_start();
 
         if(!empty($_POST['PHPSESSID']))
@@ -1250,6 +1266,18 @@ class Kernel
         exit;
     }
 
+
+    /**
+     * Get time elapsed from Kernel construction
+     * @author m.augustynowicz
+     *
+     * @return int elapsed time, in microseconds
+     */
+    public function getTime()
+    {
+        return microtime(true) - $this->_start_time;
+    }
+
 }
 
 
@@ -1279,7 +1307,7 @@ class HgBase
      */
     public function __clone()
     {
-        $present_vars = get_class_vars($this);
+        $present_vars = get_class_vars(get_class($this));
         $singleton = @$present_vars['singleton'];
         if ($singleton)
             throw new HgException("Shit, I'm being cloned!");

@@ -16,6 +16,49 @@ body.js .nojs
 }
 
 /**
+ * In less-than-or-equal developement environments,
+ * hightlight stuff that needs some styling.
+ */
+@-webkit-keyframes lookatme
+{
+    0%  { outline-color: #eb4242 }
+    50% { outline-color: #ebc6c6 }
+    0%  { outline-color: #eb4242 }
+}
+@-moz-keyframes lookatme
+{
+    0%  { outline-color: #eb4242 }
+    50% { outline-color: #ebc6c6 }
+    0%  { outline-color: #eb4242 }
+}
+@keyframes lookatme
+{
+    0%  { outline-color: #eb4242 }
+    50% { outline-color: #ebc6c6 }
+    0%  { outline-color: #eb4242 }
+}
+body.env-lte-dev .needs-styling
+{
+    outline: #eb4242 solid .25em;
+    -webkit-animation-name:            lookatme;
+    -webkit-animation-duration:        1s;
+    -webkit-animation-direction:       alternate;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-timing-function: ease-in-out;
+    -moz-animation-name:            lookatme;
+    -moz-animation-duration:        1s;
+    -moz-animation-direction:       alternate;
+    -moz-animation-iteration-count: infinite;
+    -moz-animation-timing-function: ease-in-out;
+    animation-name:            lookatme;
+    animation-duration:        1s;
+    animation-direction:       alternate;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+}
+
+
+/**
  * hg.tooltip
  */
 
