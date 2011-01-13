@@ -23,7 +23,7 @@ $conf['locale'] = array(
         //'sortable time' => '%H:%M',
         //'sortable date' => '%Y-%m-%d',
         //'sortable date+time' => '%Y-%m-%d at %H:%M',
-        //'sql' => DATE_ATOM
+        //'sql' => '%Y-$m-%dT%H:%M:%S%P'
     ),
 
     // specify regexps of accepted formats, or leave empty for all

@@ -1005,21 +1005,21 @@ class Functions extends HgBase
                 if (DATE_SHOW_DATE === $parts)
                 {
                     if (!$format = @$conf['sortable date'])
-                        $format = 'Y-m-d';
+                        $format = '%Y-%m-%d';
                 }
                 else
                 {
                     if (!$format = @$conf['sortable date+time'])
-                        $format = 'Y-m-d H:i:s';
+                        $format = '%Y-%m-%d %H:%i:%s';
                 }
-                $string = date($format, $date);
+                $string = strftime($format, $date);
                 break;
 
             // sql format
             case DATE_SQL_FORMAT : // parts ignored
                 if (!$format = @$conf['sql'])
                     $format = DATE_ATOM;
-                $string = date($format, $date);
+                $string = strftime($format, $date);
                 break;
 
             // human-readable format

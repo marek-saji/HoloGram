@@ -148,8 +148,10 @@ class DataSetController extends PagesController
 
         $diff = $this->_ds->checkModelInDb();
 		if (true !== $diff && (false === $diff || !empty($diff['not_in_base']) || !empty($diff['def_diff'])))
-		    //$this->assign('model_invalid',true);
-            $this->redirect($this->url2a('comp', array($this->_dsName())),false,false);
+        {
+            $comp_params = array($this->_dsName());
+            return $this->delegateAction('comp', $comp_params);
+        }
         else
         {
             if (!empty($diff['not_in_model']))
