@@ -362,8 +362,8 @@ class View extends HgBase implements IView
         }
         else
         {
-            $this->_metas[$name] = array(
-                    $meta_name      => $name,
+            $this->_metas[$name_or_attrs] = array(
+                    $meta_name      => $name_or_attrs,
                     'content'       => $value,
                 );
         }
