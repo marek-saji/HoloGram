@@ -2275,7 +2275,7 @@ abstract class Controller extends HgBase implements IController
             // store meta in array under it's path
 
             $r_url = & $url;
-            $path = explode('/', $ctrl);
+            $path = explode('/', ltrim($ctrl, '/'));
             foreach ($path as $elem)
             {
                 $elem = ucfirst($elem);

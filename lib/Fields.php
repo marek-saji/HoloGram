@@ -2312,6 +2312,7 @@ class FoFunc extends FAnyType implements IEvalField
         'sum' => array(
             'res' => 'FInt',
             'SUM($int:FInt)',
+            'SUM($int:FFloat)',
             'SUM(CAST($int:FBool AS int))',
         ),        
         'avg' => array(
