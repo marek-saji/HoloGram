@@ -585,7 +585,7 @@ JS;
         $argv = func_get_args();
 
         if (!$has_cool_var_dump)
-            echo '<pre>';
+            echo '<pre style="text-align: left; font-family: monospace">';
         $result = call_user_func_array('var_dump', $argv);
         if (!$has_cool_var_dump)
             echo '</pre>';
