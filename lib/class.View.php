@@ -592,7 +592,9 @@ class View extends HgBase implements IView
     {
         $env_classes = '';
         if (ENVIRONMENT <= DEV_ENV)
-            $env_classes .= 'env-lte-dev';
+            $env_classes .= ' env-lte-dev';
+        if (ENVIRONMENT <= TEST_ENV)
+            $env_classes .= ' env-lte-test';
 
         printf("<body class=\"%s %1\$s__%s %s\">\n",
                 $this->_renderer->getName(),
