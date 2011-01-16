@@ -43,11 +43,6 @@ if (isset($data) && (string)$value === (string)$data)
     $input_vars['attrs']['checked'] = 'checked';
 }
 
-$attrs = $t->inc('Forms/input', $input_vars);
-echo $label;
-?>
-</label>
-
 
 // render
 
