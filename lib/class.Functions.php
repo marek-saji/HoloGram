@@ -421,7 +421,7 @@ class Functions extends HgBase
      */
     function truncateHTML($string, $length, $suffix='&hellip;')
     {
-        if (!class_exists('tidy',false))
+        if (!class_exists('tidy',false) || !g()->conf['use_tidy'])
         {
             static $error_displayed = false;
             if (!$error_displayed)
@@ -644,7 +644,7 @@ class Functions extends HgBase
         $argv = func_get_args();
         foreach ($argv as $arg)
         {
-            if (!is_float($arg) && !preg_match('/[+-]?[0-9]*\.?[0-9]*/', $arg))
+            if (!is_float($arg) && !preg_match('/^[+-]?[0-9]*\.?[0-9]*$/', $arg))
                 return false;
         }
         return true;
@@ -1005,21 +1005,21 @@ class Functions extends HgBase
                 if (DATE_SHOW_DATE === $parts)
                 {
                     if (!$format = @$conf['sortable date'])
-                        $format = 'Y-m-d';
+                        $format = '%Y-%m-%d';
                 }
                 else
                 {
                     if (!$format = @$conf['sortable date+time'])
-                        $format = 'Y-m-d H:i:s';
+                        $format = '%Y-%m-%d %H:%i:%s';
                 }
-                $string = date($format, $date);
+                $string = strftime($format, $date);
                 break;
 
             // sql format
             case DATE_SQL_FORMAT : // parts ignored
                 if (!$format = @$conf['sql'])
                     $format = DATE_ATOM;
-                $string = date($format, $date);
+                $string = strftime($format, $date);
                 break;
 
             // human-readable format
@@ -1279,7 +1279,12 @@ class Functions extends HgBase
     public function xmlAttr(array $attr)
     {
         foreach ($attr as $a => &$val)
-            $val = htmlspecialchars($a).'="'.htmlspecialchars($val).'"';
+        {
+            if (false !== strpos($val, '"'))
+                $val = htmlspecialchars($a).'=\''.htmlspecialchars($val, ENT_NOQUOTES).'\'';
+            else
+                $val = htmlspecialchars($a).'="'.htmlspecialchars($val, ENT_COMPAT).'"';
+        }
         return join(' ', $attr);
     }
 
@@ -1470,5 +1475,80 @@ class Functions extends HgBase
         }
         return $ct;
     }
-}
+    
+    /**
+     * generates <a target="_blank"></a> tag for given url
+     * if the url does not start with 'http://' or 'https://'
+     * the 'http://' prefix is added to href="" attr
+     *
+     * @author b.matuszewski
+     *
+     * @param string $url - url
+     * @param null|string - value of <a></a> tag, if null $url will be taken instead
+     *
+     * @returns string - generated <a></a> tag
+     */
+    public function externalUrl($url, $label=null)
+    {
+        if(!preg_match('!(^http://)|(^https://)!', $url))
+            $href = 'http://' . $url;
+        else
+            $href = $url;
+        $target = '_blank';
+        $attr = compact('href', 'target');
+        $value = $label ? $label : $url;
+        return $this->tag('a', $attr, $value);
+    }
 
+    /**
+     * Method selects correct Polish grammatic form of words.
+     * Example:
+     * 1 pozycja, 2 pozycje, 5 pozycji, 22 pozycje, 32 pozycje, but: 12 pozycji
+     * @author m.jutkiewicz
+     *
+     * @param integer $number
+     * @param array $forms Array should contain three elements with exactly these keys: 1, 2, 5, e.g.:
+     * array(
+     *     1 => 'pozycja',
+     *     2 => 'pozycje',
+     *     5 => 'pozycji',
+     * )
+     */
+    public function correctForm($number, array $forms)
+    {
+    	if(!array_key_exists(1, $forms) || !array_key_exists(2, $forms) || !array_key_exists(5, $forms))
+    		throw new HgException('Incorrect using of Functions::correctForm()');
+
+		if($number == 0)
+			return $forms[5];
+
+		if($number == 1)
+			return $forms[1];
+
+		$last_digits = (string)$number;
+		$last_digits_arr = array(
+			0 => (int)$last_digits[strlen($last_digits) - 1],
+		);
+
+		if(strlen($last_digits) < 2)
+		    $last_digits_arr[1] = 0;
+	    else
+		    $last_digits_arr[1] = (int)$last_digits[strlen($last_digits) - 2];
+
+	    $last_digits = &$last_digits_arr;
+
+		switch($last_digits[1])
+		{
+			case 1:
+				return $forms[5];
+			default:
+				switch($last_digits[0])
+				{
+					case 2: case 3: case 4:
+						return $forms[2];
+					default:
+						return $forms[5];
+				}
+		}
+    }
+}

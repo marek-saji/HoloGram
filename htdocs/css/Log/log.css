@@ -1,0 +1,12 @@
+body.Log div#content section.log table { border: black solid thin; border-width: 0 0 thin thin; border-spacing: 0; }
+
+body.Log div#content section.log table th,
+body.Log div#content section.log table td { border: black solid thin; border-width: thin thin 0 0; padding: .2em; vertical-align: top; }
+
+body.Log div#content section.log table tbody th { text-align: left; }
+
+body.Log div#content section.log.details table.diff.with_old_values tbody tr      { background-color: #afa; }
+body.Log div#content section.log.details table.diff.with_old_values tbody tr.diff { background-color: #faa; }
+
+body.Log div#content section.log table td .more-like-this a { display: block; width: 12px; height: 12px; text-indent: -999em; overflow: hidden; background-image: url(data:image/gif;base64,R0lGODlhEAAQAOYAAP////7+/lNTU/39/U1NTcXFxZSUlJOTk/Hx8ZeXl6CgoPPz8/T09NHR0dfX10tLS2dnZ9TU1OXl5c/Pz25ubkZGRvz8/N/f30NDQ+bm5qSkpK+vr/j4+Hx8fGlpaV9fX3FxcZWVlcPDw+np6WJiYsfHx7m5ubS0tL+/v0dHR15eXltbW2NjY83Nze7u7szMzJ2dnfb29mBgYFBQUKysrHd3d1paWo2NjZKSkpCQkOzs7Kqqqnp6eu/v78rKypycnOTk5N3d3YGBgYODg4aGhk9PT/n5+fv7+8TExGRkZHl5eVVVVfLy8tXV1QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAAAAAAALAAAAAAQABAAAAeGgACCg4SFhoUBh4M6Dk0SR4qCLTwCRRQaTIoNEEk5ISBLMDGGPR0sSAgLEUoyDYYRBAZGggMnDxuGExUKhCIpO4ZBJDUZggwHKwWGCwYCRAUvCTYeDocSNyozBB8QAjgMgomJACMoCj8mPkMPBy6HAfCJQEIYNBaRgxcJJQP4tAgc3o07FAgAOw%3D%3D); }
+

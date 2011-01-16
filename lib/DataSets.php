@@ -150,9 +150,10 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     
     public function getCount()
     {
-        if (NULL !== $this->_count)
+        if(NULL !== $this->_count)
 		    return $this->_count;
-		if(empty($this->_groupby))
+
+		if(empty($this->_distincts) && empty($this->_groupby))
 		{
             $sql = "SELECT\n  COUNT(1)";
             $sql .= $this->_queryFrom();
@@ -160,13 +161,33 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         }
         else
         {
-            $sql = "SELECT\n COUNT(1) FROM (";
-            $sql .= "SELECT\n  1";
+    	    $sql_tmp = '';
+
+            if(!empty($this->_distincts))
+            {
+                if(true === $this->_distincts)
+                {
+                    $sql_tmp .= $this->_ident('DISTINCT')."\n";
+                }
+                else
+                {
+                    $sql_tmp .= $this->_ident(
+                        "DISTINCT ON (\n"
+                        . $this->_ident(implode(",\n", $this->_distincts))
+                        . "\n)"
+                    )."\n";
+                }
+            }
+
+            $dist = !empty($this->_whitelist) ? reset($this->_whitelist) : '1';
+            $sql = "SELECT\n  COUNT(1) FROM (";
+            $sql .= "SELECT\n {$sql_tmp} " . $dist;
             $sql .= $this->_queryFrom();
             $sql .= $this->_queryWhere();
             $sql .= $this->_queryGroupBy();
             $sql .= ") AS tab";
         }
+
 		$this->_count = g()->db->getOne($sql);
 		return($this->_count);
     }
@@ -333,36 +354,51 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         if (NULL===$field_keys)
             return($this->_whitelist);
 
-        $fields = $this->getFields();
-        
         $new_whitelist = array();
         
         foreach($field_keys as $alias => $column)
         {
             if(is_array($column))
             {
-                $field = (string) $column[0];
+                $field = $column[0];
                 $aggregate = $column[1];
                 if (is_int($alias))
-                    $alias = $aggregate.' '.str_replace('"','',$field);
+                    $alias = $aggregate.' '.str_replace('"','', (string) $field);
             }
             else
             {
-                $field = (string) $column;
+                $field = $column;
                 $aggregate = false;
             }
             if($aggregate && !in_array(strtolower($aggregate),array('max','min','count','count distinct','avg','sum')))
                 throw new HgException('Unknown aggregate function: '.$aggregate.' !');
-            if(isset($fields[$field]))
+
+            if($field === null)
+                $field_object = 'null';
+            else
+                $field_object = is_object($field) ? $field : $this->getField($field);
+
+            if(!$field_object)
+            {
+                if($this instanceof IModel)
+                    $this_name = sprintf("`%s' model", $this->getName());
+                else
+                    $this_name = sprintf("`<code>%s</code>'", $this->alias());
+                trigger_error(
+                    "Whitelisting invalid field `{$field}' in {$this_name} mode. Ignoring it.",
+                    E_USER_WARNING
+                );
+            }
+            else
             {
                 if($aggregate)
-                    $new_whitelist[$alias] = new FoFunc($aggregate,$fields[$field]);
+                    $new_whitelist[$alias] = new FoFunc($aggregate, $field_object);
                 else
                 {
                     if(is_int($alias))
-                        $new_whitelist[] = $fields[$field];
+                        $new_whitelist[] = $field_object;
                     else
-                        $new_whitelist[$alias] = $fields[$field];
+                        $new_whitelist[$alias] = $field_object;
                 }
             }
         }
@@ -373,21 +409,40 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             $this->_whitelist = $new_whitelist;
         return $this;
     }
-    
+
+
     /**
-    * Sets and returns GROUP BY fields
-    */
+     * Sets and returns GROUP BY fields
+     * @author m.augustynowicz using getField() instead of getField()
+     *
+     * @param array $field_keys list of field selectors;
+     *        if null given, returns current groupby
+     * @param bool $merge merge new groupby with existing one?
+     *
+     * @return DataSet $this
+     */
     public function groupBy($field_keys=NULL, $merge=false)
     {
         if (NULL===$field_keys)
             return($this->_groupby);
+
+        $new = array();
+        foreach ($field_keys as $field_selector)
+        {
+            $field = $this->getField($field_selector);
+            if ($field)
+                $new[$field->generator()] = $field;
+        }
+
         if ($merge)
-            $this->_groupby = array_merge($this->_groupby,array_intersect_key(array_flip($field_keys),$this->getFields()));
+            $this->_groupby = array_merge($this->_groupby, $new);
         else
-            $this->_groupby = array_intersect_key(array_flip($field_keys),$this->getFields());
+            $this->_groupby = $new;
+
         return $this;
-    }    
-    
+    }
+
+
     /**
     * Generates selecting query according to current settings of a data set.
     * @param $pages determines wether to include limit and offset statements in the query, or not.
@@ -556,6 +611,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *        IBoolean generating IField,
      *        array with such elements:
      *          1. 'field_name' => 'value'
+     *             if value is given as an array, IN operator is used
      *          2. 'literal query part'
      *          3' array('field_name','operator','value')
      *             e.g. array('date','>','2009')
@@ -565,6 +621,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *             third one as field value (only if first one was given)
      *             special operators:
      *                  'IN' -- 3rd operator is expected to be array of values
+     *                  'NOT IN' -- 3rd operator is expected to be array of values
      * @return $this
      */
     public function filter($condition)
@@ -603,33 +660,72 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                     $field = $this[$field_name];
                     if (!$field)
                         throw new HgException("Trying to filter ".get_class($this)." with unknown field $field_name");
-                    if ($value_given)
+
+                    // change "=NULL" and "<>NULL" into "IS (NOT) NULL"
+                    if ($value_given && null===$value)
                     {
                         switch ($operator)
                         {
-                            case 'IN' :
-                                foreach ($value as &$v)
-                                    $v = $field->dbString($v);
-                                unset($v);
-                                $value = '('.join(', ',$value).')';
+                            case '=' :
+                                $operator = 'IS NULL';
+                                $value = '';
+                                $value_given = false;
                                 break;
-                            default :
-                                $value = $field->dbString($value);
+                            case '!=' :
+                            case '<>' :
+                                $operator = 'IS NOT NULL';
+                                $value = '';
+                                $value_given = false;
+                                break;
+                        }
+                    }
+
+                    if ($value_given)
+                    {
+                        if (!is_array($value))
+                        {
+                            $value = $field->dbString($value);
+                        }
+                        else
+                        {
+                            switch ($operator)
+                            {
+                                // allow array values (translate to IN operator)
+                                case '=' :
+                                case '!=' :
+                                case '<>' :
+                                    $operator = ('='==$operator) ? 'IN' : 'NOT IN';
+
+                                case 'IN' :
+                                case 'NOT IN' :
+                                    foreach ($value as &$v)
+                                        $v = $field->dbString($v);
+                                    unset($v);
+                                    $value = '('.join(', ',$value).')';
+                                    break;
+
+                                default :
+                                    trigger_error("Filter operator `{$operator}' does not support arrays.", E_USER_WARNING);
+                                    return $this;
+                            }
                         }
                     }
                 }
                 $this_cond = sprintf('%s %s %s', $field, $operator, $value);
-                switch ($operator)
+                if('IN' == $operator)
                 {
-                    case 'IN' :
-                        if ('()'===$value)
-                        {
-                            $cond[] = sprintf('/* %s */ false', $this_cond);
-                            break;
-                        }
-                    default :
-                        $cond[] = '(' . $this_cond . ')';
+                    $cond[] = '()' === $value ?
+                        sprintf('/* %s */ false', $this_cond) :
+                        '(' . $this_cond . ')';
                 }
+                elseif('NOT IN' == $operator)
+                {
+                    $cond[] = '()' === $value ?
+                        sprintf('/* %s */ true', $this_cond) :
+                        '(' . $this_cond . ')';
+                }
+                else
+                    $cond[] = '(' . $this_cond . ')';
             }
             $condition = join("\nAND ", $cond);
         }
@@ -753,24 +849,9 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             {
                 if (is_string($field))
                 {
-                    $fields = $this->getFields();
-                    if (!isset($fields[$field]))
-                    {
-                        $return = true;
-                        foreach ($this->_whitelist as $f=>$c)
-                        {
-                            if ($f == $field)
-                            {
-                                $field = $c;
-                                $return = false;
-                                break;
-                            }
-                        }
-                        if ($return)
-                            return false;
-                    }
-                    else
-                        $field = $fields[$field];
+                    $field = $this->getField($field);
+                    if (!$field)
+                        return false;
                 }
                 // "generate" key
                 $key = $field->generator();
@@ -804,16 +885,6 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
         }
     }
 
-    /**
-    * Retrieves a field
-    * @param $name Name of the searched field.
-    * @return Returns a field with a given name, or NULL if such field doens't exists
-    */
-    public function getField($name)
-    {
-        $f = $this->getFields();
-        return($f[$name]);
-    }     
 
     /**
      * Field getter via ArrayAccess interface
@@ -870,23 +941,31 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     protected function _getWhitelistedFields()
     {
         $res = array();
-        foreach ($this->_whitelist as $f=>$c)
+
+        foreach($this->_whitelist as $f => $c)
         {
-            $sql = $c->generator();
-            if ($sql != $f && ($c instanceOf FoFunc || !is_int($f)))
-                $sql .= " AS \"$f\"";
+            if($c !== 'null')
+            {
+                $sql = $c->generator();
+                if($sql != $f && ($c instanceof FoFunc || !is_int($f)))
+                    $sql .= " AS \"$f\"";
+            }
+            else
+                $sql = 'null AS "' . $f . '"';
+
             $res[] = $sql;
         }
-        if (!$res)
+
+        if(!$res)
             return "NULL";
+
         return join(",\n", $res);
     }
     
     protected function _getGroupByFields()
     {
-        $current = array_intersect_key($this->getFields(),$this->_groupby);
         $res = '';
-        foreach ($current as $c)
+        foreach ($this->_groupby as $c)
             $res .= "  ".$c->generator().",\n";
         if (!empty($res))
             $res[strlen($res)-2]=' ';
@@ -1018,7 +1097,80 @@ class Join extends DataSet
 
         //FIXME: to trzeba zaliasowac zeby merge nie nadpisal pol o takiej samej nazwie
     }
-    
+
+
+    /**
+     * Retrieves a field with a given name.
+     * @author m.augustynowicz
+     *
+     * @todo when re-writing relations remember to allow fetching
+     *       fields by relation name.
+     *
+     * @param $name The name of retrieved field.
+     *
+     *              Can be:
+     *
+     *              - field name
+     *              - an alias (from whitelist).
+     *
+     *              It can be prefixed (joined by dot, e.g. `Owner.id`) with:
+     *
+     *              - model name
+     *              - model alias
+     *
+     * @return IField|null Field or NULL if no such field is defined
+     */
+    public function getField($name)
+    {
+        $model_name = null;
+        $model_with_name = explode('.', $name, 2);
+        if (sizeof($model_with_name) > 1)
+            list($model_name, $field_name) = $model_with_name;
+        else
+            $field_name = $name;
+
+        if (!$model_name)
+        {
+            // select with whitelist alias
+            if (array_key_exists($field_name, $this->_whitelist))
+            {
+                $wl_field = & $this->_whitelist[$field_name];
+                if ($wl_field instanceof IField)
+                    return $wl_field;
+            }
+        }
+
+
+        $sources = array($this->_first);
+
+        foreach ($this->_joins as $join)
+            $sources[] = $join['ds'];
+
+        foreach ($sources as & $source)
+        {
+            if ($source instanceof Model)
+            {
+                if ($model_name &&
+                    $source->getName() != $model_name &&
+                    $source->alias() != $model_name
+                   )
+                {
+                    continue;
+                }
+
+                $field = $source->getField($field_name);
+            }
+            else
+            {
+                $field = $source->getField($name);
+            }
+            if (null !== $field)
+                return $field;
+        }
+        return null;
+    }
+
+
     public function generator()
     {
         $gen = $this->_first->generator();
@@ -1250,22 +1402,58 @@ abstract class Model extends DataSet implements IModel
     {
         return(count($this->_fields));
     }
-    
+
+
     /**
-    * Retrieves a field with a given name.
-    * @param $name The name of retrieved field.
-    * @return Field or NULL if no such field is defined
-    */
+     * Retrieves a field with a given name.
+     * @author m.augustynowicz
+     *
+     * @param $name The name of retrieved field.
+     *
+     *              Can be:
+     *
+     *              - field name
+     *              - an alias (from whitelist).
+     *
+     * @return IField|null Field or NULL if no such field is defined
+     */
     public function getField($name)
     {
-        if (array_key_exists($name,$this->_fields))
-            return($this->_fields[$name]);
+        $model_with_name = explode('.', $name, 2);
+        if (sizeof($model_with_name) <= 1)
+            $field_name = $name;
         else
         {
-            $fields = $this->getFields();
-            return (isset($fields[$name]))?$fields[$name]:NULL;
+            list($model_name, $field_name) = $model_with_name;
+            if ($this->getName() != $model_name)
+                return null;
         }
+
+        // select with whitelist alias
+        if (array_key_exists($field_name, $this->_whitelist))
+        {
+            $wl_field = & $this->_whitelist[$field_name];
+            if ($wl_field instanceof IField)
+                return $wl_field;
+        }
+
+        foreach ($this->_fields as & $field)
+        {
+            /**
+             * DEPRECATED legacy code, marked for deletion 2010-11-04
+             */
+            // select by generated sql query
+            if ($field->generator() === $name)
+                return $field;
+
+
+            // select by name
+            if ($field->getName() === $field_name)
+                return $field;
+        }
+        return null;
     }
+
 
     /**
     * Prepares a Relation object.

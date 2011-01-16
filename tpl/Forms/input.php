@@ -14,7 +14,7 @@
  *
  * (params passed as local variables) 
  * @param string|false $id uniqe id. pass false to skip id attr
- * @param string $name_suffix e.g. "[en]" (note that name has to have
+ * @param string $name_prefix e.g. "[en]" (note that name has to have
  *        arrayish value, use at your own risk)
  * @param string $name_suffix e.g. "[42][]" (note that name has to have
  *        arrayish value, use at your own risk)

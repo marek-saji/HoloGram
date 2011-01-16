@@ -23,13 +23,16 @@ extract(
 <label for="<?=$input_id?>">
     <?=$this->trans($label)?>
     <?php
-    echo $f->tag('strong',
-        array(
-            'class' => 'required',
-            'title' => $this->trans('field required')
-        ),
-        '*'
-    );
+    if($required)
+    {
+        echo $f->tag('strong',
+            array(
+                'class' => 'required',
+                'title' => $this->trans('field required')
+            ),
+            '*'
+        );
+    }
     ?>
 </label>
 

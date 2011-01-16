@@ -32,17 +32,14 @@ $attrs['id'] = $id;
 $attrs['name'] = $ident.$name_prefix.'['.$input.']'.$name_suffix;
 //$attrs['value'] = $data;
 
-$attrs_html = '';
-foreach ($attrs as $name=>$value)
-    $attrs_html .= sprintf(' %s="%s"', $name, htmlentities($value));
-
 $data = html_entity_decode(@$data);
 $err_id = $attrs['id'] . '__err';
 if ((@$errors) && is_array($errors))
     $errors = implode(', ', $errors);
+
+echo $f->tag('textarea', $attrs, $data);
 ?>
 
-<textarea <?=$attrs_html?>><?=$data?></textarea>
 <div class="field_error" id="<?=$err_id?>" style="display:<?=$errors?'block':'none'?>"><?=$errors?></div>
 <?
 if($ajax)

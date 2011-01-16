@@ -6,12 +6,12 @@
 class PagesController extends Component
 {
     public static $singleton=true;
-    protected $_action='default';
-    protected $_layout='main';
-    protected $_params=array();
-
-    protected $_views_layouts = array('View'=>'main', 'AjaxView'=>'main_ajax');
-
+    protected $_action = 'default';
+    protected $_layout = 'main';
+    protected $_params = array();
+    protected $_convert_from = 'ÀÁÂÃÄÅĀĂĄǍǺÆǼÇĆĈĊČĎĐÐĒĔĖĘĚÈÉÊËĜĞĠĢĤĦÌÍÎĨĪĬĮİÏǏĴĶĹĻĽĿŁÑŃŅŇÒÓÔÕÖŌŎŐǑǾØŒŔŖŘŚŜŞŠŢŤŦÙÚÛÜŨŪŬŮŰŲǓǕǗǙǛŴÝŶŸŹŻŽ';
+    protected $_convert_to = 'AAAAAAAAAAAAACCCCCDDDEEEEEEEEEGGGGHHIIIIIIIIIIJKLLLLLNNNNOOOOOOOOOOOORRRSSSSTTTUUUUUUUUUUUUUUUWYYYZZZ';
+    protected $_views_layouts = array('View' => 'main', 'AjaxView' => 'main_ajax');
 
     public function present()
     {
@@ -27,6 +27,5 @@ class PagesController extends Component
 
         $this->_layout = implode('/',$layout_arr);
         $this->inc($this->_layout);
-    }    
+    }
 }
-

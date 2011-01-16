@@ -47,6 +47,8 @@ class ImagesUploadModel extends Model
         $this->_addField(new FString('original_mime', false, null, 0, 16));
         $this->_addField(new FString('title', false, null, 0, 64));
         $this->_addField(new FString('description', false, null, 0, 512));
+        $this->_addField(new FInt('original_width', 4, true));
+        $this->_addField(new FInt('original_height', 4, true));
 
         $this->_pk('id');
         $this->whiteListAll();
@@ -107,8 +109,11 @@ class ImagesUploadModel extends Model
                     throw new HgException($this->trans('Destination format defined incorrectly: %s.', $image_files['format']));
 
                 $this->_file = $data['file'];
+                $size = getimagesize($this->_file['tmp_name']);
+                $data['original_width'] = $size[0];
+                $data['original_height'] = $size[1];
 
-                if(!($hash = $data['id']))
+                if(!($hash = @$data['id']))
                     do
                     {
                         $hash = g('Functions')->generateKey();
@@ -119,6 +124,26 @@ class ImagesUploadModel extends Model
                 $data['id'] = $hash;
                 $data['extension'] = $image_files['format'];
                 $data['original_name'] = $this->_file['name'];
+
+                if (!$this->_file['type'] || $this->_file['type'] === 'application/octet-stream')
+                {
+                    $ext = explode('.', $data['file']['name']);
+                    $ext = $ext[count($ext) - 1];
+                    if(strpos($_SERVER['SERVER_SOFTWARE'], '(Win32)'))
+                        $pos = strrpos($data['file']['tmp_name'], '\\') + 1;
+                    else
+                        $pos = strrpos($data['file']['tmp_name'], '/') + 1;
+        
+                    $dir = substr($data['file']['tmp_name'], 0, $pos);
+                    $file_name = substr($data['file']['tmp_name'], $pos);
+
+                    if(!@g()->conf['get_mime_type_by_suffix'])
+                        $mime = $this->getMIMETypeByFile($file_name, $dir);
+                    else
+                        $mime = $this->getMIMETypeBySuffix($ext);
+                    $this->_file['type'] = $mime;
+                }
+
                 $data['original_mime'] = $this->_file['type'];
 
                 switch($this->_file['type'])
@@ -157,9 +182,9 @@ class ImagesUploadModel extends Model
 
                 foreach($image_files['sizes'] as $i => $s)
                 {
+                    list($w, $h) = sscanf($s, "%dx%d");
                     if($func)
                     {
-                        list($w, $h) = sscanf($s, "%dx%d");
                         //photo uploaded by user is resizing and converting to PNG format
                         $size = $this->_calculateNewDimensions($w, $h);
                         $rgb = array();
@@ -216,7 +241,9 @@ class ImagesUploadModel extends Model
                     unlink($this->__upload_dir . 'tmp' . $hash);
                 }
 
-                if($image_files['store_original'] && is_uploaded_file($this->_file['tmp_name']))
+                $really_is_uploaded = is_uploaded_file($this->_file['tmp_name']);
+                $is_uploaded = (@$this->_file['impersonator']) || $really_is_uploaded;
+                if($image_files['store_original'] && $is_uploaded)
                 {
                     $im = $func($this->_file['tmp_name']);
                     $f($im, $this->_file['tmp_name']);
@@ -227,7 +254,10 @@ class ImagesUploadModel extends Model
                         printf('<p class="debug">creating <code>%s</code>', $path);
 
                     mkdir($this->__upload_dir . $data['model'] . '/' . $hash, 0700, true);
-                    move_uploaded_file($this->_file['tmp_name'], $path);
+                    if ($really_is_uploaded)
+                        move_uploaded_file($this->_file['tmp_name'], $path);
+                    else
+                        rename($this->_file['tmp_name'], $path);
                 }
                 elseif(is_uploaded_file($this->_file['tmp_name']))
                     unlink($this->_file['tmp_name']);

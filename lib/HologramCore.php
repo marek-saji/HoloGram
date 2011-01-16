@@ -89,7 +89,7 @@ if (!function_exists('lcfirst'))
  *
  * * action{ActionName}(array $params)
  *
- *   action other than defaultAction that can be called with launchAction().
+ *   action that can be called with launchAction().
  *   launching an action sets $this->_template to lowercased action name,
  *   You can override this using _setTemplate().
  *
@@ -128,10 +128,11 @@ interface IController
     public function launchAction($action, array &$params=array());
 
     /**
-     * Getter for launched action's name
-     * @return string|null null, when no action has been launched yet
+     * Getter for launched action name
+     * @param boolean $collapse_default if true, will return empty string form default action
+     * @return string|null
      */
-    public function getLaunchedAction();
+    public function getLaunchedAction($collapse_default=false);
 
     /**
      * Render controller (without lauout and such)
@@ -194,6 +195,14 @@ interface IController
      * @return IController
      */
     public function displayingCtrl();
+
+    /**
+     * Checks whether component is request's main displaying controller.
+     * @author m.augustynowicz
+     *
+     * @return boolean
+     */
+    public function isDisplayingCtrl();
 
     /**
      * Getter for permanent controllers
@@ -542,6 +551,11 @@ class DataBase
     private $__debug = 0;
     const debug_css = 'font-size:11px; background-color: white; color: black; border: #888 solid; border-width: 1px 0; margin: .5ex 1em;';
 
+    /**
+     * @var int time, when query was launched, in microtime
+     */
+    protected $_query_start = null;
+
     public function __construct($db_resource)
     {
         $this->__db = $db_resource;
@@ -686,6 +700,7 @@ class DataBase
 
         printf('<div style="%s">', self::debug_css);
         print '<div style="margin: 0 2em;">';
+        $this->_query_start = microtime(true);
     }
 
     protected function _printInDebugPost($func, $args, $result=null)
@@ -695,6 +710,9 @@ class DataBase
             if ((!g()->debug->allowed()) || (!$this->__debug))
                 return;
         }
+
+        $query_time = microtime(true) - $this->_query_start;
+        $this->_query_start = null;
 
         echo '</div>';
         $query = @$args[0];
@@ -736,7 +754,8 @@ class DataBase
                     </script>
 JS;
             }
-            printf('<div>query returned %s: <a href="#dbdebug%d" onclick="return hgDebugDbToggle(this,\'pre\',0)">what?</a>',
+            printf('<div>query took %fms and returned %s: <a href="#dbdebug%d" onclick="return hgDebugDbToggle(this,\'pre\',0)">what?</a>',
+                    $query_time,
                     $result_desc,
                     ++$counter
                 );
@@ -746,7 +765,7 @@ JS;
             g()->debug->dump($result);
             print "</pre>";
             print '<div style="display:none">';
-            g()->debug->trace(1, null, false);
+            g()->debug->trace(1, null);
             print "</div>";
             print "</div>";
             if ($msg = $this->lastErrorMsg())
@@ -789,8 +808,14 @@ JS;
 */
 class Kernel
 {
+    /**
+     * @var int time Kernel was constructed, in microseconds
+     */
+    protected $_start_time = null;
+
     private $__instances;
     protected $_session; //
+    protected $_log = null;
     public $db;
     public $conf = array();
     public $auth;
@@ -815,7 +840,12 @@ class Kernel
     */
     public function __construct()
     {
+        $this->_start_time = microtime(true);
         ob_start();
+
+        if(!empty($_POST['PHPSESSID']))
+            session_id($_POST['PHPSESSID']);
+
         session_start();
 
         $this->readConfigFiles();
@@ -838,6 +868,8 @@ class Kernel
     * - Tworzy pierwszy kontroler
     * - Wywoluje jego metode process($req) (byc mozer wielokrotnie, jezeli dopuszczamy wywolanie kilku akcji na raz.
     * - Inicjuje renderowanie strony
+    *
+    * @return mixed whatever first controller returns.
     */
     public function run()
     {
@@ -847,10 +879,12 @@ class Kernel
             $this->req = $this->get('Request');
             $this->auth = $this->get('Auth');
 
+            // used in log() method
+            $this->_log = $this->get('Log', 'model');
+
             $this->lang->available(); // fill the cache
 
-            if ($lang = $this->lang->get())
-                $this->readConfigFiles('lang/'.$lang);
+            $this->_getTranslations($this->lang->get());
 
             $this->first_controller = $this->get(
                 $this->conf['first_controller']['type'],'controller',
@@ -879,6 +913,8 @@ class Kernel
             register_shutdown_function(array($this, 'possiblyDisplayPrerendererEcho'));
             $this->prerender_echo = ob_get_clean();
             $this->view->present();
+
+            return $this->first_controller->getLaunchedActionReturn();
         }
         catch(Exception $e)
         {
@@ -972,8 +1008,17 @@ class Kernel
     {
         $argc = func_num_args();
 
-        if (empty($name))
-            return($this);
+        if ($argc == 0)
+            return $this;
+        else if (empty($name))
+        {
+            trigger_error(
+                'Tried to manufacture empty-named with '
+                        .__CLASS__.'::'.__FUNCTION__,
+                E_USER_ERROR
+            );
+        }
+
         if (is_array($resource_type))
         {
             $args = $resource_type;
@@ -1053,6 +1098,32 @@ class Kernel
         }
     }
 
+
+    /**
+     * Log an event
+     * @author m.augustynowicz
+     *
+     * @see LogModel::log() this is a wrapper to that method
+     *
+     * @param string $level {@see conf[enum][log_level]}
+     * @param Controller|null $that controller event happened in
+     * @param mixed $id id of object event regards
+     * @param string $title title of object, or event if ($id===null)
+     * @param array $values when no $values2 given, set of event properties,
+     *        when $values2 given -- set of old properties
+     * @param array $new_values set of new properties
+     * @param int $user_id user id to use (when none supplied, signed-in
+     *        user's id will be used)
+     *
+     * @return void
+     */
+    public function log($level, Controller $that, $title=null, $id=null,
+                        array $values=null, array $new_values=null, $user_id=false )
+    {
+        $this->_log->log($level, $that, $title, $id, $values, $new_values, $user_id);
+    }
+
+    
     /**
     * Zwraca zawartosc bufora z rzeczami wyslanymi do przegladarki w trakcie przetwarzania
     * akcji. Najczesciej znajdowac sie tam beda debugi.
@@ -1128,6 +1199,45 @@ class Kernel
         }
     }
 
+
+    /**
+     * Fetch translations from database and merge them into config
+     * @author m.augustynowicz
+     *
+     * @param string $lang language code
+     */
+    protected function _getTranslations($lang)
+    {
+        // get from config files
+
+        $this->readConfigFiles('lang/'.$lang);
+
+
+        // get from database
+        if ($this->conf['use_db_trans'])
+        {
+            $f = g('Functions');
+            $trans = & $this->conf['translations'];
+
+            $db_trans = g('Trans', 'model')
+                    ->filter(array(
+                        'lang' => $lang
+                    ))
+                    ->exec();
+
+            foreach ($db_trans as &$row)
+            {
+                if ($f->anyToBool($row['value_is_complex']))
+                {
+                    $row['value'] = json_decode($row['value'], true);
+                }
+
+                $trans[$row['context']][$row['key']] = $row['value'];
+            }
+        }
+    }
+
+
     /**
      * Getter for {@see $_rendering}
      * @author m.augustynowicz
@@ -1154,6 +1264,18 @@ class Kernel
         else
             header('Location: '.$url, true, 301);
         exit;
+    }
+
+
+    /**
+     * Get time elapsed from Kernel construction
+     * @author m.augustynowicz
+     *
+     * @return int elapsed time, in microseconds
+     */
+    public function getTime()
+    {
+        return microtime(true) - $this->_start_time;
     }
 
 }
@@ -1185,7 +1307,7 @@ class HgBase
      */
     public function __clone()
     {
-        $present_vars = get_class_vars($this);
+        $present_vars = get_class_vars(get_class($this));
         $singleton = @$present_vars['singleton'];
         if ($singleton)
             throw new HgException("Shit, I'm being cloned!");
@@ -1225,6 +1347,9 @@ class HgBase
         $argv = func_get_args();
         $text = array_shift($argv);
 
+
+        // handle array of texts to translate
+
         if (is_array($text))
         {
             foreach ($text as &$txt)
@@ -1234,6 +1359,9 @@ class HgBase
             }
             return $text;
         }
+
+
+        // get translations from config files
 
         foreach ($this->_trans_sources as $source)
         {
@@ -1262,6 +1390,7 @@ class HgBase
             break;
         }
 
+
         if (!isset($msg))
         {
             $ret = vsprintf($text, $argv);
@@ -1273,6 +1402,9 @@ class HgBase
             $trans = & $ret;
         }
 
+
+        // do debug things
+
         $debug_all = g()->debug->on('trans');
         $debug_missing = g()->debug->on('trans','missing');
 
@@ -1283,6 +1415,7 @@ class HgBase
                     array() === $trans ? 'NO TRANS!' : $trans
                 );
         }
+
 
         return $ret;
 
@@ -1322,6 +1455,12 @@ abstract class Controller extends HgBase implements IController
     protected $_template = '';
     protected $_action_to_launch = null;
     protected $_launched_action = null;
+
+    /**
+     * @var mixed whatever this controller's action returns
+     */
+    protected $_launched_action_return = null;
+
     protected $_params = null;
 
     /**
@@ -1387,6 +1526,16 @@ abstract class Controller extends HgBase implements IController
         }
         if (!$has_access)
         {
+            if(!empty($params['backto']))
+            {
+                if (g()->debug->allowed())
+                {
+                    printf('<p class="debug"><em>$params[\'backto\']</em> found (%s)<br /> redirecting to the given page</p>',
+                        $params['backto']
+                    );
+                }
+                $this->redirect($params['backto']);
+            }
             $this->redirect(); // main page
         }
 
@@ -1445,6 +1594,9 @@ abstract class Controller extends HgBase implements IController
     }
 
 
+    /**
+     * @todo DEPRECATED (defaultAction) marked for deletion 2010-11-03
+     */
     public function defaultAction(array $params)
     {
         $this->redirect(array('HttpErrors','error404'));
@@ -1555,18 +1707,15 @@ abstract class Controller extends HgBase implements IController
      *
      * @param string $file file name to get without extension (excluding $type=='img')
      * @param string $type file type, can be js|css|img|tpl
+     * @param bool $assert fail, when file does not exist
      * @return false|string when $type=='tpl' returns absolute path to the template
-     *         or false, when it doesn't exist; for other types -- returns URI
+     *         or false, when it doesn't exist and $assert=false; for other types -- returns URI
      *         to the file, and false if it does not exist (and raises NOTICE
      *         when debug is allowed).
      */
-    public function file($file, $type)
+    public function file($file, $type, $assert=true)
     {
         $argv = func_get_args();
-        if(isset($argv[2]))
-            $return_false_on_404 = g('Functions')->anyToBool($argv[2]);
-        else
-            $return_false_on_404 = false;
         $return_real_path = false;
         switch($type)
         {
@@ -1582,7 +1731,6 @@ abstract class Controller extends HgBase implements IController
                 break;
             case 'tpl':
                 $base_bases = array('tpl/%s.php');
-                $return_false_on_404 = true;
                 $return_real_path = true;
                 break;
             default:
@@ -1621,9 +1769,9 @@ abstract class Controller extends HgBase implements IController
         // file not found
         if (null === $c)
         {
-            if ($return_false_on_404)
+            if (false == $assert)
                 return false;
-            else if (g()->conf['allow_debug'])
+            else
                 trigger_error("File $file not found!", E_USER_NOTICE);
         }
 
@@ -1661,6 +1809,21 @@ abstract class Controller extends HgBase implements IController
     {
         return($this->__name);
     }
+
+
+    /**
+     * Get name ment for navigation (highlighting menu item etc)
+     *
+     * When overwritten, it can be used to interpersonate different controller
+     * @author m.augustynowicz
+     *
+     * @return string
+     */
+    public function getNavName()
+    {
+        return $this->getName();
+    }
+
 
     public function redirect($url='',$with_controllers=true, $with_base_uri=true)
     {
@@ -1732,6 +1895,18 @@ abstract class Controller extends HgBase implements IController
 
 
     /**
+     * Get return value of this controller's launched action
+     * @author m.augustynowicz
+     *
+     * @return mixed
+     */
+    public function getLaunchedActionReturn()
+    {
+        return $this->_launched_action_return;
+    }
+
+
+    /**
      * Launch default action
      * @author m.augustynowicz
      *
@@ -1783,7 +1958,9 @@ abstract class Controller extends HgBase implements IController
         // open debug output block
         if (g()->debug->allowed())
         {
-            printf('<div class="debug-output-block"><h3>%s, action %s(%s)%s</h3>',
+            $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
+            printf('<div class="debug-output-block %s extends-%s launching action"><h3>%s, action %s(%s)%s</h3>',
+                $displaying_ctrl_class, get_parent_class($this),
                 $this->path(), $action, print_r($params, true),
                 $action === $this->_default_action ? ' <small>(default)</small>' : ''
             );
@@ -1803,7 +1980,7 @@ abstract class Controller extends HgBase implements IController
         else
         {
             $this->_setTemplate($action);
-            $this->$method($params);
+            $this->_launched_action_return = $this->$method($params);
         }
 
         // close debug output block
@@ -1843,9 +2020,12 @@ abstract class Controller extends HgBase implements IController
      *
      * @return string
      */
-    public function getLaunchedAction()
+    public function getLaunchedAction($collapse_default=false)
     {
-        return $this->_launched_action;
+        if ($this->_launched_action == $this->_default_action)
+            return '';
+        else
+            return $this->_launched_action;
     }
 
 
@@ -1925,8 +2105,9 @@ abstract class Controller extends HgBase implements IController
             $attrs = array();
         else
         {
-            $attrs = $argv[0][3];
+            $attrs = & $argv[0][3];
             unset($argv[0][3]);
+            $argv[0] = array_values($argv[0]); // re-index
         }
 
         $attrs['href'] = call_user_func_array(array($this,'url2c'), $argv);
@@ -2061,7 +2242,7 @@ abstract class Controller extends HgBase implements IController
         $url = array();
         foreach ($controllers as $c)
         {
-            @list($ctrl, $act, $params) = $c;
+            @list($ctrl, $act, $params, $with_host) = $c;
 
             // validate types of parameters
 
@@ -2094,7 +2275,7 @@ abstract class Controller extends HgBase implements IController
             // store meta in array under it's path
 
             $r_url = & $url;
-            $path = explode('/', $ctrl);
+            $path = explode('/', ltrim($ctrl, '/'));
             foreach ($path as $elem)
             {
                 $elem = ucfirst($elem);
@@ -2254,7 +2435,7 @@ abstract class Controller extends HgBase implements IController
             else
             {
                 if (null === $name_or_args)
-                    $name_or_args = strtolower($controller);
+                    $name_or_args = ucfirst($controller);
                 $args = array(
                     'name'   => $name_or_args,
                     'parent' => $this
@@ -2281,8 +2462,19 @@ abstract class Controller extends HgBase implements IController
         {
             case null :
             case 'default' :
-                $method = 'defaultAction';
-                break;
+                /**
+                 * @todo DEPRECATED (defaultAction) marked for deletion 2010-11-03
+                 */
+                if (!method_exists($this, 'actionDefault'))
+                {
+                    g()->debug->addInfo(
+                        "deprecated {$this->getName()}::defaultAction",
+                        true,
+                        "`defaultAction' name convention has been deprecated and will be removed in future. Rename it in `{$this->getName()}' to `actionDefault' instead"
+                    );
+                    $method = 'defaultAction';
+                    break;
+                }
             default :
                 $method = 'action' . ucfirst($action_name);
         }
@@ -2363,6 +2555,31 @@ abstract class TrunkController extends Controller
         else
             return $this->__child;
     }
+
+
+    /**
+     * Checks whether component is request's main displaying controller.
+     * @author m.augustynowicz
+     *
+     * @return boolean
+     */
+    public function isDisplayingCtrl()
+    {
+        return false;
+    }
+
+
+    /**
+     * Get's (children's) return value of launched action
+     * @author m.augustynowicz
+     *
+     * @return mixed
+     */
+    public function getLaunchedActionReturn()
+    {
+        return $this->__child->getLaunchedActionReturn();
+    }
+
 
 
     /**
@@ -2626,7 +2843,6 @@ abstract class Component extends Controller
                                 . $f->camelify($input);
                     if (method_exists($this,$callback))
                     {
-                        //$variable_to_pass_by_reference = @$post[$input];
                         $new_errors = $this->$callback($post[$input]);
                         if (!empty($new_errors))
                         {
@@ -2741,8 +2957,9 @@ abstract class Component extends Controller
         // begin debug output block
         if (g()->debug->allowed())
         {
-            printf('<div class="debug-output-block"><h3>preparing %s</h3>',
-                   $this->path() );
+            $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
+            printf('<div class="debug-output-block %s extends-%3$s preparing ctrl"><h3>preparing %s <small>extends %s</small></h3>',
+                   $displaying_ctrl_class, $this->path(), get_parent_class($this) );
         }
 
         // find an action to launch
@@ -2812,8 +3029,9 @@ abstract class Component extends Controller
         {
             if (g()->debug->allowed())
             {
-                printf('<div class="debug-output-block"><h4>launching %s(%s)</h3>',
-                       $method, print_r($this->_params, true) );
+                $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
+                printf('<div class="debug-output-block %s extends-%s preparing action"><h4>launching %s(%s)</h3>',
+                       $displaying_ctrl_class, get_parent_class($this), $method, print_r($this->_params, true) );
             }
 
             $this->$method($this->_params);
@@ -2840,7 +3058,7 @@ abstract class Component extends Controller
             {
                 if (g()->debug->allowed())
                 {
-                    printf('<div class="debug-output-block"><h4>launching %s(%s)</h3>',
+                    printf('<div class="debug-output-block routing"><h4>launching %s(%s)</h3>',
                            $callback, print_r($in_request, true) );
                 }
 
@@ -2851,7 +3069,7 @@ abstract class Component extends Controller
                     printf('</div>');
                 }
 
-                if (!$route)
+                if (false === $route) // null still routes
                     continue;
             }
 
@@ -2881,8 +3099,9 @@ abstract class Component extends Controller
         // begin debug output block
         if (g()->debug->allowed())
         {
-            printf('<div class="debug-output-block"><h3>launching things in %s</h3>',
-                   $this->path() );
+            $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
+            printf('<div class="debug-output-block %s extends-%3$s launching ctrl"><h3>launching things in %s <small>extends %s</small></h3>',
+                   $displaying_ctrl_class, $this->path(), get_parent_class($this) );
         }
 
         if (!$this->_action_to_launch)
@@ -3005,6 +3224,18 @@ abstract class Component extends Controller
     public function displayingCtrl()
     {
         return g()->first_controller->displayingCtrl();
+    }
+
+
+    /**
+     * Checks whether component is request's main displaying controller.
+     * @author m.augustynowicz
+     *
+     * @return boolean
+     */
+    public function isDisplayingCtrl()
+    {
+        return $this == $this->displayingCtrl();
     }
 
 
@@ -3244,10 +3475,6 @@ abstract class PermanentController extends Component
     public function getExtUri()
     {
         return '';
-    }
-
-    public function defaultAction(array $params)
-    {
     }
 
 }

@@ -30,9 +30,6 @@ if (defined('ENVIRONMENT'))
         $conf['site_name'] .= '(dev)';
 }
 
-// debugs to turn on when enabling "fav"
-$conf['favorite debugs'] = 'db, js, mails, view, debug, user';
-
 // app-specific class overrides
 $conf['classes_override'] = array(
     // Use adoDB
@@ -40,4 +37,8 @@ $conf['classes_override'] = array(
     // will use only one language
     //'Lang'           => 'LangOne',
 );
+
+// whether to use translations stored in database, in addition
+// to those in config files
+$conf['use_db_trans'] = false;
 

@@ -15,9 +15,15 @@ $conf['locale'] = array(
             32 => '32 days ago',
         ),
          */
+
         // strftime() format
-        //'human time' => 'H:M',
-        //'sq' => DATE_ATOM
+        //'human time' => '%H:%M',
+        //'human date' => '%Y-%m-%d',
+        //'human date+time' => '%Y-%m-%d at %H:%M',
+        //'sortable time' => '%H:%M',
+        //'sortable date' => '%Y-%m-%d',
+        //'sortable date+time' => '%Y-%m-%d at %H:%M',
+        //'sql' => '%Y-$m-%dT%H:%M:%S%P'
     ),
 
     // specify regexps of accepted formats, or leave empty for all

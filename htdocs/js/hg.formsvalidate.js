@@ -118,8 +118,29 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                         {
                             var field_input = $(':input[name^="'+form_name+'['+field+']"]');
                         }
-                        var err = $('#' + field_input.eq(-1).attr('id') + '__err');
-                        console.log(field_input, err);
+                        
+                        /**
+                         * checking if last element from a set of inputs has attr('id')
+                         * if so then we take it with suffix '_err' to find field_error
+                         * label container.
+                         * if not we try to find first input haveing id
+                         *
+                         * @TODO think about situation when neighter of inputs is haveing id
+                         */
+                        if(field_input.eq(-1).attr('id') == '')
+                        {
+                            for(key in field_input)
+                            {
+                                if($(field_input[key]).attr('id'))
+                                {
+                                    var attr_id = $(field_input[key]).attr('id');
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                            var attr_id = field_input.eq(-1).attr('id');
+                        var err = $('#' + attr_id + '__err');
                     }
                     if (0 >= errors_count)
                     {
@@ -166,11 +187,18 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                 .find('.validatables_container')
                     .each(function(){
                         var me = $(this);
-                        var invalid = me.find('.invalid').length;
-                        me.toggleClass('invalid', invalid)
-                          .toggleClass('valid',  !invalid);
+                        var invalid = (0 != me.find('.invalid').length);
+                        me
+                            .add($(me.data('also-hightlight-when-invalid')))
+                                .toggleClass('invalid', invalid)
+                                .toggleClass('valid',  !invalid);
                     });
 
+        if(all_errors_count)
+            $.nyroModalSettings({
+                width: null,
+                height: null
+            });
         } // opts.success
     };
     

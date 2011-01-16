@@ -81,4 +81,5 @@ if (!defined('UPLOAD_DIR'))
 require_once(HG_DIR.'lib/HologramCore.php');
 $kernel = new Kernel();
 $forest = & $kernel;
-/* run, */ $forest->run();
+exit(/* run, */ $forest->run());
+
