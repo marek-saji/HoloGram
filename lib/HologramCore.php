@@ -1526,6 +1526,16 @@ abstract class Controller extends HgBase implements IController
         }
         if (!$has_access)
         {
+            if(!empty($params['backto']))
+            {
+                if (g()->debug->allowed())
+                {
+                    printf('<p class="debug"><em>$params[\'backto\']</em> found (%s)<br /> redirecting to the given page</p>',
+                        $params['backto']
+                    );
+                }
+                $this->redirect($params['backto']);
+            }
             $this->redirect(); // main page
         }
 
