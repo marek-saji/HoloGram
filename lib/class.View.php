@@ -127,7 +127,7 @@ class View extends HgBase implements IView
             $uniform_fn = sprintf('jquery.uniform-%s%s', $uniform_version, $min);
             $this->addJs($this->_renderer->file($uniform_fn, 'js'));
             // uniform these form elements
-            $this->addOnLoad('$(":checkbox.hg:not(.prevent_uniform), :radio.hg, select.hg").uniform();');
+            $this->addOnLoad('$(".holoform :checkbox.hg:not(.prevent_uniform), .holoform :radio.hg:not(.prevent_uniform), .holoform select.hg:not(.prevent_uniform)").uniform();');
         }
 
 
