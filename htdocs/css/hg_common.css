@@ -37,8 +37,9 @@ body.js .nojs
     50% { outline-color: #ebc6c6 }
     0%  { outline-color: #eb4242 }
 }
-body.env-lte-dev .needs-styling
+body.env-lte-test .needs-styling
 {
+    background-color: #fee;
     outline: #eb4242 solid .25em;
     -webkit-animation-name:            lookatme;
     -webkit-animation-duration:        1s;
@@ -55,6 +56,18 @@ body.env-lte-dev .needs-styling
     animation-direction:       alternate;
     animation-iteration-count: infinite;
     animation-timing-function: ease-in-out;
+}
+body.env-lte-test .needs-styling::before
+{
+    content: 'gimme some style~';
+    font-weight: bold;
+    font-style: italic;
+    font-size: .8em;
+    color: #eb4242;
+    /* FIRE!! */
+    display: inline-block;
+    padding-top: 3em;
+    text-shadow: 0 0 .4em white, 0 -.5em .4em #FFFF33, .2em -1em .6em #FFDD33, -.2em -1.5em 1.1em #FF8800, .2em -2.5em 1.8em #FF2200;
 }
 
 

@@ -30,9 +30,6 @@ if (defined('ENVIRONMENT'))
         $conf['site_name'] .= '(dev)';
 }
 
-// debugs to turn on when enabling "fav"
-$conf['favorite debugs'] = 'db, js, mails, view, debug, user';
-
 // app-specific class overrides
 $conf['classes_override'] = array(
     // Use adoDB

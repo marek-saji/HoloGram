@@ -341,17 +341,32 @@ class View extends HgBase implements IView
     /**
      * Sets <meta> tag to be rendered in <head></head> section
      *
-     * tag will be looking something like this
+     * When two or three strings supplied tag will be looking like this:
      * <meta $meta_name="$name" content="$value">
+     * When array supplied as only param, it is expected to cantain
+     * `meta` tag attributes.
+     * @author m.augustynowicz
+     * @author m.charmulowicz accepts first param as array with attrs
+     * @param string|array $name_or_attrs eighter meta name value or
+     *        array with `meta` tag attribtues.
+     * @param string $value content value
+     * @param string $meta_value name attribute name
      *
-     * on 22.04.2010 $meta_name added
+     * @return void
      */
-    public function setMeta($name,$value,$meta_name = 'name')
+    public function setMeta($name_or_attrs,$value,$meta_name = 'name')
     {
-        $this->_metas[$name] = array(
-                $meta_name      => $name,
-                'content'       => $value,
-            );
+        if(is_array($name_or_attrs))
+        {
+            $this->_metas[] = $name_or_attrs;
+        }
+        else
+        {
+            $this->_metas[$name_or_attrs] = array(
+                    $meta_name      => $name_or_attrs,
+                    'content'       => $value,
+                );
+        }
     }
 
     /**
@@ -577,7 +592,9 @@ class View extends HgBase implements IView
     {
         $env_classes = '';
         if (ENVIRONMENT <= DEV_ENV)
-            $env_classes .= 'env-lte-dev';
+            $env_classes .= ' env-lte-dev';
+        if (ENVIRONMENT <= TEST_ENV)
+            $env_classes .= ' env-lte-test';
 
         printf("<body class=\"%s %1\$s__%s %s\">\n",
                 $this->_renderer->getName(),
