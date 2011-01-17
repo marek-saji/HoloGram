@@ -28,6 +28,8 @@ class View extends HgBase implements IView
     protected $_metas = array();
     protected $_headers = array();
     protected $_head_code = array();
+    
+    protected $_opengraph_xmlns = false;
 
     public function __construct()
     {
@@ -482,6 +484,16 @@ class View extends HgBase implements IView
             return true;
     }
 
+    /**
+     * Adds xmlns:og="http://ogp.me/ns#" to html tag
+     * @author m.charmulowicz
+     *
+     * @return void
+     */
+    public function addOpenGraphXMLNS()
+    {
+        $this->_opengraph_xmlns = true;
+    }
 
     /**
      * Generic tag code generator.
@@ -545,8 +557,10 @@ class View extends HgBase implements IView
     protected function _renderHtmlOpen()
     {
         $lang = htmlspecialchars($this->_lang);
+        $opengraph_xmlns = $this->_opengraph_xmlns ? 'xmlns:og="http://ogp.me/ns#"' : '';
+        
         if ($this->_is_html5)
-            printf("<html lang=\"%s\">\n", $lang);
+            printf("<html lang=\"%s\" {$opengraph_xmlns}>\n", $lang);
         else
         {
             printf("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"%s\" lang=\"%1\$s\">\n",
