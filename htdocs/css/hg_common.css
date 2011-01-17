@@ -37,7 +37,7 @@ body.js .nojs
     50% { outline-color: #ebc6c6 }
     0%  { outline-color: #eb4242 }
 }
-body.env-lte-dev .needs-styling
+body.env-lte-test .needs-styling
 {
     background-color: #fee;
     outline: #eb4242 solid .25em;
@@ -57,7 +57,7 @@ body.env-lte-dev .needs-styling
     animation-iteration-count: infinite;
     animation-timing-function: ease-in-out;
 }
-body.env-lte-dev .needs-styling::before
+body.env-lte-test .needs-styling::before
 {
     content: 'gimme some style~';
     font-weight: bold;
