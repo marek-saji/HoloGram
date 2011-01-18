@@ -57,6 +57,7 @@ body.env-lte-test .needs-styling
     animation-iteration-count: infinite;
     animation-timing-function: ease-in-out;
 }
+/*
 body.env-lte-test .needs-styling::before
 {
     content: 'gimme some style~';
@@ -64,11 +65,12 @@ body.env-lte-test .needs-styling::before
     font-style: italic;
     font-size: .8em;
     color: #eb4242;
-    /* FIRE!! */
+    /* FIRE!! *-/
     display: inline-block;
     padding-top: 3em;
     text-shadow: 0 0 .4em white, 0 -.5em .4em #FFFF33, .2em -1em .6em #FFDD33, -.2em -1.5em 1.1em #FF8800, .2em -2.5em 1.8em #FF2200;
 }
+*/
 
 
 /**
