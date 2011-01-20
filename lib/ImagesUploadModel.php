@@ -127,7 +127,6 @@ class ImagesUploadModel extends Model
                 $data['maker'] = $exif['Make'];
                 $data['camera_model'] = $exif['Model'];
                 $data['focallength'] = $exif['FocalLength'];
-                var_dump($exif);
                 $data['aperturefnumber'] = $exif['ApertureFNumber'];
                 $data['isospeedratings'] = $exif['ISOSpeedRatings'];
                             
