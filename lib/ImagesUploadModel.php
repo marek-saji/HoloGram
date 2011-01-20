@@ -49,7 +49,14 @@ class ImagesUploadModel extends Model
         $this->_addField(new FString('description', false, null, 0, 512));
         $this->_addField(new FInt('original_width', 4, true));
         $this->_addField(new FInt('original_height', 4, true));
-
+        
+        $this->_addField(new FString('maker', false));
+        $this->_addField(new FString('camera_model', false));
+        $this->_addField(new FString('aperturefnumber', false));
+        $this->_addField(new FString('isospeedratings', false));
+        $this->_addField(new FString('focallength', false));
+        $this->_addField(new FTimestamp('filedatatime'));
+        
         $this->_pk('id');
         $this->whiteListAll();
     }
@@ -79,7 +86,7 @@ class ImagesUploadModel extends Model
     protected function _syncSingle(&$data, $action, &$error)
     {
         $folder = $this->__upload_dir . $data['model'] . '/';
-
+        
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
         elseif(mkdir($folder, 0700, true))
@@ -113,6 +120,17 @@ class ImagesUploadModel extends Model
                 $data['original_width'] = $size[0];
                 $data['original_height'] = $size[1];
 
+                //EXIF
+                $exif = exif_read_data($data['file']['tmp_name']);
+                $data['filedatatime'] = $exif['DateTime'];
+                
+                $data['maker'] = $exif['Make'];
+                $data['camera_model'] = $exif['Model'];
+                $data['focallength'] = $exif['FocalLength'];
+                var_dump($exif);
+                $data['aperturefnumber'] = $exif['ApertureFNumber'];
+                $data['isospeedratings'] = $exif['ISOSpeedRatings'];
+                            
                 if(!($hash = @$data['id']))
                     do
                     {
@@ -145,7 +163,7 @@ class ImagesUploadModel extends Model
                 }
 
                 $data['original_mime'] = $this->_file['type'];
-
+                
                 switch($this->_file['type'])
                 {
                     case 'image/jpeg':
