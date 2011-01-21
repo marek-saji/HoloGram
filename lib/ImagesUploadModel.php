@@ -124,11 +124,13 @@ class ImagesUploadModel extends Model
 
                 //EXIF
                 $exif = exif_read_data($data['file']['tmp_name']);
-                $data['filedatatime'] = $exif['DateTime'];
+                $data['filedatatime'] = $exif['DateTimeOriginal'];
                 $data['maker'] = $exif['Make'];
                 $data['camera_model'] = $exif['Model'];
                 $data['focallength'] = $exif['FocalLength'];
-                $data['aperturefnumber'] = $exif['ApertureFNumber'];
+                var_dump($exif);
+                $exif['COMPUTED']['ApertureFNumber'] = str_replace(',', '.', $exif['COMPUTED']['ApertureFNumber']);
+                $data['aperturefnumber'] = $exif['COMPUTED']['ApertureFNumber'];
                 $data['isospeedratings'] = $exif['ISOSpeedRatings'];
                 $data['height'] = $exif['COMPUTED']['Height'];
                 $data['width'] = $exif['COMPUTED']['Width'];
