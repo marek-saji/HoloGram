@@ -4,10 +4,10 @@ g()->load('DataSets', null);
 /**
  * Model for uploaded images.
  * @author m.jutkiewicz
- * 
+ *
  * WARNING: if you are using transaction's rollback, you have to
  * delete files from a hard drive by yourself.
- * 
+ *
  * To use this model with its destiny it is necessary to
  * define in source model's constructor a property called 'image_files' e.g.:
  * $this->image_files = array(
@@ -22,8 +22,8 @@ g()->load('DataSets', null);
  * 			   also you can define this parameter for each image size separately in array, e.g.:
  * 			   array('00A8FF', false, null, '000000');
  * 'format' - target format, allowed values: 'png', 'gif', 'jpg'.
- * 
- * All above-mentioned properties are mandatory and must be declared, even if they are empty. 
+ *
+ * All above-mentioned properties are mandatory and must be declared, even if they are empty.
  */
 class ImagesUploadModel extends Model
 {
@@ -49,14 +49,16 @@ class ImagesUploadModel extends Model
         $this->_addField(new FString('description', false, null, 0, 512));
         $this->_addField(new FInt('original_width', 4, true));
         $this->_addField(new FInt('original_height', 4, true));
-        
+
         $this->_addField(new FString('maker', false));
         $this->_addField(new FString('camera_model', false));
         $this->_addField(new FString('aperturefnumber', false));
         $this->_addField(new FString('isospeedratings', false));
         $this->_addField(new FString('focallength', false));
         $this->_addField(new FTimestamp('filedatatime'));
-        
+        $this->_addField(new FInt('height', 4, false));
+        $this->_addField(new FInt('width', 4, false));
+
         $this->_pk('id');
         $this->whiteListAll();
     }
@@ -86,7 +88,7 @@ class ImagesUploadModel extends Model
     protected function _syncSingle(&$data, $action, &$error)
     {
         $folder = $this->__upload_dir . $data['model'] . '/';
-        
+
         if(file_exists($folder))
             ;//g()->debug->addInfo(null, $this->trans('Directory %s exists', $name));
         elseif(mkdir($folder, 0700, true))
@@ -123,13 +125,14 @@ class ImagesUploadModel extends Model
                 //EXIF
                 $exif = exif_read_data($data['file']['tmp_name']);
                 $data['filedatatime'] = $exif['DateTime'];
-                
                 $data['maker'] = $exif['Make'];
                 $data['camera_model'] = $exif['Model'];
                 $data['focallength'] = $exif['FocalLength'];
                 $data['aperturefnumber'] = $exif['ApertureFNumber'];
                 $data['isospeedratings'] = $exif['ISOSpeedRatings'];
-                            
+                $data['height'] = $exif['COMPUTED']['Height'];
+                $data['width'] = $exif['COMPUTED']['Width'];
+
                 if(!($hash = @$data['id']))
                     do
                     {
@@ -150,7 +153,7 @@ class ImagesUploadModel extends Model
                         $pos = strrpos($data['file']['tmp_name'], '\\') + 1;
                     else
                         $pos = strrpos($data['file']['tmp_name'], '/') + 1;
-        
+
                     $dir = substr($data['file']['tmp_name'], 0, $pos);
                     $file_name = substr($data['file']['tmp_name'], $pos);
 
@@ -162,7 +165,7 @@ class ImagesUploadModel extends Model
                 }
 
                 $data['original_mime'] = $this->_file['type'];
-                
+
                 switch($this->_file['type'])
                 {
                     case 'image/jpeg':
@@ -403,11 +406,11 @@ class ImagesUploadModel extends Model
 
     /**
      * Returns true when the file exists and is not a directory.
-     *      
+     *
      * @param string $file_name - contains file's name
-     *      
+     *
      * @author D. Wegner
-     * @author m.jutkiewicz     
+     * @author m.jutkiewicz
      */
     public function fileExists($filename)
     {
@@ -437,16 +440,16 @@ class ImagesUploadModel extends Model
 
     /**
      * Zwraca typ mime pliku na podstawie polecenia 'file'.
-     * 
+     *
      * @author p.piskorski
      * @author m.izewski
      * @author m.augustynowicz
      * @author m.jutkiewicz
      * WPISUJCIE MIASTA!
-     * 
+     *
      * @param string $file - nazwa pliku
      * @param string $path - katalog z plikiem, domyslnie UPLOAD_DIR
-     *      
+     *
      * @return string typ mime, null jezeli operacja sie nie powiedzie
      */
     public function getMIMETypeByFile($file, $path = UPLOAD_DIR)
@@ -473,7 +476,7 @@ class ImagesUploadModel extends Model
 
     /**
      * Returns mime type based on the extension.
-     * 
+     *
      * @author p.piskorski
      * @param string $suffix - identyfikator typu pliku/rozszerzenie
      * @return string mime type of 'false' if type is unknown
@@ -557,7 +560,7 @@ class ImagesUploadModel extends Model
     /**
      * Calculates the new dimensions of an image with keeping the scale.
      * @author m.jutkiewicz
-     * 
+     *
      * @return array The array of new and old dimensions.
      */
     protected function _calculateNewDimensions($w, $h)
@@ -565,7 +568,7 @@ class ImagesUploadModel extends Model
         $size = getimagesize($this->_file['tmp_name']);
         $width = $size[0];
         $height = $size[1];
-    
+
     	if($w > $width && $h > $height)
     	{
     		$new_w = $width;
@@ -574,7 +577,7 @@ class ImagesUploadModel extends Model
     	else
     	{
     		$fct = $width / $w;
-    
+
     		if($height / $fct > $h)
     		{
     			$fct = $height / $h;
