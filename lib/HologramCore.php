@@ -1711,7 +1711,7 @@ abstract class Controller extends HgBase implements IController
         if (strpos($_SERVER['SERVER_SOFTWARE'],'Win32'))
         {
             $glob = glob($path.'*');
-            if (basename($path) != @$glob[0])
+            if ($path != @$glob[0])
                 return false;
         }
 
