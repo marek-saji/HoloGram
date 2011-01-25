@@ -182,6 +182,13 @@
 #debug_toolbar #debug_toolbox li > a
 {
     display: block;
+    text-decoration: none;
+}
+#debug_toolbar #debug_toolbox li > a:hover,
+#debug_toolbar #debug_toolbox li > a:active,
+#debug_toolbar #debug_toolbox li > a:focus
+{
+    background-color: #ECECCA !important;
 }
 
 #foot_debug .errors_count
