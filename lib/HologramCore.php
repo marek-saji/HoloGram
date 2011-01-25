@@ -1695,6 +1695,30 @@ abstract class Controller extends HgBase implements IController
         return $ret;
     }
 
+
+    /**
+     * Checks whether file exists.
+     *
+     * Under windows also checks if file name case is the same.
+     * @author m.augustynowicz
+     *
+     * @param string $path file path
+     *
+     * @return bool success of operation
+     */
+    public function fileExists($path)
+    {
+        if (strpos($_SERVER['SERVER_SOFTWARE'],'Win32'))
+        {
+            $glob = glob($path.'*');
+            if (basename($path) != @$glob[0])
+                return false;
+        }
+
+        return file_exists($path);
+    }
+
+
     /**
      * Specifies URI to given file owned $this class.
      * First it checks if ClassBaseName/$file exists (base i.e. without suffix)
@@ -1754,7 +1778,7 @@ abstract class Controller extends HgBase implements IController
             {
                 // just in case. if we are requesting some js scripts w/ params
                 list($fn) = explode('?',sprintf($basef, $n.'/'.$file));
-                if (file_exists($fn))
+                if ($this->fileExists($fn))
                 {
                     if ($n)
                         $n .= '/';
