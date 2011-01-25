@@ -2050,11 +2050,15 @@ abstract class Controller extends HgBase implements IController
      * @author m.augustynowicz
      *
      * @param string|int $key name or index of a param
+     * @param mixed $default_value value to be used, when param is absent in request
      * @return string param value, null when it's not set
      */
-    public function getParam($key)
+    public function getParam($key, $default_value=null)
     {
-        return @$this->_params[$key];
+        if (array_key_exists($key, $this->_params))
+            return @$this->_params[$key];
+        else
+            return $default_value;
     }
 
 
