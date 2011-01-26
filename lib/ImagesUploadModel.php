@@ -128,7 +128,6 @@ class ImagesUploadModel extends Model
                 $data['maker'] = $exif['Make'];
                 $data['camera_model'] = $exif['Model'];
                 $data['focallength'] = $exif['FocalLength'];
-                var_dump($exif);
                 $exif['COMPUTED']['ApertureFNumber'] = str_replace(',', '.', $exif['COMPUTED']['ApertureFNumber']);
                 $data['aperturefnumber'] = $exif['COMPUTED']['ApertureFNumber'];
                 $data['isospeedratings'] = $exif['ISOSpeedRatings'];
@@ -299,6 +298,15 @@ class ImagesUploadModel extends Model
             break;
         }
 
+        return parent::_syncSingle($data, $action, $error);
+    }
+    
+    /**
+     * this action should allow you to ommit file handlig part of _syncSingle
+     * @author b.matuszewski
+     */
+    public function onlyDBSync(&$data, $action, &$error)
+    {
         return parent::_syncSingle($data, $action, $error);
     }
 
