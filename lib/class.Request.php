@@ -464,10 +464,23 @@ class Request extends HgBase
             return sprintf('%s://%s%s%s', $this->_protocol, $host, $this->_base_uri, $ctrl);
         }
     }
-    
-    public function getUrlPath()
+
+
+    /**
+     * Gets path to current page
+     * @author m.augustynowicz
+     *
+     * @param bool $absolute by defauly (false) url is returned
+     *        relative to base url
+     *
+     * @return string absolute or relative url
+     */
+    public function getUrlPath($absolute=false)
     {
-        return($this->_url_path);
+        if ($absolute)
+            return $this->getBaseUri(true) . $this->_url_path;
+        else
+            return $this->_url_path;
     }
 
 
