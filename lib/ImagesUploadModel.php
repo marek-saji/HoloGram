@@ -302,21 +302,25 @@ class ImagesUploadModel extends Model
     }
 
     /**
-     * this action should allow you to ommit file handlig part of _syncSingle
+     * copies row of ImagesUploadModel and related model
+     * also copies images to new directory
      * @author b.matuszewski
-     */
-    public function onlyDBSync(&$data, $action, &$error)
-    {
-        return parent::_syncSingle($data, $action, $error);
-    }
-
-    /**
-     * @param array $params
-     *    'model_name'
+     *
+     * @param array $params containig key
+     *    'model_name' - name of related model
      *    'id_in_model'
-     *    'hash_name'
-     *    'white_list'
-     *    'overwrites'
+     *    'hash_name' - name of FImageFile field in related model
+     *    'overwrites' - array of values you want to overwrite
+     *          for example
+     *          'model_name' => 'Photo'
+     *          'id_in_model' => $photo_id
+     *          'has_name' => 'image_hash'
+     *          'overwrites' => array('owner_id' => g()->auth->id())
+     *          will copy row of PhotoModel where id = {$photo_id}
+     *          but the row will be modified. owne_id of new photo would be
+     *          actually logged in user's id
+     *
+     * @return int|bool - id of compied row in related model or false on failure
      */
     public function hardCopy($params)
     {
@@ -369,9 +373,11 @@ class ImagesUploadModel extends Model
         $image_db_data['id'] = $target_hash;
         $errors = array();
         $sql = '';
-        $action = 'insert';
         if(!$sql = parent::_syncSingle($image_db_data, 'insert', $errors))
+        {
+            g()->debug->dump($errors);
             return false;
+        }
             
         if(!g()->db->execute($sql))
             return false;
@@ -389,7 +395,10 @@ class ImagesUploadModel extends Model
         {
             printf('<p class="debug">Creating directory <code>%s</code></p>', $source_path);
             if(!$mkdir)
+            {
                 echo '<p class="debug"><strong>failed</strong></p>';
+                return false;
+            }
         }
         foreach($image_files['sizes'] as $size)
         {
@@ -399,7 +408,11 @@ class ImagesUploadModel extends Model
                 printf('<p class="debug">copying file <code>%s</code><br />to <code>%s</code>', $source_file, $target_file);
             $copy = copy($source_file, $target_file);
             if($debug_allowed && !$copy)
+            {
                 echo '<p class="debug"><strong>failed</strong></p>';
+                return false;
+            }
+                
         }
         if($image_files['store_original'])
         {
@@ -410,7 +423,10 @@ class ImagesUploadModel extends Model
                 printf('<p class="debug">copying file <code>%s</code><br />to <code>%s</code>', $source_file, $target_file);
             $copy = copy($source_file, $target_file);
             if($debug_allowed && !$copy)
+            {
                 echo '<p class="debug"><strong>failed</strong></p>';
+                return false;
+            }
         }
             
         return $model->getData('id');
