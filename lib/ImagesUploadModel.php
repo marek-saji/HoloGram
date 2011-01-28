@@ -300,7 +300,7 @@ class ImagesUploadModel extends Model
 
         return parent::_syncSingle($data, $action, $error);
     }
-    
+
     /**
      * this action should allow you to ommit file handlig part of _syncSingle
      * @author b.matuszewski
@@ -308,6 +308,112 @@ class ImagesUploadModel extends Model
     public function onlyDBSync(&$data, $action, &$error)
     {
         return parent::_syncSingle($data, $action, $error);
+    }
+
+    /**
+     * @param array $params
+     *    'model_name'
+     *    'id_in_model'
+     *    'hash_name'
+     *    'white_list'
+     *    'overwrites'
+     */
+    public function hardCopy($params)
+    {
+        extract($params);
+        if(empty($model_name))
+            throw new HgException("Wrong params passed to ImagesUploadModel::hardCopy(). Mising field 'model_name'");
+        if(empty($id_in_model))
+            throw new HgException("Wrong params passed to ImagesUploadModel::hardCopy(). Mising field 'id_in_model'");
+        if(empty($hash_name))
+            throw new HgException("Wrong params passed to ImagesUploadModel::hardCopy(). Mising field 'hash_name'");
+        $overwrites = array_merge(
+            array(),
+            (array) @$overwrites
+        );
+
+        $this->filter(array(
+            'model' => $model_name,
+            'id_in_model' => $id_in_model
+        ));
+        if(!$this->getCount())
+            return false;
+            
+        $image_db_data = $this->getRow();
+        $surce_hash = $image_db_data['id'];
+        $f = g('Functions');
+        do
+        {
+            $target_hash = $f->generateKey();
+            $full_name = $this->getFullFileName($model_name, $target_hash);
+        }
+        while($this->fileExists($full_name));
+
+        $model = g($model_name, 'model');
+        $model->whiteListAll();
+        $db_data = $model->getRow($id_in_model);
+        if(!$db_data)
+            return false;
+
+        foreach($overwrites as $key => $val)
+            $db_data[$key] = $val;
+            
+        unset($db_data['id']);
+            
+        $db_data[$hash_name] = $target_hash;
+
+        $result = $model->sync($db_data, true, 'insert');
+        if(true !== $result)
+            return false;
+            
+        $image_db_data['id'] = $target_hash;
+        $errors = array();
+        $sql = '';
+        $action = 'insert';
+        if(!$sql = parent::_syncSingle($image_db_data, 'insert', $errors))
+            return false;
+            
+        if(!g()->db->execute($sql))
+            return false;
+            
+        if(g()->db->lastErrorMsg())
+            return false;
+
+        $image_files = $model->image_files;
+        $format = $image_files['format'];
+        $source_path = $this->getFullFileName($model_name, $surce_hash);
+        $target_path = $this->getFullFileName($model_name, $target_hash);
+        $debug_allowed = g()->debug->allowed();
+        $mkdir = mkdir($target_path, 0700, true);
+        if($debug_allowed)
+        {
+            printf('<p class="debug">Creating directory <code>%s</code></p>', $source_path);
+            if(!$mkdir)
+                echo '<p class="debug"><strong>failed</strong></p>';
+        }
+        foreach($image_files['sizes'] as $size)
+        {
+            $source_file = $source_path . '/' . $size . '.' . $image_files['format'];
+            $target_file = $target_path . '/' . $size . '.' . $image_files['format'];
+            if($debug_allowed)
+                printf('<p class="debug">copying file <code>%s</code><br />to <code>%s</code>', $source_file, $target_file);
+            $copy = copy($source_file, $target_file);
+            if($debug_allowed && !$copy)
+                echo '<p class="debug"><strong>failed</strong></p>';
+        }
+        if($image_files['store_original'])
+        {
+            $size = 'original';
+            $source_file = $source_path . '/' . $size . '.' . $image_files['format'];
+            $target_file = $target_path . '/' . $size . '.' . $image_files['format'];
+            if($debug_allowed)
+                printf('<p class="debug">copying file <code>%s</code><br />to <code>%s</code>', $source_file, $target_file);
+            $copy = copy($source_file, $target_file);
+            if($debug_allowed && !$copy)
+                echo '<p class="debug"><strong>failed</strong></p>';
+        }
+            
+        return $model->getData('id');
     }
 
     public function delete($execute = false)

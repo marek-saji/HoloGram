@@ -1918,7 +1918,6 @@ abstract class Model extends DataSet implements IModel
     protected function _syncSingle(&$data, $action, &$error)
     {
         // determining the action
-        
         if(isset($data['_action']))
             $action = $data['_action'];
             
