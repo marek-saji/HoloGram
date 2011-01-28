@@ -65,15 +65,17 @@ if ($err_handling) :
 </div>
 
 <?php
-if($ajax)
-{
-    g()->view->addOnLoad(<<< JS
-        $('#{$id}').submit(function(e)
+$ajax_json = json_encode($ajax);
+g()->view->addOnLoad(<<< JS
+    $('#{$id}').submit(function(e)
+    {
+        var form = $(this);
+        var msg = form.find('.sending-form-message');
+        var buttons = form.find('input[type="submit"], input[type="reset"]');
+        msg.show();
+
+        if ($ajax_json)
         {
-            var form = $(this);
-            var msg = form.find('.sending-form-message');
-            var buttons = form.find('input[type="submit"], input[type="reset"]');
-            msg.show();
             buttons
                 .attr('disabled', 'disabled')
                 .addClass('disabled');
@@ -95,10 +97,10 @@ if($ajax)
                 }
             }
             return ret;
-        });
+        }
+    });
 JS
-    );
-}
+);
 
 endif; // handle errors
 
