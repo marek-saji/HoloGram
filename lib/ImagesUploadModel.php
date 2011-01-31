@@ -369,8 +369,11 @@ class ImagesUploadModel extends Model
         $result = $model->sync($db_data, true, 'insert');
         if(true !== $result)
             return false;
+
+        $inserted_id = $model->getData('id');
             
         $image_db_data['id'] = $target_hash;
+        $image_db_data['id_in_model'] = $inserted_id;
         $errors = array();
         $sql = '';
         if(!$sql = parent::_syncSingle($image_db_data, 'insert', $errors))
@@ -429,7 +432,7 @@ class ImagesUploadModel extends Model
             }
         }
             
-        return $model->getData('id');
+        return $inserted_id;
     }
 
     public function delete($execute = false)
