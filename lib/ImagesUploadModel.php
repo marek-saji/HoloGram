@@ -84,7 +84,7 @@ class ImagesUploadModel extends Model
     {
         return $this->__upload_dir;
     }
-
+    
     protected function _syncSingle(&$data, $action, &$error)
     {
         $folder = $this->__upload_dir . $data['model'] . '/';
@@ -124,15 +124,15 @@ class ImagesUploadModel extends Model
 
                 //EXIF
                 $exif = exif_read_data($data['file']['tmp_name']);
-                $data['filedatatime'] = $exif['DateTimeOriginal'];
-                $data['maker'] = $exif['Make'];
-                $data['camera_model'] = $exif['Model'];
-                $data['focallength'] = $exif['FocalLength'];
-                $exif['COMPUTED']['ApertureFNumber'] = str_replace(',', '.', $exif['COMPUTED']['ApertureFNumber']);
-                $data['aperturefnumber'] = $exif['COMPUTED']['ApertureFNumber'];
-                $data['isospeedratings'] = $exif['ISOSpeedRatings'];
-                $data['height'] = $exif['COMPUTED']['Height'];
-                $data['width'] = $exif['COMPUTED']['Width'];
+                $data['filedatatime'] = @$exif['DateTimeOriginal'];
+                $data['maker'] = @$exif['Make'];
+                $data['camera_model'] = @$exif['Model'];
+                $data['focallength'] = @$exif['FocalLength'];
+                $exif['COMPUTED']['ApertureFNumber'] = str_replace(',', '.', @$exif['COMPUTED']['ApertureFNumber']);
+                $data['aperturefnumber'] = @$exif['COMPUTED']['ApertureFNumber'];
+                $data['isospeedratings'] = @$exif['ISOSpeedRatings'];
+                $data['height'] = @$exif['COMPUTED']['Height'];
+                $data['width'] = @$exif['COMPUTED']['Width'];
 
                 if(!($hash = @$data['id']))
                     do
