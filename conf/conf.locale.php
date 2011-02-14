@@ -2,19 +2,18 @@
 
 $conf['locale'] = array(
     // see: http://en.wikipedia.org/wiki/IETF_language_tag
-    'fallback'  => 'pl',
+    'fallback'  => 'en',
     // on *nix: find /usr/share/zoneinfo # (or similar)
     'time zone' => 'Europe/Warsaw',
 
     'date format' => array(
         'default' => 35, // see class.Functions.php for values
 
-        /*
         'days offsets' => array( // will be translated
-            0 => 'today',
-            32 => '32 days ago',
+            //0 => 'today',
+            //1 => 'yesterday',
+            //32 => '32 days ago',
         ),
-         */
 
         // strftime() format
         //'human time' => '%H:%M',
