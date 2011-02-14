@@ -7,17 +7,17 @@ abstract class DeveloperController extends PagesController
     protected $_files = array(__FILE__);
     protected $_title = null;
 
-
-    public function onAction($action, array & $params)
+    public function __construct(array $args)
     {
-        if (!g()->debug->allowed())
-        {
-            $this->redirect(array('HttpErrors', 'error404'));
-        }
-
         g()->db->lastErrorMsg(); // will initialize db
 
-        return true;
+        parent::__construct($args);
+    }
+
+
+    public function hasAccess($action, array &$params = array(), $just_checking=true)
+    {
+        return g()->debug->allowed(); // allow only in debug mode
     }
 
 
@@ -26,7 +26,7 @@ abstract class DeveloperController extends PagesController
      *
      * @param array $params none used
      */
-    public function defaultAction(array $params)
+    public function actionDefault(array $params)
     {
         $actions = array();
         foreach ($this->_files as & $file)
@@ -59,6 +59,7 @@ abstract class DeveloperController extends PagesController
      *   - create*()
      *   - populate*()
      *   - add*()
+     *   - update*()
      * @author m.augustynowicz
      *
      * @param array $params accepts "die" parameter
@@ -68,7 +69,7 @@ abstract class DeveloperController extends PagesController
         $this->_devActionBegin($params, __FUNCTION__);
 
         $all_methods = get_class_methods($this);
-        foreach (array('create', 'populate', 'add') as $suffix)
+        foreach (array('create', 'populate', 'add', 'update') as $suffix)
         {
             printf('<hr /><h2>%s* actions</h2>', $suffix);
             $regex = '/^action'.ucfirst($suffix).'/';
@@ -175,8 +176,8 @@ abstract class DeveloperController extends PagesController
                 $action = 'update';
                 $count = & $upd_count;
                 $row = array_merge(
-                    $row,
-                    array_intersect_key($existing, $filter_fields)
+                    $existing,
+                    $row
                 );
             }
             if (true !== $err = $model->sync($row, true, $action))

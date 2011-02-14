@@ -4,7 +4,8 @@ class Debug extends HgBase
 {
     static $singleton = true;
     protected $_session = null;
-    protected $_evil_monkeys = 0; // count of @
+    protected $_evil_monkeys_count = 0; // count of @
+    protected $_error_counts = array();
     protected $_old_error_handler = null;
 
     public function __construct()
@@ -216,10 +217,9 @@ class Debug extends HgBase
      * @param string $msg Message to display.
      * @param integer|array $trace if array given, it's being used instead
      *        of debug_backtrace(), if integer - debug_backtrace() gets shifted
-     * @param bool $show_context shall we show context (it may be quite big!)
      * @return void
      */
-    public function trace($msg = '', $trace=array(), $show_context=true)
+    public function trace($msg = '', $trace=array())
     {
         static $files = array();
 
@@ -294,9 +294,12 @@ JS;
         }
 
         // remember kids, pixel measurement in css is evil. but it's debug mode!
-        echo '<table style="font-size: 11px; border-spacing: 0; border: black double thin; border-width: 3px 3px 1px; margin: 1ex; background-color: white;">';
+        echo '<table style="font-size: 11px; border-spacing: 0; border: black double thin; border-width: 3px 3px 1px; margin: 1ex; background-color: white; text-align: left;">';
         if ($msg)
-            echo "<tr><td colspan=\"2\" style=\"background-color: #bbb\">$msg</td></tr>";
+        {
+            $attr_safe_msg = htmlspecialchars(strip_tags($msg));
+            echo "<tr><td colspan=\"2\" style=\"background-color: #bbb\" title=\"$attr_safe_msg\">$msg</td></tr>";
+        }
 
         $cell_style = 'style="border-bottom: thin solid black; padding: .1em; font-size: 11px"';
 
@@ -389,21 +392,6 @@ JS;
                 printf('<button title="suprised? ask saji how to get this working {;" onclick="hgDebugPost(\'/edit.php\', \'fn=%s&amp;l=%d\');">edit</button>', $call['file'], $call['line']);
                 echo '</pre>';
                 echo '</td></tr>';
-            }
-
-            if ($show_context && @$call['context'])
-            {
-                echo '<tr><td '.$cell_style.' colspan="2">';
-                if (! (defined('ENVIRONMENT') && ENVIRONMENT == LOCAL_ENV))
-                    print '(if you\'d be working in local environment, you could view context here)';
-                else if ((!g()->req) || g()->req->isAjax())
-                    print '(if it was not an AJAX call, you could view context here)';
-                else
-                {
-                    echo '<a href="javascript:void(0)" onclick="css=this.nextSibling.style; css.display=css.display==\'none\'?\'block\':\'none\'">toggle context visibility</a><pre style="display:none">';
-                    print_r($call['context']);
-                }
-                echo '</pre></td></tr>';
             }
 
             echo '</tbody>';
@@ -519,7 +507,7 @@ JS;
         // when debug is allowed error_reporting should indicate use of "@"
         if (!error_reporting())
         {
-            $this->_evil_monkeys++;
+            $this->_evil_monkeys_count++;
             return true;
         }
 
@@ -530,21 +518,27 @@ JS;
                 return true;
         }
 
-        static $err_consts = array(
+        static $err_consts = null;
+        if (null === $err_consts)
+        {
+            $err_consts = array(
                 E_ERROR => 'ERROR',
                 E_WARNING => 'WARNING',
                 E_NOTICE => 'NOTICE',
                 E_USER_WARNING => 'USER WARNING',
                 E_USER_NOTICE => 'USER NOTICE',
                 E_STRICT => 'STRICT STANDARDS ERROR',
-                /* php-5.3
-                E_DEPRECATED => 'DEPRECATED',
-                E_USER_DEPRECATED => 'USER DEPRECATED',
-                 */
             );
+            if (defined('E_DEPRECATED'))
+                $err_consts[E_DEPRECATED] = 'DEPRECATED';
+            if (defined('E_USER_DEPRECATED'))
+                $err_consts[E_USER_WARNING] = 'USER DEPRECATED';
+        }
 
         if (!$errtype = @$err_consts[$errno])
             $errtype = '<a href="http://php.net/manual/en/errorfunc.constants.php">ERR#'.$errno.'</a>';
+
+        @$this->_error_counts[strip_tags($errtype)]++;
 
         $msg = '<strong style="background-color:orange">['.$errtype.']</strong> '.$errstr;
         $trace = debug_backtrace();
@@ -561,14 +555,42 @@ JS;
     /**
      * Display pretty formatted and collapsable var_dump()
      * @todo make it awesome.
+     * @author m.augustynowicz
+     *
+     * @param mixed the same args as var_dump()
+     *
+     * @return mixed the same args as var_dump()
      */
     public function dump()
     {
         if (!$this->allowed())
             return;
 
+        static $has_cool_var_dump = null;
+        if (null === $has_cool_var_dump)
+        {
+            $ini_val = ini_get('xdebug.overload_var_dump');
+            if (false !== $ini_val)
+            {
+                // xdebug-2.1
+                $has_cool_var_dump = g('Functions')->anyToBool($ini_val);
+            }
+            else
+            {
+                // in previous versions, you can't really disable it
+                $has_cool_var_dump = function_exists('xdebug_enable');
+            }
+        }
+
         $argv = func_get_args();
-        return call_user_func_array('var_dump', $argv);
+
+        if (!$has_cool_var_dump)
+            echo '<pre style="text-align: left; font-family: monospace">';
+        $result = call_user_func_array('var_dump', $argv);
+        if (!$has_cool_var_dump)
+            echo '</pre>';
+
+        return $result;
     }
 
     /**
@@ -580,7 +602,34 @@ JS;
             return;
 
         echo '<pre style="border: silver solid thin">';
-        printf("<a href=\"http://google.com/images?q=evil+monkey\">evil monkeys</a> used: ~%d\n", $this->_evil_monkeys);
+
+        printf("<a href=\"http://google.com/images?q=evil+monkey\">evil monkeys</a> used: ~%d\n", $this->_evil_monkeys_count);
+
+        if (!empty($this->_error_counts))
+        {
+            echo '<div class="errors_count">';
+            echo "<em>Oh dear, there has been some errors:</em>\n";
+            ksort($this->_error_counts);
+            echo "<dl>";
+            foreach ($this->_error_counts as $errtype => $count)
+            {
+                printf("<dt>%s</dt><dd>%d</dd>", $errtype, $count);
+            }
+            echo "</dl>";
+            static $motivational_texts = array(
+                'make a world better place, fix them!',
+                'develop responsively, get rid of them!',
+                'not yours? be a collegue and nag their autor about it',
+                'you can fix it! I believe in you!',
+                'you better look into it, it may be something serious!',
+                'Live the EXTREME !!!!!!! Don\'t touch em!',
+                'Cherish it!',
+                'this is HOLOGRAM!!!!!!'
+            );
+            echo $motivational_texts[rand(0, sizeof($motivational_texts)-1)];
+            echo '</div><!-- .errors_count -->';
+        }
+
         echo '</pre>';
     }
 

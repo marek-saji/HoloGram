@@ -1,0 +1,131 @@
+/**
+ * Hide non-javascript-only content
+ */
+body.js .nojs
+{
+    display:                none;
+}
+
+/**
+ * Hide elements added for computer sematics
+ * (e.g. for satysfying microformats)
+ */
+.computer-semantic
+{
+    display:                none;
+}
+
+/**
+ * In less-than-or-equal developement environments,
+ * hightlight stuff that needs some styling.
+ */
+@-webkit-keyframes lookatme
+{
+    0%  { outline-color: #eb4242 }
+    50% { outline-color: #ebc6c6 }
+    0%  { outline-color: #eb4242 }
+}
+@-moz-keyframes lookatme
+{
+    0%  { outline-color: #eb4242 }
+    50% { outline-color: #ebc6c6 }
+    0%  { outline-color: #eb4242 }
+}
+@keyframes lookatme
+{
+    0%  { outline-color: #eb4242 }
+    50% { outline-color: #ebc6c6 }
+    0%  { outline-color: #eb4242 }
+}
+body.env-lte-test .needs-styling
+{
+    background-color: #fee;
+    outline: #eb4242 solid .25em;
+    -webkit-animation-name:            lookatme;
+    -webkit-animation-duration:        1s;
+    -webkit-animation-direction:       alternate;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-timing-function: ease-in-out;
+    -moz-animation-name:            lookatme;
+    -moz-animation-duration:        1s;
+    -moz-animation-direction:       alternate;
+    -moz-animation-iteration-count: infinite;
+    -moz-animation-timing-function: ease-in-out;
+    animation-name:            lookatme;
+    animation-duration:        1s;
+    animation-direction:       alternate;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+}
+body.env-lte-test .needs-styling::before
+{
+    content: 'gimme some style~';
+    font-weight: bold;
+    font-style: italic;
+    font-size: .8em;
+    color: #eb4242;
+    /* FIRE!! */
+    display: inline-block;
+    padding-top: 3em;
+    text-shadow: 0 0 .4em white, 0 -.5em .4em #FFFF33, .2em -1em .6em #FFDD33, -.2em -1.5em 1.1em #FF8800, .2em -2.5em 1.8em #FF2200;
+}
+
+
+/**
+ * hg.tooltip
+ */
+
+.tooltip_content
+{
+    display:                none;
+}
+
+/**
+ * hg.gmaps
+ */
+
+.gmap /* legacy */
+{
+    overflow:               auto;
+}
+.gmap_messages /* legacy */
+{
+    height:                 1.5em;
+}
+.map .map_messages
+{
+    min-height:             18px; /* space for loader gif */
+    background-color:       black;
+/*    border-radius:          .75em;
+    -moz-border-radius:     .75em;
+    -khtml-border-radius:   .75em;
+    -webkit-border-radius:  .75em;
+    -ie-border-radius:      expression(DD_roundies('.map-panel.map .map_messages', '16'));
+*/    opacity:                .7;
+}
+
+.gmap_messages .ajax_loading, /* legacy */
+.map .map_messages .loading
+{
+    padding:                8px 0 8px 20px;
+    background:             transparent url(../gfx/loading.gif) no-repeat scroll left center;
+    font-weight:            bold;
+}
+
+/**
+ * hg.helpval
+ */
+.helpval_active
+{
+    color:                  #888;
+    font-style:             italic;
+}
+
+/**
+ * modal windows
+ */
+.modaled
+{
+    display:                none;
+}
+

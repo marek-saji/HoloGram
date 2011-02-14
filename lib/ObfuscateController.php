@@ -3,9 +3,7 @@
  * @author b.matuszewski
  */
  
-g()->load('POPPages', 'controller');
-
-class ObfuscateController extends POPPagesController
+class ObfuscateController extends PagesController
 {
     public function actionAjaxDecode(array $params)
     {

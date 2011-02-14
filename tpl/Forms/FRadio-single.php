@@ -31,6 +31,7 @@ if (!isset($data))
     }
 }
 
+
 $input_vars = array_merge($____local_variables, array(
     'data' => $value,
     'err_handling' => false,
@@ -42,6 +43,7 @@ if (isset($data) && (string)$value === (string)$data)
 {
     $input_vars['attrs']['checked'] = 'checked';
 }
+
 
 
 // render

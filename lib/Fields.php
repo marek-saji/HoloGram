@@ -731,7 +731,7 @@ abstract class Field implements IModelField
                     $code = $this->_mess->get($this, 'invalid');
             }
         }
-        return ($error);
+        return (g()->first_controller->trans($error));
     }
 
     protected function _filterNulls($val)
@@ -806,7 +806,8 @@ abstract class FStringBase extends Field
         }
         else
         {
-            $length = strlen($value);
+            $value = str_replace("\r\n", "\n", $value);
+            $length = mb_strlen($value, 'utf-8');
             //null is not the same as an empty string
             //if(isset($this->_rules['notnull']) && $this->_rules['notnull'] && !$length)
             //  return true;
@@ -958,9 +959,9 @@ class FMD5String extends FString
 class FPassword extends FMD5String
 {
 
-    public function __construct($name, $min_length = null, $max_length = null)
+    public function __construct($name, $min_length = null, $max_length = null, $notnull = true)
     {
-        parent::__construct($name, true, $min_length, $max_length);
+        parent::__construct($name, $notnull, $min_length, $max_length);
     }
 
     public function dbString($value)
@@ -1012,7 +1013,7 @@ class FURL extends FString
             else if (!isset($this->_allowed_protocols[$matches[1]]))
                 $err['unsupported protocol'] = true;
 
-            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9]+)+)(?:\/|$)!', $value, $matches))
+            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?:\/|$)!', $value, $matches))
                 $err['syntax error'] = true;
 
             if (!function_exists('checkdnsrr'))
@@ -1170,18 +1171,21 @@ class FInt extends Field
     public function invalid(&$value)
     {
         $err = array();
-        if (NULL === $value || '' === $value)
-        {
-            if ($this->notNull())
-            {
-                $err['notnull'] = true;
-            }
-        }
-        else
+
+        // note that this will cast $value to string
+        $value = preg_replace('/ /', '', $value);
+
+        if ('' !== $value)
         {
             if (!g('Functions')->isInt($value))
                 $err['invalid'] = true;
         }
+        else
+        {
+            if ($this->notNull())
+                $err['notnull'] = true;
+        }
+
         return ($this->_errors($err, $value));
     }
 
@@ -1335,9 +1339,17 @@ class FEnum extends Field
      */
     public function columnDefinitionAdditionalQuery()
     {
-        $sql_values = "'".join("','", $this->_values)."'";
-        return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
-                $this->_type_name, $sql_values );
+        static $type_exists = array();
+        $checking_query = sprintf('SELECT COUNT(1) from pg_type WHERE typname = \'%s\'', pg_escape_string($this->_type_name));
+        if(! g()->db->getOne($checking_query) && !@$type_exists[$this->_type_name])
+        {
+            $type_exists[$this->_type_name] = true;
+            $sql_values = "'".join("','", $this->_values)."'";
+            return sprintf('CREATE TYPE "%s" AS ENUM (%s)',
+                    $this->_type_name, $sql_values );
+        }
+        else
+            return false;
     }
 }
 
@@ -1388,6 +1400,8 @@ class FFloat extends Field
             $res = array();
         if($def['typename'] != 'float' && $def['typename'] != 'float' . $this->_rules['precision'])
             $res['typename'] = $this->dbType();
+        else
+            unset($res['typename']);
         if($def['type_specific'] != '-1')
             $res['typename'] = $this->dbType();
         return (empty($res) ? false : $res);
@@ -2154,6 +2168,49 @@ class FFile extends FString
         }
         return $size;
     }
+
+    /**
+     * Invalidate file field
+     * @author j.rozanski
+     * @param not_known $value uploaded file array or md5 string
+     */
+    public function invalid(&$value)
+    {
+        $err = array();
+        if(is_array($value))
+        {
+            if($value['error'] != UPLOAD_ERR_OK)
+            {
+                if($value['error'] == UPLOAD_ERR_NO_FILE)
+                {
+                    if($this->notNull())
+                        $err['notnull'] = true;
+                }
+                else
+                    $err['invalid'] = true;
+            }
+        }
+        elseif(is_string($value))
+        {
+            // store max and min length as they are meant to be used as foregin key
+
+            $prev_rules = array(
+                'min_length' => $this->_rules['min_length'],
+                'max_length' => $this->_rules['max_length']
+            );
+            $this->_rules['min_length'] = $this->_rules['max_length'] = null;
+
+            $return = parent::invalid($value);
+
+            $this->_rules = array_merge(
+                $this->_rules,
+                $prev_rules
+            );
+
+            return $return;
+        }
+        return ($this->_errors($err, $value));
+    }
 }
 
 /**
@@ -2233,7 +2290,8 @@ class FoFunc extends FAnyType implements IEvalField
             'MAX($int:FInt)',
             'MAX($int:FBool)',
             'MAX($int:FString)',
-            'MAX($int:FTimestamp)'
+            'MAX($int:FTimestamp)',
+            'MAX($int:FFloat)',
         ),
         'count' => array(
             'res' => 'FString',
@@ -2254,10 +2312,13 @@ class FoFunc extends FAnyType implements IEvalField
         'sum' => array(
             'res' => 'FInt',
             'SUM($int:FInt)',
+            'SUM($int:FFloat)',
+            'SUM(CAST($int:FBool AS int))',
         ),        
         'avg' => array(
             'res' => 'FInt',
             'AVG($int:FInt)',
+            'AVG($int:FFloat)',
         ),        
         
     );
@@ -2448,12 +2509,20 @@ class FoBinaryChain extends FoChain implements IBoolean
 {
     /**
      * Constructor. Requires first two links of the chain. One can add other links with subsequent calls to also().
-     * @param $arg_1 The first argument
-     * @param $operator operator, currently one of: 'and','or'.
-     * @param @arg_2 The second argument.
+     *
+     * @param mixed $arg_1 The first operand; or operator if no other arguments given
+     * @param string $operator operator, currently one of: 'and','or'.
+     * @param mixed $arg_2 The second operand
      */
-    public function __construct($arg_1, $operator, $arg_2)
+    public function __construct($arg_1, $operator='AND', $arg_2=null)
     {
+        if (func_num_args()<2)
+        {
+            $operator = & $arg_1;
+            unset($arg_1);
+            $arg_1 = null;
+        }
+
         //$args = func_get_args();
         switch(strtoupper($operator))
         {
@@ -2465,10 +2534,9 @@ class FoBinaryChain extends FoChain implements IBoolean
                 throw new HgException("operator $operator is not supported");
         }
         $this->_glue = strtoupper($operator);
-        if(empty($arg_1) || empty($arg_2))
-            throw new HgException("Cannot pass empty operands to the FoChain constructor");
         $this->also($arg_1);
-        $this->also($arg_2);
+        if (func_num_args() > 2)
+            $this->also($arg_2);
     }
 
     /**
@@ -2501,14 +2569,22 @@ class FoBinaryChain extends FoChain implements IBoolean
      */
     public function generator()
     {
-        $curr = reset($this->_operands);
-        $res = '';
-        if($curr)
-            $res .= $curr->generator();
-            //else //var_dump($this);
-        while($curr = next($this->_operands))
-            $res .= "\n{$this->_glue} " . $curr->generator();
-        return ($res);
+        if (empty($this->_operands))
+        {
+            $res = "false /* '{$this->_glue}' chain with no operands */";
+        }
+        else
+        {
+            $curr = reset($this->_operands);
+            $res = "(\n";
+            if($curr)
+                $res .= $curr->generator();
+            while($curr = next($this->_operands))
+                $res .= "\n{$this->_glue}\n" . $curr->generator();
+            $res = str_replace("\n", "\n  ", $res);
+            $res .= "\n)";
+        }
+        return $res;
     }
 }
 
@@ -2536,6 +2612,7 @@ class FoBinary extends FCustomBoolean implements IEvalField, IBoolean
             '>=',
             '<=',
             '<>',
+            '!=',
             'LIKE',
             'ILIKE'
         )))
