@@ -104,7 +104,7 @@ class PaginatorController extends Component
      *
      * @param array $params URL params
      */
-    public function defaultAction(array $params)
+    public function actionDefault(array $params)
     {
         if(!$this->_current_page = (int)@$params[0])
             $this->_current_page = 1;
