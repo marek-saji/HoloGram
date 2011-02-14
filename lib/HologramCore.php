@@ -1147,8 +1147,9 @@ class Kernel
         {
             $this->debug->trace('redirect happens.');
             //printf("I'd like to redirect to %s, may I? <strong style=\"font-size: 2em\"><a href=\"%s\">yes</a></strong>, <a href=\"#\" onclick=\"alert('tought!');window.location.href='%s';return false;\">no</a>\n", $url, $url, $url);
-            printf('<div style="position:fixed;bottom:0;right:0;left:0;text-align:center;padding:1ex;font-size:1.2em;background-color:white;color:black;"><a id="redirect-link" href="%s" style="display:block;width:100%%;"><big>redirecting to <code>%s</code></big></a></div>',
+            printf('<div style="position:fixed;bottom:0;right:0;left:0;text-align:center;padding:.5em;font-size:1.2em;background-color:white;color:black;"><a id="redirect-link" href="%s" style="display:block;width:100%%;"><big>redirecting to <code>%s</code></big></a></div>',
                    $url, $url );
+            echo '<style type="text/css">body { padding-bottom: 3em; }</style>';
             echo '<script type="text/javascript">document.getElementById("redirect-link").focus();</script>';
         }
         else
