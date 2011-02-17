@@ -179,7 +179,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
                 }
             }
 
-            $dist = !empty($this->_whitelist) ? reset($this->_whitelist) : '1';
+            $dist = !empty($this->_whitelist) ? implode(",\n", $this->_whitelist) : '1';
             $sql = "SELECT\n  COUNT(1) FROM (";
             $sql .= "SELECT\n {$sql_tmp} " . $dist;
             $sql .= $this->_queryFrom();
