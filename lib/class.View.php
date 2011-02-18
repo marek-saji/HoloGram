@@ -60,6 +60,7 @@ class View extends HgBase implements IView
 
         $js_debug = g()->debug->on('js');
         $min = $js_debug ? '.min' : '';
+        $protocol = g()->req->isSSL() ? 'https://' : 'http://';
 
         // jQuery itself
 
@@ -74,8 +75,7 @@ class View extends HgBase implements IView
         }
         else
         {
-            $protocol = g()->req->isSSL() ? 'https' : 'http';
-            $this->addJs($protocol.'://ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
+            $this->addJs($protocol.'ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
         }
         /*
         // make jquery more verbal about errors and warnings
@@ -162,8 +162,7 @@ class View extends HgBase implements IView
             }
             else
             {
-                $protocol = g()->req->isSSL() ? 'https' : 'http';
-                $attrs['src'] = $protocol.'://html5shiv.googlecode.com/svn/trunk/html5.js';
+                $attrs['src'] = $protocol.'html5shiv.googlecode.com/svn/trunk/html5.js';
             }
             $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
                 $this->_tag('script', $attrs)
