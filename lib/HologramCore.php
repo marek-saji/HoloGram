@@ -1726,6 +1726,11 @@ abstract class Controller extends HgBase implements IController
                 $file .= '.'.$type;
                 $base_bases = array('htdocs/'.$type.'/%s');
                 break;
+            case 'less':
+                $file .= '.'.$type;
+                $type = 'css';
+                $base_bases = array('htdocs/'.$type.'/%s');
+                break;
             case 'gfx':
                 // filename suffix is not added here.
                 $base_bases = array('htdocs/gfx/%s');

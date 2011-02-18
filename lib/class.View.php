@@ -83,6 +83,16 @@ class View extends HgBase implements IView
             $this->addJs('http://github.com/jamespadolsey/jQuery-Lint/raw/master/jquery.lint.js');
          */
 
+
+        // Leaner CSS
+        // http://lesscss.org/
+        $lesscss_version = '1.0.41';
+        $lesscss_file = $this->_renderer->file(
+            "less-{$lesscss_version}.min", 'js', false
+        );
+        // it has to be plased under <links />
+        $this->addInHead("<script type='text/javascript' src='{$lesscss_file}'></script>");
+
         // our core javascript code (lazy loading etc)
         $this->addJs($this->_renderer->file('hg.core','js'));
         // nasty way to add hg.definitions from each alias
@@ -208,11 +218,11 @@ class View extends HgBase implements IView
 
         $this->_renderHeadJSInclusion(); // this adds something to $this->_head_code
 
-        $this->_renderHeadLiterals();
-
         $this->_renderHeadLinks();
 
         $this->_renderCSSCode();
+
+        $this->_renderHeadLiterals();
 
         $this->_renderHeadClose();
 
@@ -272,6 +282,44 @@ class View extends HgBase implements IView
         );
         return(true);
     }
+
+
+    /**
+     * Registers LESS stylesheet.
+     *
+     * When debug mode on, less is parsed with javascript,
+     * when off -- css file is used.
+     * @author m.augustynowicz
+     *
+     * @param string $file path to less file
+     * @param string $media media attribute
+     *
+     * @return bool true
+     */
+    public function addLess($file, $media="all")
+    {
+        if (g()->debug->on())
+            $rel = 'stylesheet/less';
+        else
+        {
+            $rel = 'stylesheet';
+            $file = preg_replace('/\.less$/', '.css', $file);
+        }
+
+        $key = 'css '.$file;
+        $this->_serializeLink($file);
+        $this->addLink(
+            $key,
+            array(
+                'type'  => 'text/css',
+                'media' => $media,
+                'rel'   => $rel,
+                'href'  => $file
+            )
+        );
+        return true;
+    }
+
     
     /**
     * Dodaje css wbudowany w html. 
