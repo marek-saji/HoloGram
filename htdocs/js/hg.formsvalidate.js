@@ -184,7 +184,7 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
 
             // handle .validatables_container class
             form
-                .find('.validatables_container')
+                .find('.validatables_container, .field')
                     .each(function(){
                         var me = $(this);
                         var invalid = (0 != me.find('.invalid').length);
