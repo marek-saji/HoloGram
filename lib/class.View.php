@@ -62,39 +62,94 @@ class View extends HgBase implements IView
         $min = $js_debug ? '.min' : '';
         $protocol = g()->req->isSSL() ? 'https://' : 'http://';
 
-        // jQuery itself
+        foreach (g()->conf['js-libs'] as $conf)
+        {
+            // prevent from loading
+            if (@$conf['autoload'] === false)
+                continue;
 
-        $jquery_version = '1.4.3';
-        // this will raise a warning, when file is absent. we should check for
-        // that, even when using extarnal CDNs
-        $jquery_file = $this->_renderer->file(
-                'jquery-'.$jquery_version.$min, 'js', false );
-        if (!$this->useExternalCDN())
-        {
-            $this->addJs($jquery_file);
+            // use only in debug
+            if (array_key_exists('debug', $conf))
+            {
+                if ($js_debug != $conf['debug'])
+                    continue;
+            }
+
+            // use only when rendering HTML5
+            if (array_key_exists('html5', $conf))
+            {
+                if ($this->_is_html5 != $conf['html5'])
+                    continue;
+            }
+
+            // determine part of file name for minified version
+            if (array_key_exists('min', $conf))
+                $this_min = $conf['min'];
+            else
+                $this_min = $min;
+            $filepath = false;
+            $ver = @$conf['version'];
+            // local copy
+            if ($conf['filename'])
+            {
+                $filename = sprintf($conf['filename'], $ver, $this_min);
+                $filepath = $this->_renderer->file($filename, 'js', false);
+            }
+            // CDN
+            if (@$conf['cdn_path'] && $this->useExternalCDN())
+            {
+                $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
+            }
+
+            if ($filepath)
+            {
+                $this->addJs($filepath, @$conf['ie']);
+
+                if (@$conf['onload'])
+                {
+                    $this->addOnLoad($conf['onload']);
+                }
+
+                // linked css file
+                if (@$conf['css'])
+                {
+                    $conf = $conf['css'];
+                    $filepath = false;
+                    // local copy
+                    if ($conf['filename'])
+                    {
+                        $filename = sprintf($conf['filename'], $ver, $this_min);
+                        $filepath = $this->_renderer->file($filename, 'css', false);
+                    }
+                    // CDN
+                    if (@$conf['cdn_path'] && $this->useExternalCDN())
+                    {
+                        $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
+                    }
+
+                    if ($filepath)
+                    {
+                        $this->addCss($filepath);
+                    }
+                }
+            }
         }
-        else
-        {
-            $this->addJs($protocol.'ajax.googleapis.com/ajax/libs/jquery/'.$jquery_version.'/jquery'.$min.'.js');
-        }
-        /*
-        // make jquery more verbal about errors and warnings
+        unset($conf, $this_min, $filepath, $ver, $filename);
+
+
         if ($js_debug)
-            $this->addJs('http://github.com/jamespadolsey/jQuery-Lint/raw/master/jquery.lint.js');
-         */
+        {
+            // Leaner CSS
+            // http://lesscss.org/
+            $lesscss_version = '1.0.41';
+            $lesscss_file = $this->_renderer->file(
+                "less-{$lesscss_version}.min", 'js', false
+            );
+            // it has to be plased under <links />
+            $this->addInHead("<script type='text/javascript' src='{$lesscss_file}'></script>");
+        }
 
 
-        // Leaner CSS
-        // http://lesscss.org/
-        $lesscss_version = '1.0.41';
-        $lesscss_file = $this->_renderer->file(
-            "less-{$lesscss_version}.min", 'js', false
-        );
-        // it has to be plased under <links />
-        $this->addInHead("<script type='text/javascript' src='{$lesscss_file}'></script>");
-
-        // our core javascript code (lazy loading etc)
-        $this->addJs($this->_renderer->file('hg.core','js'));
         // nasty way to add hg.definitions from each alias
         global $DIRS;
         $base_uri = g()->req->getBaseUri();
@@ -111,73 +166,6 @@ class View extends HgBase implements IView
             $this->addJs($uri);
         }
 
-        if ($js_debug)
-        {
-            // Firefox Light, for those who can't do magic tricks for themselves
-            switch (true)
-            {
-                case strpos($_SERVER['HTTP_USER_AGENT'],'Firefox') :
-                case strpos($_SERVER['HTTP_USER_AGENT'],'Gecko') :
-                case strpos($_SERVER['HTTP_USER_AGENT'],'Chrome') :
-                case strpos($_SERVER['HTTP_USER_AGENT'],'Chromium') :
-                case strpos($_SERVER['HTTP_USER_AGENT'],'Safari') :
-                case strpos($_SERVER['HTTP_USER_AGENT'],'Presto') :
-                    break;
-                default :
-                    $this->addJs('http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js');
-            }
-        }
-
-
-        // Uniform: sexy forms with jQuery
-        // http://pixelmatrixdesign.com/uniform/
-        if (!g()->debug->on('disable', 'uniform'))
-        {
-            $uniform_version = '1.5';
-            $uniform_fn = sprintf('jquery.uniform-%s%s', $uniform_version, $min);
-            $this->addJs($this->_renderer->file($uniform_fn, 'js'));
-            // uniform these form elements
-            $this->addOnLoad('$(":checkbox.hg:not(.prevent_uniform), :radio.hg, select.hg").uniform();');
-        }
-
-
-        // these things below should make IE behave a litte better
-
-        // fix for IE and tip floats in holoforms
-        $this->addOnLoad('$(".holoform li.field").css({
-            "z-index"  : function(i){ return 99999-i; },
-            "position" : "relative"
-        });');
-
-        // ie-css3 javascript library: fix some CSS selectors
-        // http://www.keithclark.co.uk/labs/ie-css3/
-        // NOTE: there's also ie-css3 htc adding support for some attributes
-        //       laying in css/
-        //       http://fetchak.com/ie-css3/
-
-        $ie_css3_js_version = '0.9.7b';
-        $ie_css3_js_fn = sprintf('ie-css3-%s.min', $ie_css3_js_version);
-        $this->addJs($this->_renderer->file($ie_css3_js_fn,'js'));
-
-        // fixing HTML5 in less-keen browsers
-        if ($this->_is_html5)
-        {
-            // html5.js is for, well.. html5
-            // http://code.google.com/p/html5shiv/
-
-            $html5_shiv_file = $this->_renderer->file('html5','js');
-            if (!$this->useExternalCDN())
-            {
-                $attrs['src'] = $html5_shiv_file;
-            }
-            else
-            {
-                $attrs['src'] = $protocol.'html5shiv.googlecode.com/svn/trunk/html5.js';
-            }
-            $this->addInHead(sprintf("<!--[if IE]>\n%s<![endif]-->",
-                $this->_tag('script', $attrs)
-            ));
-        }
     }
 
     /**
@@ -660,7 +648,7 @@ class View extends HgBase implements IView
                 $env_classes
             );
         // add js class to body, if javascript is present
-        echo '<script type="text/javascript">document.getElementsByTagName("body")[0].className = document.getElementsByTagName("body")[0].className.replace(/ nojs /, " js ");</script>';
+        echo '<script type="text/javascript">(function(b){b.className=b.className.replace(/ nojs /, " js ");})(document.getElementsByTagName("body")[0]);</script>'."\n";
 
         if (g()->debug->allowed())
         {
@@ -836,7 +824,7 @@ class View extends HgBase implements IView
         {
             if (@$js['ie'])
             {
-                echo "<!--[if {$js['ie']}]>\n";
+                echo "  <!--[if {$js['ie']}]>\n  ";
             }
 
             $attrs = array('type' => 'text/javascript',
@@ -845,7 +833,7 @@ class View extends HgBase implements IView
 
             if (@$js['ie'])
             {
-                echo "<![iendif]-->\n";
+                echo "  <![iendif]-->\n";
             }
 
         }
