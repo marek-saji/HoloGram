@@ -329,17 +329,28 @@ class View extends HgBase implements IView
     {
         $this->_inl_csses[] = $css_code;
     }    
-    
+
+
     /**
-    * Dodaje zewnetrzny skrypt. 
-    */
-    public function addJs($file)
+     * Registers javascript file for inclusion
+     * @author m.augustynowicz
+     *
+     * @param string $file javascript file URL
+     * @param bool|string $ie IE conditional or false
+     *
+     * @return void
+     */
+    public function addJs($file, $ie=false)
     {
         $key = $file;
         $this->_serializeLink($file);
-        $this->_jses[$key] = $file;
+        $this->_jses[$key] = array(
+            'url' => $file,
+            'ie' => $ie
+        );
     }
-    
+
+
     /**
     * Dodaje skrypt wbudowany w strone. 
     */
@@ -821,11 +832,22 @@ class View extends HgBase implements IView
     protected function _renderHeadJSInclusion()
     {
         // display
-        foreach ($this->_jses as &$l)
+        foreach ($this->_jses as &$js)
         {
+            if (@$js['ie'])
+            {
+                echo "<!--[if {$js['ie']}]>\n";
+            }
+
             $attrs = array('type' => 'text/javascript',
-                           'src'  => $l );
+                           'src'  => $js['url'] );
             echo $this->_tag('script', $attrs);
+
+            if (@$js['ie'])
+            {
+                echo "<![iendif]-->\n";
+            }
+
         }
 
     }
