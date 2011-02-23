@@ -29,12 +29,16 @@ if (!$id)
 
 $err_id = $id . '__err';
 if ((@$errors) && is_array($errors))
-    $errors = implode(', ', $errors);
+    $errors = implode('</li><li>', $errors);
 else
     $errors = '';
 
-printf('<span class="field_error" id="%s" style="%s">%s</span>',
-         $err_id, ($errors?'':'display:none'), $errors );
+printf(
+    '<ol class="field_error" id="%s" style="%s">%s</ol>',
+    $err_id,
+    $errors ? '' : 'display:none',
+    $errors ? "<li>{$errors}</li>" : ''
+);
 if($ajax)
     $v->addOnLoad('$(\'#'.$id.'\').'.$js_event.'(function(){return hg("input_validate")(this);})');
 

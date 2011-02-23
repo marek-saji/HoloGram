@@ -121,7 +121,7 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                         
                         /**
                          * checking if last element from a set of inputs has attr('id')
-                         * if so then we take it with suffix '_err' to find field_error
+                         * if so then we take it with suffix '_err' to find nield_error
                          * label container.
                          * if not we try to find first input haveing id
                          *
@@ -154,8 +154,12 @@ hg['input_validate'].f = function(input, err, form, whole_form, no_id)
                     else
                     {
                         invalid_fields = invalid_fields.add(field_input);
+                        err.html('');
+                        for (var i in values)
+                        {
+                            $('<li />', {html: values[i]}).appendTo(err);
+                        }
                         err
-                            .html(values.join(', '))
                             .fadeIn('fast');
                         field_input
                             .addClass('invalid')
