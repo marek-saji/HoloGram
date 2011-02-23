@@ -114,12 +114,20 @@ class View extends HgBase implements IView
                 if (@$conf['css'])
                 {
                     $conf = $conf['css'];
+
+                    $stylesheet = 'css';
+                    if (array_key_exists('less', $conf))
+                    {
+                        if ($conf['less'])
+                            $stylesheet = 'less';
+                    }
+
                     $filepath = false;
                     // local copy
                     if ($conf['filename'])
                     {
                         $filename = sprintf($conf['filename'], $ver, $this_min);
-                        $filepath = $this->_renderer->file($filename, 'css', false);
+                        $filepath = $this->_renderer->file($filename, $stylesheet, false);
                     }
                     // CDN
                     if (@$conf['cdn_path'] && $this->useExternalCDN())
@@ -129,7 +137,10 @@ class View extends HgBase implements IView
 
                     if ($filepath)
                     {
-                        $this->addCss($filepath);
+                        if ('css' == $stylesheet)
+                            $this->addCss($filepath);
+                        else if ('less' == $stylesheet)
+                            $this->addLess($filepath);
                     }
                 }
             }
