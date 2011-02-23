@@ -1008,27 +1008,39 @@ class FURL extends FString
 
         if(($this->notNull() && NULL !== $value) || (!$this->notNull() && $value != NULL))
         {
-            if (!preg_match('!^([a-zA-Z]+)://!', $value, $matches))
-                $value = $this->_default_protocol . '://' . $value;
-            else if (!isset($this->_allowed_protocols[$matches[1]]))
-                $err['unsupported protocol'] = true;
+            if (preg_match('!^([a-zA-Z]+)://!', $value, $matches))
+            {
+                $protocol = $matches[1];
+            }
+            else
+            {
+                $protocol = $this->_default_protocol;
+                $value = $protocol . '://' . $value;
+            }
 
             if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?:\/|$)!', $value, $matches))
+            {
                 $err['syntax error'] = true;
-
-            if (!function_exists('checkdnsrr'))
-            {
-                if (g()->debug->allowed())
-                    g()->addInfo('checkdnsrr not available', 'debug', 'PHP function checkdnsrr() is not available!');
             }
-            else if ($this->_check_dns_records)
+            else
             {
-                foreach ($this->_check_dns_records as $dnsr)
+                if (!isset($this->_allowed_protocols[$protocol]))
+                    $err['unsupported protocol'] = true;
+
+                if (!function_exists('checkdnsrr'))
                 {
-                    if (!checkdnsrr($matches[1].'.', $dnsr))
+                    if (g()->debug->allowed())
+                        g()->addInfo('checkdnsrr not available', 'debug', 'PHP function checkdnsrr() is not available!');
+                }
+                else if ($this->_check_dns_records)
+                {
+                    foreach ($this->_check_dns_records as $dnsr)
                     {
-                        $err['no dns record'] = true;
-                        break;
+                        if (!checkdnsrr($matches[1].'.', $dnsr))
+                        {
+                            $err['no dns record'] = true;
+                            break;
+                        }
                     }
                 }
             }
