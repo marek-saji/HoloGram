@@ -13,7 +13,9 @@
  */
 extract(array_merge(
         array(
-            'label'  => null
+            'label'  => null,
+            'err_handling' => false,
+            'validate_js_event' => 'change',
         ),
         (array) $____local_variables
     ));
@@ -44,12 +46,18 @@ if ($label)
     printf("<label for=\"%s\">\n", $id);
 }
 
-$return_me = $t->inc('Forms/input', $____local_variables);
+$attrs = $t->inc('Forms/input', array('err_handling'=>false) + $____local_variables);
 
 if ($label)
 {
     printf("%s\n</label>\n", $label);
 }
 
-return $return_me;
+$id = $attrs['id'];
+$js_event = $validate_js_event;
+$err_attrs = $t->inc('Forms/errors', compact('id', 'ajax', 'err_handling', 'js_event', 'errors'));
+if (is_array($err_attrs))
+    $attrs = array_merge($err_attrs, $attrs);
+
+return $attrs;
 
