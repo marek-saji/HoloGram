@@ -653,10 +653,13 @@ class View extends HgBase implements IView
         if (ENVIRONMENT <= TEST_ENV)
             $env_classes .= ' env-lte-test';
 
-        printf("<body class=\" nojs %s %1\$s__%s %s\">\n",
+        $debug_class = g()->debug->on('view') ? 'debug_enabled' : '';
+
+        printf("<body class=\" nojs %s %1\$s__%s %s %s\">\n",
                 $this->_renderer->getName(),
                 $this->_renderer->getLaunchedAction(),
-                $env_classes
+                $env_classes,
+                $debug_class
             );
         // add js class to body, if javascript is present
         echo '<script type="text/javascript">(function(b){b.className=b.className.replace(/ nojs /, " js ");})(document.getElementsByTagName("body")[0]);</script>'."\n";
