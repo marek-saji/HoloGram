@@ -8,36 +8,18 @@
  * @author m.augustynowicz
  */
 
-// defining the environment (where are we?)
 define('LOCAL_ENV', 0);
 define('DEV_ENV',   1);
 define('TEST_ENV',  2);
 define('PROD_ENV',  3);
-switch (true)
-{
-    # our beloved dev machines
-    case preg_match('/^192\.168\.0\./', $_SERVER['REMOTE_ADDR']) :
-        define('ENVIRONMENT', DEV_ENV);
-        error_reporting(E_ALL|E_STRICT); // to prevent white-screen-of-death situations.
-        break;
-    # "there's no place like 127.0.0.1"
-    case '127.0.0.1' == $_SERVER['REMOTE_ADDR'] :
-    // makes sense, when detecting DEV environment is by exact IP
-    //# local network: developing remotely?
-    //case preg_match('/^192\.168\.0\./', $_SERVER['REMOTE_ADDR']) :
-        define('ENVIRONMENT', LOCAL_ENV);
-        error_reporting(E_ALL|E_STRICT); // to prevent white-screen-of-death situations.
-        break;
-    # test hostnames
-    case preg_match('/(^|\.)test\./', $_SERVER['HTTP_HOST']) :
-        define('ENVIRONMENT', TEST_ENV);
-        error_reporting(0);
-        break;
-    # production environment
-    default :
-        define('ENVIRONMENT', PROD_ENV);
-        error_reporting(0);
-}
+
+$env_const = strtoupper(getenv('HG_ENVIRONMENT')).'_ENV';
+define('ENVIRONMENT', defined($env_const) ? constant($env_const) : PROD_ENV);
+
+if (ENVIRONMENT >= TEST_ENV)
+    error_reporting(0);
+else
+    error_reporting(E_ALL|E_STRICT);
 
 #
 # NOTICE:

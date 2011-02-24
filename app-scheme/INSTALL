@@ -2,9 +2,6 @@
  # checkout app:
    svn clone .../hg-app/.../src src/
 
- # edit src/app/htdocs/index.php
-   # update local, dev and test IPs/hostnames
-
  # checkout hologram:
    git clone .../hg/... src/hg/
 
