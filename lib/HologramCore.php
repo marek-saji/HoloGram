@@ -1157,9 +1157,10 @@ class Kernel
      * @author m.augustynowicz
      *
      * @param string $prefix optionally add this before file names
+     * @param string $glob globe used to match files
      * @return void
      */
-    public function readConfigFiles($prefix = '')
+    public function readConfigFiles($prefix = '', $glob='conf*')
     {
         // read from these directories
         $configDirs = array();
@@ -1176,7 +1177,7 @@ class Kernel
         foreach ($configDirs as $configDir)
         {
             $confDir = rtrim($configDir,'/').'/';
-            $patterns = array($confDir.$prefix.'conf*php');
+            $patterns = array($confDir.$prefix.$glob.'.php');
 
             $confAll = array();
             foreach ($patterns as $pattern)
