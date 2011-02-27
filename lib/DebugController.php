@@ -235,11 +235,12 @@ class DebugController extends TrunkController
      * Produce URLs that can be handled by process()
      * @param string $act action name
      * @param array $params action's params
+     * @param boolean $with_host should produced URL contain host name?
      * @return string
      */
-    public function url2a($act='', array $params=array())
+    public function url2a($act='', array $params=array(), $with_host=false)
     {
-        return parent::url2c(ucfirst($this->getName()), $act, $params);
+        return parent::url2c(ucfirst($this->getName()), $act, $params, $with_host);
     }
 
 }
