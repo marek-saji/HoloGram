@@ -413,7 +413,7 @@ interface IView
     public function getTitle();
 
     public function getMeta($tag);
-    public function setMeta($tag,$value);
+    public function setMeta($name_or_attrs, $value=null, $meta_name = 'name');
 
     /**
      * Registers HTTP header.
