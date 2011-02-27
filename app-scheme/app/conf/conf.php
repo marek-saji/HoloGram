@@ -3,8 +3,17 @@
  * Technical settings
  */
 
-// even consider the idea of debug mode being enabled
-$conf['allow_debug'] = true;
+// even consider the idea of debug mode being enabled?
+switch (getenv('HG_ENVIRONMENT'))
+{
+    case 'LOCAL' :
+    case 'DEV' :
+    //case 'TEST' :
+        $conf['allow_debug'] = true;
+        break;
+    default :
+        $conf['allow_debug'] = false;
+}
 
 $conf['controllers']['lib']['default'] = 'Main';
 $conf['controllers']['debug']['sub'] = array (
