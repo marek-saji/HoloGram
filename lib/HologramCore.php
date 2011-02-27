@@ -2119,6 +2119,8 @@ abstract class Controller extends HgBase implements IController
 
         $attrs['href'] = call_user_func_array(array($this,'url2c'), $argv);
 
+        $contens = $this->trans($contents);
+
         return $this->_l2sth($contents, $attrs);
     }
 
