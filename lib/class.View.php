@@ -378,13 +378,16 @@ class View extends HgBase implements IView
     public function setDescription($desc)
     {
         $this->setMeta('description', $desc);
+        $this->setMeta('og:description', $desc, 'property');
     }
 
     public function setTitle($title)
     {
         $this->_title = $title;
-    }    
-    
+        $this->setMeta('og:title', $title, 'property');
+    }
+
+
     public function getTitle()
     {
         return $this->_title;
@@ -770,10 +773,6 @@ class View extends HgBase implements IView
         {
             $title = htmlspecialchars(strip_tags($this->_title));
             echo $this->_tag('title', $NULL, $title);
-            $this->setMeta(array(
-                'property' => 'og:title',
-                'content'  => $title
-            ));
         }
 
         # <meta name="..
