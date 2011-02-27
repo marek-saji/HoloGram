@@ -2212,12 +2212,13 @@ abstract class Controller extends HgBase implements IController
      *
      * @param string $act action's name
      * @param array $params action's parameters
+     * @param boolean $with_host should produced URL contain host name?
      * @return string
      */
-	public function url2a($act='', array $params=array())
+	public function url2a($act='', array $params=array(), $with_host=false)
 	{
         // null means current controller
-        return $this->url2c(null, $act, $params);
+        return $this->url2c(null, $act, $params, $with_host);
     }
 
 
