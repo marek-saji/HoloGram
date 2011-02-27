@@ -411,7 +411,7 @@ class View extends HgBase implements IView
      *
      * @return void
      */
-    public function setMeta($name_or_attrs,$value,$meta_name = 'name')
+    public function setMeta($name_or_attrs, $value=null, $meta_name = 'name')
     {
         if(is_array($name_or_attrs))
         {
@@ -606,7 +606,7 @@ class View extends HgBase implements IView
             printf("<html lang=\"%s\">\n", $lang);
         else
         {
-            printf("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"%s\" lang=\"%1\$s\">\n",
+            printf("<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:og=\"http://ogp.me/ns#\" xml:lang=\"%s\" lang=\"%1\$s\">\n",
                     $lang);
         }
     }
@@ -770,6 +770,10 @@ class View extends HgBase implements IView
         {
             $title = htmlspecialchars(strip_tags($this->_title));
             echo $this->_tag('title', $NULL, $title);
+            $this->setMeta(array(
+                'property' => 'og:title',
+                'content'  => $title
+            ));
         }
 
         # <meta name="..
