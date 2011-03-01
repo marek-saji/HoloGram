@@ -28,11 +28,16 @@ class TextView extends View
 
         $this->setEncoding();
 
-        $this->_figlet('hologramCLI', false);
-        printf(" %s v%s\n",
-                g()->conf['site_name'],
-                g()->conf['version']
-            );
+        $this->_sendHeaders();
+
+        if (g()->debug->allowed())
+        {
+            $this->_figlet('hologramCLI', false);
+            printf(" %s v%s\n",
+                    g()->conf['site_name'],
+                    g()->conf['version']
+                );
+        }
 
         if (g()->prerender_echo)
         {
@@ -46,8 +51,12 @@ class TextView extends View
         }
 
         echo $contents;
-        $this->_figlet('bye', false);
-        echo "  bye\n";
+
+        if (g()->debug->allowed())
+        {
+            $this->_figlet('bye', false);
+            echo "  bye\n";
+        }
     }
 
     /**
@@ -64,7 +73,7 @@ class TextView extends View
 
         $this->_encoding = $enc;
         $header = 'Content-type';
-        $value  = 'application/json; charset='.$enc;
+        $value  = 'text/plain; charset='.$enc;
         $this->addHeader($header, $value);
     }
 
