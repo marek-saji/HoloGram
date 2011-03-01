@@ -1296,14 +1296,30 @@ class Functions extends HgBase
      * @param string $name
      * @param array $attr
      * @param null|string $value passing no value renders <tag />
+     * @param string $type when rendering non-self-closing tag, can specify
+     *        "open", "close" or "both"
      * @return string
      */
-    public function tag($name, array $attr=array(), $value=null)
+    public function tag($name, array $attr=array(), $value=null, $type='both')
     {
-        if (func_num_args() > 2)
-            $fmt = '<%s %s>%s</%1$s>';
-        else
+        if (func_num_args() <= 2)
+        {
             $fmt = '<%s %s />';
+        }
+        else
+        {
+            switch (substr(strtolower($type), 0, 4))
+            {
+                case 'open' :
+                    $fmt = '<%s %s>';
+                    break;
+                case 'clos' :
+                    $fmt = '</%s>';
+                    break;
+                default :
+                    $fmt = '<%s %s>%s</%1$s>';
+            }
+        }
 
         return sprintf($fmt, $name, $this->xmlAttr($attr), $value);
     }
