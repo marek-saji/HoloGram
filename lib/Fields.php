@@ -1018,7 +1018,7 @@ class FURL extends FString
                 $value = $protocol . '://' . $value;
             }
 
-            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?:\/|$)!', $value, $matches))
+            if (!preg_match('!^[a-zA-Z]+://([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?::[0-9]+)?(?:/|$)!', $value, $matches))
             {
                 $err['syntax error'] = true;
             }
