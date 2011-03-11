@@ -84,7 +84,7 @@ class View extends HgBase implements IView
 
             // determine part of file name for minified version
             if (array_key_exists('min', $conf))
-                $this_min = $conf['min'];
+                $this_min = $js_debug ? '' : $conf['min'];
             else
                 $this_min = $min;
             $filepath = false;
@@ -92,14 +92,29 @@ class View extends HgBase implements IView
             // local copy
             if ($conf['filename'])
             {
-                $filename = sprintf($conf['filename'], $ver, $this_min);
+                if ($min && @$conf['min_filename'])
+                {
+                    $filename = sprintf($conf['min_filename'], $ver);
+                }
+                else
+                {
+                    $filename = sprintf($conf['filename'], $ver, $this_min);
+                }
                 $filepath = $this->_renderer->file($filename, 'js', false);
             }
             // CDN
             if (@$conf['cdn_path'] && $this->useExternalCDN())
             {
-                $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
+                if ($min && @$conf['min_cdn_path'])
+                {
+                    $filepath = sprintf($conf['min_cdn_path'], $protocol, $ver);
+                }
+                else
+                {
+                    $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
+                }
             }
+            var_dump("$filename ~~ $filepath");
 
             if ($filepath)
             {
@@ -126,13 +141,27 @@ class View extends HgBase implements IView
                     // local copy
                     if ($conf['filename'])
                     {
-                        $filename = sprintf($conf['filename'], $ver, $this_min);
+                        if ($min && @$conf['min_filename'])
+                        {
+                            $filename = sprintf($conf['min_filename'], $ver);
+                        }
+                        else
+                        {
+                            $filename = sprintf($conf['filename'], $ver, $this_min);
+                        }
                         $filepath = $this->_renderer->file($filename, $stylesheet, false);
                     }
                     // CDN
                     if (@$conf['cdn_path'] && $this->useExternalCDN())
                     {
-                        $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
+                        if ($min && @$conf['min_cdn_path'])
+                        {
+                            $filepath = sprintf($conf['min_cdn_path'], $protocol, $ver);
+                        }
+                        else
+                        {
+                            $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
+                        }
                     }
 
                     if ($filepath)
