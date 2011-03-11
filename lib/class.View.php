@@ -114,7 +114,6 @@ class View extends HgBase implements IView
                     $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
                 }
             }
-            var_dump("$filename ~~ $filepath");
 
             if ($filepath)
             {
@@ -879,7 +878,7 @@ class View extends HgBase implements IView
 
             if (@$js['ie'])
             {
-                echo "  <![iendif]-->\n";
+                echo "  <![endif]-->\n";
             }
 
         }
