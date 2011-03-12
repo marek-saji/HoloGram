@@ -191,19 +191,34 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
 		$this->_count = g()->db->getOne($sql);
 		return($this->_count);
     }
-	
-	public function exec($return=true)
-	{
-        if(!$this->_array = g()->db->getAll($this->query()))
-	       $this->_array = array();
-	    
+
+
+    public function exec($key=null, $return=true)
+    {
+        // for compatibility reason, accept $return as first arg
+        if (is_bool($key))
+        {
+            $return = &$key;
+            unset($key);
+        }
+
+        if (!$this->_array = g()->db->getAll($this->query()))
+        {
+           $this->_array = array();
+        }
+
+        if (isset($key))
+        {
+            g('Functions')->changeKeys($this->_array, $key);
+        }
+
         if ($return)
         {
             if ($this->_limit==1 && !empty($this->_array))
                 return ($this->_array[0]);
             return ($this->_array);
         }
-	}
+    }
 
 
     /**
