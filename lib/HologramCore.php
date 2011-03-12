@@ -1361,6 +1361,10 @@ class HgBase
             }
             return $text;
         }
+        else
+        {
+            $text = (string) $text;
+        }
 
 
         // get translations from config files
