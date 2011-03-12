@@ -110,11 +110,6 @@ class PaginatorController extends Component
             $this->_current_page = 1;
     }
 
-    public function getCurrentPage()
-    {
-        return $this->_current_page;
-    }
-
     /**
      * Render enhanced with caching.
      * @return void
@@ -133,4 +128,65 @@ class PaginatorController extends Component
             ob_get_flush()
         );
     }
+
+
+    /**
+     * Total items count
+     * @author m.augustynowicz
+     *
+     * @return int
+     */
+    public function getCount()
+    {
+        return $this->_count;
+    }
+
+
+    /**
+     * Number of items per page
+     * @author m.augustynowicz
+     *
+     * @return int
+     */
+    public function getPerPage()
+    {
+        return $this->_perpage;
+    }
+
+
+    /**
+     * Page number we are on.
+     * @author m.augustynowicz
+     *
+     * @return int
+     */
+    public function getCurrentPage()
+    {
+        return $this->_current_page;
+    }
+
+
+    /**
+     * Total pages count
+     * @author m.augustynowicz
+     *
+     * @return int
+     */
+    public function getPagesCount()
+    {
+        return $this->_total_pages;
+    }
+
+
+    /**
+     * Current's page first item index in global scope
+     * @author m.augustynowicz
+     *
+     * @return int
+     */
+    public function getFirstItemIndex()
+    {
+        return 1 + ($this->_current_page-1)*$this->_perpage;
+    }
+
 }
