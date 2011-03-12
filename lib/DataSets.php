@@ -2049,12 +2049,10 @@ abstract class Model extends DataSet implements IModel
                 if ($use_auto_value)
                 {
                     // Field::autoValue() handles quoting
-                    $value = & $auto_value;
+                    $value = $auto_value;
                 }
-                else
-                {
-                    $value = $field->dbString($data[$name]);
-                }
+
+                $value = $field->dbString($data[$name]);
 
                 if($action == 'insert')
                 {

@@ -545,7 +545,7 @@ abstract class Field implements IModelField
                         {
                             throw new HgException("Automatic uses default value that is not set");
                         }
-                        $value = $this->dbString($value);
+                        //$value = $this->dbString($value);
                     }
                     else
                         return false;
@@ -564,13 +564,10 @@ abstract class Field implements IModelField
                     {
                         return false;
                     }
+                    $value = $new_value;
                     if ($def['quote'])
                     {
-                        $value = $this->dbString($new_value);
-                    }
-                    else
-                    {
-                        $value = $new_value;
+                        //$value = $this->dbString($value);
                     }
                     break;
 
@@ -579,7 +576,7 @@ abstract class Field implements IModelField
                     $value = $def['source'];
                     if ($def['quote'])
                     {
-                        $value = $this->dbString($value);
+                        //$value = $this->dbString($value);
                     }
             }
             return true;
