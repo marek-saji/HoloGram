@@ -686,6 +686,7 @@ class Request extends HgBase
         // encode set of values
         if (is_array($val))
         {
+            ksort($val, SORT_STRING);
             foreach ($val as $name => & $value)
             {
                 $value = $this->encodeVal($value);
