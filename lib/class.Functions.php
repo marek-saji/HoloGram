@@ -1516,6 +1516,63 @@ class Functions extends HgBase
         return $this->tag('a', $attr, $value);
     }
 
+
+    /**
+     * Format numeric bytes into suffix form.
+     * @author m.augustynowicz
+     * @url http://stackoverflow.com/questions/2510434/php-format-bytes-to-kilobytes-megabytes-gigabytes/2510459#2510459
+     *
+     * @param float $bytes
+     * @param int $precision
+     *
+     * @return string
+     */
+    public function formatBytes($bytes, $precision = 2)
+    {
+        static $units = array('B', 'KB', 'MB', 'GB', 'TB');
+
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+
+        $bytes /= (1 << (10 * $pow));
+
+        return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+
+    /**
+     * Parsee human-readable format of filesize/diskspace.
+     * @author m.augustynowicz
+     *
+     * @param string $string
+     *
+     * @return bool|float false on errors
+     */
+    public function parseBytes($string)
+    {
+        $string = trim(strtoupper($string));
+        if (!preg_match('/^(.*)([A-Z])B?$/', $string, $matches))
+        {
+            return false;
+        }
+
+        static $units = array('K'=>1, 'M'=>2, 'G'=>3, 'T'=>4);
+
+        $num = (float) $matches[1];
+        $unit = $matches[2];
+
+        if (!isset($units[$unit]))
+        {
+            return false;
+        }
+        else
+        {
+            return $num * (1 << (10 * $units[$unit]));
+        }
+    }
+
+
     /**
      * Method selects correct Polish grammatic form of words.
      * Example:
