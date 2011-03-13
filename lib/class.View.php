@@ -62,118 +62,11 @@ class View extends HgBase implements IView
         $min = $js_debug ? '.min' : '';
         $protocol = g()->req->isSSL() ? 'https://' : 'http://';
 
-        foreach (g()->conf['js-libs'] as $conf)
+        foreach (g()->conf['js-libs'] as $lib_name =>  &$conf)
         {
-            // prevent from loading
-            if (@$conf['autoload'] === false)
-                continue;
-
-            // use only in debug
-            if (array_key_exists('debug', $conf))
-            {
-                if ($js_debug != $conf['debug'])
-                    continue;
-            }
-
-            // use only when rendering HTML5
-            if (array_key_exists('html5', $conf))
-            {
-                if ($this->_is_html5 != $conf['html5'])
-                    continue;
-            }
-
-            // determine part of file name for minified version
-            if (array_key_exists('min', $conf))
-                $this_min = $js_debug ? '' : $conf['min'];
-            else
-                $this_min = $min;
-            $filepath = false;
-            $ver = @$conf['version'];
-            // local copy
-            if ($conf['filename'])
-            {
-                if ($min && @$conf['min_filename'])
-                {
-                    $filename = sprintf($conf['min_filename'], $ver);
-                }
-                else
-                {
-                    $filename = sprintf($conf['filename'], $ver, $this_min);
-                }
-                $filepath = $this->_renderer->file($filename, 'js', false);
-            }
-            // CDN
-            if (@$conf['cdn_path'] && $this->useExternalCDN())
-            {
-                if ($min && @$conf['min_cdn_path'])
-                {
-                    $filepath = sprintf($conf['min_cdn_path'], $protocol, $ver);
-                }
-                else
-                {
-                    $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
-                }
-            }
-
-            if ($filepath)
-            {
-                $this->addJs($filepath, @$conf['ie']);
-
-                if (@$conf['onload'])
-                {
-                    $this->addOnLoad($conf['onload']);
-                }
-
-                // linked css file
-                if (@$conf['css'])
-                {
-                    $conf = $conf['css'];
-
-                    $stylesheet = 'css';
-                    if (array_key_exists('less', $conf))
-                    {
-                        if ($conf['less'])
-                            $stylesheet = 'less';
-                    }
-
-                    $filepath = false;
-                    // local copy
-                    if ($conf['filename'])
-                    {
-                        if ($min && @$conf['min_filename'])
-                        {
-                            $filename = sprintf($conf['min_filename'], $ver);
-                        }
-                        else
-                        {
-                            $filename = sprintf($conf['filename'], $ver, $this_min);
-                        }
-                        $filepath = $this->_renderer->file($filename, $stylesheet, false);
-                    }
-                    // CDN
-                    if (@$conf['cdn_path'] && $this->useExternalCDN())
-                    {
-                        if ($min && @$conf['min_cdn_path'])
-                        {
-                            $filepath = sprintf($conf['min_cdn_path'], $protocol, $ver);
-                        }
-                        else
-                        {
-                            $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $this_min);
-                        }
-                    }
-
-                    if ($filepath)
-                    {
-                        if ('css' == $stylesheet)
-                            $this->addCss($filepath);
-                        else if ('less' == $stylesheet)
-                            $this->addLess($filepath);
-                    }
-                }
-            }
+            $this->loadJsLib($lib_name, false);
         }
-        unset($conf, $this_min, $filepath, $ver, $filename);
+        unset($conf);
 
 
         if ($js_debug)
@@ -392,8 +285,150 @@ class View extends HgBase implements IView
     public function addOnLoad($js_code)
     {
         $this->_onloads[] = $js_code;
-    }    
-    
+    }
+
+
+    /**
+     * Loads JavaScript library
+     *
+     * @uses conf[js-libs]
+     * @author m.augustynowicz
+     *
+     * @param string $nameA key in conf[js-libs]
+     * @param bool $fore_load passing false will skip all [autoload]=false libs
+     *
+     * @return bool false, when no such lib exist
+     */
+    public function loadJsLib($name, $fore_load = true)
+    {
+        if (!array_key_exists($name, g()->conf['js-libs']))
+        {
+            return false;
+        }
+
+        $conf = &g()->conf['js-libs'][$name];
+        $js_debug = g()->debug->on('js');
+        $default_min = $js_debug ? '.min' : '';
+        $protocol = g()->req->isSSL() ? 'https://' : 'http://';
+
+        // prevent from loading
+        if (!$fore_load && @$conf['autoload'] === false)
+        {
+            return;
+        }
+
+        // use only in debug
+        if (array_key_exists('debug', $conf) && $js_debug != $conf['debug'])
+        {
+            return true;
+        }
+
+        // use only when rendering HTML5
+        if (array_key_exists('html5', $conf) && $this->_is_html5 != $conf['html5'])
+        {
+            return true;
+        }
+
+        // determine part of file name for minified version
+        if ($js_debug)
+        {
+            $min = '';
+        }
+        else
+        {
+            $min = array_key_exists('min', $conf) ? $conf['min'] : $default_min;
+        }
+        $filepath = false;
+        $ver = @$conf['version'];
+
+        // local copy
+        if (@$conf['filename'])
+        {
+            if ($min && @$conf['min_filename'])
+            {
+                $filename = sprintf($conf['min_filename'], $ver);
+            }
+            else
+            {
+                $filename = sprintf($conf['filename'], $ver, $min);
+            }
+            $filepath = $this->_renderer->file($filename, 'js', false);
+        }
+
+        // CDN
+        if ((@$conf['cdn_path']) && $this->useExternalCDN())
+        {
+            if ($min && @$conf['min_cdn_path'])
+            {
+                $filepath = sprintf($conf['min_cdn_path'], $protocol, $ver);
+            }
+            else
+            {
+                $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $min);
+            }
+        }
+
+        // load it
+        if ($filepath)
+        {
+            $this->addJs($filepath, @$conf['ie']);
+
+            if (@$conf['onload'])
+            {
+                $this->addOnLoad($conf['onload']);
+            }
+        }
+
+
+        // linked stylesheet file
+        if (@$conf['css'])
+        {
+            $conf = $conf['css'];
+
+            $stylesheet = (@$conf['less']) ? 'less' : 'css';
+
+            $filepath = false;
+            // local copy
+            if ($conf['filename'])
+            {
+                if ($min && @$conf['min_filename'])
+                {
+                    $filename = sprintf($conf['min_filename'], $ver);
+                }
+                else
+                {
+                    $filename = sprintf($conf['filename'], $ver, $min);
+                }
+                $filepath = $this->_renderer->file($filename, $stylesheet, false);
+            }
+            // CDN
+            if (@$conf['cdn_path'] && $this->useExternalCDN())
+            {
+                if ($min && @$conf['min_cdn_path'])
+                {
+                    $filepath = sprintf($conf['min_cdn_path'], $protocol, $ver);
+                }
+                else
+                {
+                    $filepath = sprintf($conf['cdn_path'], $protocol, $ver, $min);
+                }
+            }
+
+            if ($filepath)
+            {
+                if ('css' == $stylesheet)
+                {
+                    $this->addCss($filepath);
+                }
+                else if ('less' == $stylesheet)
+                {
+                    $this->addLess($filepath);
+                }
+            }
+        }
+    }
+
+
     public function addKeyword($word)
     {
         $keywords = $this->getMeta('keywords');
