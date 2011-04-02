@@ -212,6 +212,30 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             g('Functions')->changeKeys($this->_array, $key);
         }
 
+        // translate all [foo+bar] to [foo][bar]
+        foreach ($this->_array as &$row)
+        {
+            foreach ($row as $alias => &$value)
+            {
+                $exploded = explode('+', $alias);
+                if (sizeof($exploded) > 1)
+                {
+                    $curr = &$row;
+                    $last_path_el = array_pop($exploded);
+                    foreach($exploded as &$path_el)
+                    {
+                        $curr = &$curr[$path_el];
+                    }
+                    $curr[$last_path_el] = &$value;
+                    unset($curr, $exploded, $last_path_el, $path);
+                    unset($row[$alias]);
+                }
+            }
+            unset($alias, $value);
+        }
+        unset($row);
+
+
         if ($return)
         {
             if ($this->_limit==1 && !empty($this->_array))
