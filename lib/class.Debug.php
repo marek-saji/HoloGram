@@ -622,9 +622,6 @@ JS;
                 'not yours? be a collegue and nag their autor about it',
                 'you can fix it! I believe in you!',
                 'you better look into it, it may be something serious!',
-                'Live the EXTREME !!!!!!! Don\'t touch em!',
-                'Cherish it!',
-                'this is HOLOGRAM!!!!!!'
             );
             echo $motivational_texts[rand(0, sizeof($motivational_texts)-1)];
             echo '</div><!-- .errors_count -->';
