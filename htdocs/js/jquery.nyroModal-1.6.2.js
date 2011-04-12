@@ -477,12 +477,12 @@ jQuery(function($) {
 				var div = $(currentSettings.type);
 				if (div.length) {
 					setCurrentSettings({type: 'div'});
-					w = div.width();
-					h = div.height();
 					if (contentElt)
 						contentEltLast = contentElt;
 					contentElt = div;
 					modal.tmp.append(div.contents());
+					w = div.width();
+					h = div.height();
 				}
 				initSettingsSize.width = w;
 				initSettingsSize.height = h;
