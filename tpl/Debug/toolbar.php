@@ -70,11 +70,11 @@ $v->addCss($this->file('debug','css'));
             <li>
                 <?php
                 echo $this->l2c(
-                    'enable favorite debugs',
+                    'enable favorite debugs ♥',
                     'Debug/on;Debug/set', // HACK
                     '',
                     array('fav'),
-                    array('title'=>'turn on debugs defined in conf[favorite debugs]')
+                    array('title'=>'turn on debugs defined in conf[debug][favorite]')
                 );
                 ?>
             </li>
