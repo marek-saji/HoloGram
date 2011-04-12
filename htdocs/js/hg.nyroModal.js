@@ -55,6 +55,11 @@ hg['nyroModalInit'].f = function()
             if (hg['nyroModalInit'].ajax_i)
                 hg('ajaxDOMReady')(hg['nyroModalInit'].ajax_i);
 
+            if (hg.init && hg.init.copyToClipboard)
+            {
+                window.setTimeout(hg.init.copyToClipboard, 10000);
+            }
+
             var modal = $('#nyroModalContent');
 
             // IE>=8 does not send the form when return is hit
