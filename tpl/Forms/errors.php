@@ -9,6 +9,7 @@
  * @param boolean $err_handling add div.field error, bind events (if $ajax)
  * @param boolean $ajax use ajax validation
  * @param string $js_event javascript event to launch validation on
+ * @param int $timeout while-editing validation delay
  */
 extract(array_merge(
         array(
@@ -16,7 +17,8 @@ extract(array_merge(
             'errors'    => array(),
             'err_handling' => true,
             'ajax'      => true,
-            'js_event'  => 'blur'
+            'js_event'  => 'blur',
+            'timeout'   => 1500
         ),
         (array) $____local_variables
     ));
@@ -33,6 +35,8 @@ if ((@$errors) && is_array($errors))
 else
     $errors = '';
 
+$timeout = json_encode((int) $timeout);
+
 printf(
     '<ol class="field_error" id="%s" style="%s">%s</ol>',
     $err_id,
@@ -40,7 +44,32 @@ printf(
     $errors ? "<li>{$errors}</li>" : ''
 );
 if($ajax)
-    $v->addOnLoad('$(\'#'.$id.'\').'.$js_event.'(function(){return hg("input_validate")(this);})');
+{
+    //$v->addOnLoad('$(\'#'.$id.'\').bind("validate", function(){return hg("input_validate")(this);}).bind("'.$js_event.'", function(){$(this).trigger("validate")})');
+    $v->addOnLoad( <<< JS_VALIDATE
+    \$('#$id')
+        .bind('validate.validation', function(e, timeout){
+            var \$this = \$(this),
+                timeout = arguments[1] || 0
+            ;
+            window.clearTimeout(\$this.data('validationTimeout'));
+            if (timeout)
+            {
+                \$this.data('validationTimeout', window.setTimeout(function(){
+                    \$this.trigger('validate');
+                }, timeout));
+            }
+            else
+            {
+                hg("input_validate")(\$this[0]);
+            }
+        })
+        .bind('$js_event.validation', function(){\$(this).trigger('validate')})
+        .bind('keyup.validation', function(){\$(this).trigger('validate', [$timeout])})
+    ;
+JS_VALIDATE
+);
+}
 
 return array('err_id' => $err_id);
 
