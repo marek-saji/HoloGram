@@ -820,7 +820,7 @@ jQuery(function($) {
 			if (jFrom.attr('rev') == 'modal')
 				currentSettings.modal = true;
 
-			currentSettings.title = jFrom.attr('title');
+			currentSettings.title = '';//jFrom.attr('title');
 
 			if (from && from.rel && from.rel.toLowerCase() != 'nofollow') {
 				var indexSpace = from.rel.indexOf(' ');
