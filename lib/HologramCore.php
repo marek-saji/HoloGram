@@ -56,6 +56,24 @@ function g($name='', $type='class', $args=array())
 }
 
 
+
+/**
+ * Wrapper to allow chain calling with `new` operator in PHP
+ *
+ * example:
+ *
+ *     $bar = o(new Foo)->getBar();
+ *
+ * @param object $obj
+ *
+ * @return object the very same $obj
+ */
+function o($obj)
+{
+    return $obj;
+}
+
+
 // lcfirst() has been added in php-5.3
 if (!function_exists('lcfirst'))
 {
