@@ -307,7 +307,8 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
      *        when $fields == false, unset all distincts.
      *        when $fields is IField, one can pass more fields as rest
      *        of function's arguments.
-     * @return void
+     *
+     * @return $this
      */
     public function distinct($fields=true)
     {
@@ -329,8 +330,9 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             $fields = func_get_args();
         }
 
-
         $this->_distincts = $fields;
+
+        return $this;
     }
     
     public function whiteListAll()
