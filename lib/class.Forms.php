@@ -167,7 +167,14 @@ class Forms extends HgBase
     {
         $input_def = $this->_getInput($input, false);
 
-        $data = @ $this->__ctrl->data[$this->__short_ident][$input];
+        if (array_key_exists($input, @$this->__ctrl->data[$this->__short_ident]))
+        {
+            $data = @ $this->__ctrl->data[$this->__short_ident][$input];
+        }
+        else
+        {
+            $data = $input_def['value'];
+        }
         $errors = $this->_getErrors($input);
 
         $additional_attrs = (array) @$additional_params['attrs'];
@@ -412,6 +419,8 @@ class Forms extends HgBase
                     {
                         $field = & $model[$field_name];
                         $input_def['field_objects'][] = & $field;
+
+                        $input_def['value'] = $field->defaultValue();
 
                         // export some of the rules to the client using html5 data-* attributes
 
