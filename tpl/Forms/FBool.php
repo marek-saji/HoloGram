@@ -43,7 +43,19 @@ $____local_variables['data'] = 1;
 
 if ($label)
 {
-    printf("<label for=\"%s\">\n", $id);
+    $label_attrs = array(
+        'for'   => $id,
+        'class' => ''
+    );
+    if (array_key_exists('disabled', $____local_variables))
+    {
+        $label_attrs['class'] .= ' disabled';
+    }
+    else if (array_key_exists('disabled', @$attrs))
+    {
+        $label_attrs['class'] .= ' disabled';
+    }
+    printf("<label %s>\n", $f->xmlAttr($label_attrs));
 }
 
 $attrs = $t->inc('Forms/input', array('err_handling'=>false) + $____local_variables);

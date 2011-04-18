@@ -46,6 +46,11 @@ if ($disabled)
 
 @$attrs['class'] .= ' '.$attrs['type'];
 
+if (array_key_exists('disabled', $attrs))
+{
+    $attrs['class'] .= ' disabled';
+}
+
 if (false !== $id)
     $attrs['id'] = $id;
 $id = @$attrs['id']; // keep in sync

@@ -34,9 +34,24 @@ if ($disabled)
 
 $attrs['id'] = $id;
 
-$attrs_html = $f->xmlAttr($attrs);
+
+$label_attrs = array(
+    'class' => ''
+);
+
+ if (array_key_exists('disabled', $attrs))
+{
+    @$attrs['class']      .= ' disabled';
+    $label_attrs['class'] .= ' disabled';
+}
+
+
+$attrs_html       = $f->xmlAttr($attrs);
+$label_attrs_html = $f->xmlAttr($label_attrs);
 
 unset($attrs['id']); // we don't want <input />s to get the same id as fieldset
+
+$____local_variables['attrs'] = $attrs;
 
 if (isset($select_array))
 {
@@ -47,7 +62,7 @@ if (isset($select_array))
 <fieldset <?=$attrs_html?>>
 
     <?php if (null !== $empty_value_label) : ?>
-        <label>
+        <label <?=$label_attrs?>>
             <?php
             $input_vars = array_merge($____local_variables, array(
                 'data' => '',
