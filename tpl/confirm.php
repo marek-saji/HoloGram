@@ -33,23 +33,26 @@ $form = g('Forms', array('confirm', $this));
 ?>
 
 <section class="confirmation">
-    <?php
-    $form->create($this->url2c($this->url(),
-                               $this->getLaunchedAction(),
-                               $this->getParams() ));
-    ?>
-        <p>
-            <strong><?=$question?></strong>
-        </p>
+
+    <div class="holoform">
         <?php
-        $this->inc('Forms/buttons', array(
-            'form'   => & $form,
-            'submit' => $yes,
-            'cancel' => $no
-        ));
+        $form->create($this->url2c($this->url(),
+                                   $this->getLaunchedAction(),
+                                   $this->getParams() ));
         ?>
-    <?php
-    $form->end();
-    ?>
+            <p>
+                <?=$question?>
+            </p>
+            <?php
+            $this->inc('Forms/buttons', array(
+                'form'   => & $form,
+                'submit' => $yes,
+                'cancel' => $no
+            ));
+            ?>
+        <?php
+        $form->end();
+        ?>
+    </div>
 </section>
 
