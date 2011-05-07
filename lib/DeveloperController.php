@@ -166,7 +166,7 @@ abstract class DeveloperController extends PagesController
                 $filter = $row;
             $model->filter($filter)->setMargins(1);
             $existing = $model->exec();
-            if (false === $existing)
+            if (false === $existing || array() === $existing)
             {
                 $action = 'insert';
                 $count = & $ins_count;

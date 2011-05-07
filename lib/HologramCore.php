@@ -3355,6 +3355,10 @@ abstract class Component extends Controller
 
     public function getFormsIdent($ident)
     {
+        if (is_a($ident, 'Forms'))
+        {
+            $ident = $ident->getShortIdent();
+        }
         return g('Functions')->camelify($this->url()) . '_' . $ident;
     }
 

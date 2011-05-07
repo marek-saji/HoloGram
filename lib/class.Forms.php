@@ -173,7 +173,7 @@ class Forms extends HgBase
         }
         else
         {
-            $data = $input_def['value'];
+            $data = @$input_def['value']; // a null is fine too
         }
         $errors = $this->_getErrors($input);
 

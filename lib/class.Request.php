@@ -464,7 +464,20 @@ class Request extends HgBase
             return sprintf('%s://%s%s%s', $this->_protocol, $host, $this->_base_uri, $ctrl);
         }
     }
-    
+
+
+    /**
+     * Get urL Request was constructed with
+     * @author m.augustynowicz
+     *
+     * @return string URL of current request
+     */
+    public function getRequestUrl()
+    {
+        return $this->_given_url;
+    }
+
+
     public function getUrlPath()
     {
         return($this->_url_path);
