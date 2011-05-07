@@ -619,7 +619,7 @@ JS;
             static $motivational_texts = array(
                 'make a world better place, fix them!',
                 'develop responsively, get rid of them!',
-                'not yours? be a collegue and nag their autor about it',
+                'not yours? be a collegue and nag their author about it',
                 'you can fix it! I believe in you!',
                 'you better look into it, it may be something serious!',
             );
