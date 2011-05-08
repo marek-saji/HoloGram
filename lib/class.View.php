@@ -295,11 +295,11 @@ class View extends HgBase implements IView
      * @author m.augustynowicz
      *
      * @param string $nameA key in conf[js-libs]
-     * @param bool $fore_load passing false will skip all [autoload]=false libs
+     * @param bool $force_load passing false will skip all [autoload]=false libs
      *
      * @return bool false, when no such lib exist
      */
-    public function loadJsLib($name, $fore_load = true)
+    public function loadJsLib($name, $force_load = true)
     {
         if (!array_key_exists($name, g()->conf['js-libs']))
         {
@@ -312,7 +312,7 @@ class View extends HgBase implements IView
         $protocol = g()->req->isSSL() ? 'https://' : 'http://';
 
         // prevent from loading
-        if (!$fore_load && @$conf['autoload'] === false)
+        if (!$force_load && @$conf['autoload'] === false)
         {
             return;
         }
