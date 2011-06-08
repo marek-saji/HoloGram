@@ -92,10 +92,10 @@ class Mail extends HgBase
         if (g()->debug->on())
         {
             echo '<dl style="overflow: auto; border: black dotted thin; padding: 1em">';
-            printf('<dt>to</dt><dd>%s</dd>',                    $recipients);
-            printf('<dt>subject</dt><dd>%s</dd>',               $subject);
-            printf('<dt>content</dt><dd>%s</dd>',               $content);
-            printf('<dt>headers</dt><dd><pre>%s</pre></dd>',    var_export($headers, true));
+            printf('<dt>to</dt><dd>%s</dd>',                    htmlspecialchars($recipients));
+            printf('<dt>subject</dt><dd>%s</dd>',               htmlspecialchars($subject));
+            printf('<dt>HTML content</dt><dd>%s</dd>',          $content);
+            printf('<dt>headers</dt><dd><pre>%s</pre></dd>',    htmlspecialchars(var_export($headers, true)));
             echo '</dl>';
         }
 
@@ -160,8 +160,8 @@ class Mail extends HgBase
         $defaults = g()->conf['mail']['defaults'];
 
         $from    or $from    = @$defaults['from'];
-        $options or $options = @$defaults['options'];
-        $headers or $headers = @$defaults['headers'];
+        $options or $options = (array) @$defaults['options'];
+        $headers or $headers = (array) @$defaults['headers'];
 
 
         if (!$lay_html = @$options['layout'])

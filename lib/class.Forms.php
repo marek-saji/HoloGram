@@ -167,7 +167,7 @@ class Forms extends HgBase
     {
         $input_def = $this->_getInput($input, false);
 
-        if (array_key_exists($input, @$this->__ctrl->data[$this->__short_ident]))
+        if (array_key_exists($input, (array)@$this->__ctrl->data[$this->__short_ident]))
         {
             $data = @ $this->__ctrl->data[$this->__short_ident][$input];
         }
