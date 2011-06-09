@@ -99,7 +99,9 @@ class Mail extends HgBase
             echo '</dl>';
         }
 
-        $headers = implode("\r\n", $headers);
+        // FIXME should be \r\n, but test server changes it to \r\r\n
+        //       see note on `additional_headers` at http://php.net/mail
+        $headers = implode("\n", $headers);
 
         if (mail($recipients, $subject, $content, $headers))
         {
