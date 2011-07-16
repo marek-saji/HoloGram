@@ -1280,10 +1280,27 @@ class Functions extends HgBase
     {
         foreach ($attr as $a => &$val)
         {
-            if (false !== strpos($val, '"'))
-                $val = htmlspecialchars($a).'=\''.htmlspecialchars($val, ENT_NOQUOTES).'\'';
+            if ($val === false)
+            {
+                // skip
+                continue;
+            }
+            else if ($val === true)
+            {
+                // boolean true attribute
+                $val = htmlspecialchars($a);
+            }
+            else if (false !== strpos($val, '"'))
+            {
+                $val = htmlspecialchars($val, ENT_QUOTES); // escape both quotes
+                $val = htmlspecialchars($a) . "='" . $val . "'";
+            }
             else
-                $val = htmlspecialchars($a).'="'.htmlspecialchars($val, ENT_COMPAT).'"';
+            {
+                // surround with double quotes
+                $val = htmlspecialchars($val, ENT_COMPAT); // escape only double quotes
+                $val = htmlspecialchars($a) . '="' . $val . '"';
+            }
         }
         return join(' ', $attr);
     }
