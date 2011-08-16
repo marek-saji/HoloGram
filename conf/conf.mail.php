@@ -7,7 +7,6 @@ $conf['mail'] = array(
     //  - [options]
     //  - [headers]
     'defaults' => array(
-        'from' => array('nyopaste@test.1cm.pl' => 'nyopaste')
     )
 );
 
