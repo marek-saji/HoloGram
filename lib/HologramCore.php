@@ -1935,7 +1935,7 @@ abstract class Controller extends HgBase implements IController
      */
     public function getLaunchedActionReturn()
     {
-        return $this->_launched_action_return;
+        return (int) $this->_launched_action_return;
     }
 
 
