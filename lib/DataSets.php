@@ -928,6 +928,18 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
 
 
     /**
+     * Shortcut to order() returning DataSet
+     * @author m.augustynowicz
+     */
+    public function orderBy()
+    {
+        $argv = func_get_args();
+        call_user_func_array(array($this, 'order'), $argv);
+        return $this;
+    }
+
+
+    /**
      * Field getter via ArrayAccess interface
      * @author m.augustynowicz
      */
