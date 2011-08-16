@@ -781,6 +781,10 @@ JS;
             printf(', <a href="#dbdebug%d" onclick="return hgDebugDbToggle(this, \'code\', 0, \'whiteSpace\', \'pre\', \'normal\')">expand white spaces</a>', $counter);
             print '<pre style="display:none">';
             g()->debug->dump($result);
+            if (is_resource($result))
+            {
+                echo pg_result_error($result);
+            }
             print "</pre>";
             print '<div style="display:none">';
             g()->debug->trace(1, null);
