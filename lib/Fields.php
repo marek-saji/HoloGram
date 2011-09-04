@@ -175,7 +175,7 @@ interface IModelField extends IField
      * @param mixed $value
      * @return string
      */
-    public function dbString($value);
+    static public function dbString($value);
 
 
     public function columnDefinition();
@@ -681,7 +681,7 @@ abstract class Field implements IModelField
             return ($this->_model);
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
@@ -872,7 +872,7 @@ abstract class FStringBase extends Field
         return ($this->_errors($err, $value));
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
@@ -907,7 +907,7 @@ abstract class FStringBase extends Field
  */
 class FString extends FStringBase
 {
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null  !== $value)
         if (false !== $value)
@@ -937,7 +937,7 @@ class FRich extends FStringBase
  */
 class FMultilineString extends FStringBase
 {
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null  !== $value)
         if (false !== $value)
@@ -1017,7 +1017,7 @@ class FPassword extends FMD5String
         parent::__construct($name, $notnull, $min_length, $max_length);
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
@@ -1270,7 +1270,7 @@ class FInt extends Field
         }
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         /*
         if(false !== ($av = @$this->autoValue()))
@@ -1338,7 +1338,7 @@ class FEnum extends Field
     }
 
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
@@ -1509,7 +1509,7 @@ class FFloat extends Field
         return ($this->_errors($err, $value));
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
@@ -1678,7 +1678,7 @@ class FDate extends Field
         return ('DATE');
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
@@ -1701,7 +1701,7 @@ class FDate extends Field
 
 class FMonthYear extends FDate
 {
-    public function dbString($value)
+    static public function dbString($value)
     {
         /*
         if(false !== ($av = @$this->autoValue()))
@@ -1775,7 +1775,7 @@ class FTime extends Field
         return ('TIME');
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
@@ -1846,7 +1846,7 @@ class FTimestamp extends Field
         return ($this->_errors($err, $value));
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
@@ -1908,7 +1908,7 @@ class FBool extends Field implements IBoolean
         return ($this->_errors($err, $value));
     }
 
-    public function dbString($value)
+    static public function dbString($value)
     {
         if (null === $value || '' === $value)
         {
