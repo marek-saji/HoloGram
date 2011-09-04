@@ -1980,8 +1980,7 @@ abstract class Model extends DataSet implements IModel
             foreach($this->_primary_keys as $pk)
                 if(!isset($data[$pk]) || !$data[$pk])
                 {
-                    $action = 'insert';
-                    trigger_error('Tried to update-sync, but no PK given, falling back to insert!', E_USER_WARNING);
+                    trigger_error('Tried to update-sync, but no PK given!', E_USER_ERROR);
                     break;
                 }
         }
