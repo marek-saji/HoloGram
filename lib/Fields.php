@@ -2302,6 +2302,44 @@ class FMediaFile extends FFile
 
 }
 
+
+/**
+ * Interface for database-specific full text search vectors.
+ * @author m.augustynowicz
+ */
+interface FTextSearchVectorInterface
+{
+}
+
+
+/**
+ * Full text search vector. PostgreSQL-specific.
+ *
+ * Not designed to store values supplied by user.
+ * @author m.augustynowicz
+ */
+class FTextSearchVectorPSQL extends Field implements FTextSearchVectorInterface
+{
+    static public function dbString($value)
+    {
+        if ($value instanceof IField)
+        {
+            $value = $value->generator();
+        }
+        else
+        {
+            $value = FString::dbString($value);
+        }
+        return "to_tsvector(" . $value . ")";
+    }
+
+    public function dbType()
+    {
+        return 'TSVECTOR';
+    }
+}
+
+
 /**
  * Fields that evaluate a function.
  */
