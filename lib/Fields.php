@@ -530,58 +530,114 @@ abstract class Field implements IModelField
 
         if (isset($this->_rules['auto']))
         {
-            $def = & $this->_rules['auto'];
+            $def =& $this->_rules['auto'];
+            if (array_key_exists('quote', $def))
+            {
+                $quote = $def['quote'];
+            }
+            else
+            {
+                $quote = true;
+            }
 
             switch (true)
             {
                 // DEFAULT
                 case 'DEFAULT' === $def['source'] :
-                    if (null === $action || 'update' === $action)
-                        return false;
-                    if ($this->_rules['notnull'] && null === $value)
-                    {
-                        $value = $this->defaultValue();
-                        if (null === $value)
-                        {
-                            throw new HgException("Automatic uses default value that is not set");
-                        }
-                        //$value = $this->dbString($value);
-                    }
-                    else
-                        return false;
-                    break;
+                    return $this->_autoValueDefault(
+                        $action, $def['source'], $value, $quote
+                    );
 
                 // sync with another field
                 case $def['source'] instanceof IField :
-                    $value = $def['source']->generator();
-                    break;
+                    return $this->_autoValueOtherField(
+                        $action, $def['source'], $value, $quote
+                    );
 
                 // use callback
                 case is_array($def['source']) :
-                    $new_value = call_user_func($def['source'],
-                            $action, $this, $value);
-                    if (null === $new_value)
-                    {
-                        return false;
-                    }
-                    $value = $new_value;
-                    if ($def['quote'])
-                    {
-                        //$value = $this->dbString($value);
-                    }
-                    break;
+                    return $this->_autoValueCallback(
+                        $action, $def['source'], $value, $quote
+                    );
 
                 // use the literal value
                 default :
-                    $value = $def['source'];
-                    if ($def['quote'])
-                    {
-                        //$value = $this->dbString($value);
-                    }
+                    return $this->_autoValueLiteral(
+                        $action, $def['source'], $value, $quote
+                    );
             }
-            return true;
         }
         return false;
+    }
+
+    protected function _autoValueDefault($action, $source, & $value, $quote = true)
+    {
+        if (null === $action || 'update' === $action)
+        {
+            return false;
+        }
+        if (null !== $value)
+        {
+            return false; // use any non-null value given
+        }
+        if (!$this->_rules['notnull'])
+        {
+            return false; // legacy, quirk. if field can be NULL, let it be NULL.
+        }
+
+        $value = $this->defaultValue();
+
+        if (null === $value)
+        {
+            throw new HgException("Automatic uses default value that is not set");
+        }
+
+        if ($quote)
+        {
+            $value = $this->dbString($value);
+        }
+
+        return true;
+    }
+
+    protected function _autoValueOtherField($action, IField $source, & $value, $quote = false)
+    {
+        $value = $source->generator();
+
+        // intentionally ignore $quote param
+
+        return true;
+    }
+
+    protected function _autoValueCallback($action, array $source, & $value, $quote = true)
+    {
+        $new_value = call_user_func($source, $action, $this, $value);
+
+        if (null === $new_value)
+        {
+            return false;
+        }
+
+        $value = $new_value;
+
+        if ($quote)
+        {
+            $value = $this->dbString($value);
+        }
+
+        return true;
+    }
+
+    protected function _autoValueLiteral($action, $source, & $value, $quote = true)
+    {
+        $value = $def['source'];
+
+        if ($quote)
+        {
+            $value = $this->dbString($value);
+        }
+
+        return true;
     }
 
 
