@@ -713,6 +713,7 @@ class Request extends HgBase
 
         // triple encod is a must, apache tends to freak out otherwise
         $val = @urlencode(urlencode(urlencode($val)));
+        $val = str_replace('%252B', '+', $val);
         if ($this->_link_split_encoded)
         {
             $val = str_replace(g()->conf['link_split'],
