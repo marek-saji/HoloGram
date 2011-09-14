@@ -690,7 +690,14 @@ class Request extends HgBase
     /**
      * Encodes value in url, for building links.
      *
-     * @param string|array $val scalar value or array with parameters
+     * Special param named '#' can be used,
+     * it will be used as an anchor part of URL.
+     * Thus array('id' => 1, 'detail' => 'full', '#' => 'details')
+     * will produce "id=1,detail=full#details"
+     * @author m.augustynowicz
+     *
+     * @param string|array $val scalar value or array with parameters,
+     *        array can include '#' param.
      *
      * @return string encoded value or set of values
      */
@@ -699,6 +706,17 @@ class Request extends HgBase
         // encode set of values
         if (is_array($val))
         {
+            // param named '#'
+            if (array_key_exists('#', $val))
+            {
+                $hash =& $val['#'];
+                unset($val['#']);
+            }
+            else
+            {
+                $hash = false;
+            }
+
             ksort($val, SORT_STRING);
             foreach ($val as $name => & $value)
             {
@@ -706,13 +724,22 @@ class Request extends HgBase
                 if (!is_int($name))
                     $value = $this->encodeVal($name) . '=' . $value;
             }
-            return implode(',', $val);
+
+            $encoded = implode(',', $val);
+
+            if ($hash)
+            {
+                $encoded .= '#' . $hash;
+            }
+
+            return $encoded;
         }
 
         // encode one value
 
         // triple encod is a must, apache tends to freak out otherwise
         $val = @urlencode(urlencode(urlencode($val)));
+        // always encode spaces as "+"
         $val = str_replace('%252B', '+', $val);
         if ($this->_link_split_encoded)
         {
