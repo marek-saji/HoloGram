@@ -2324,13 +2324,13 @@ class FTextSearchVectorPSQL extends Field implements FTextSearchVectorInterface
     {
         if ($value instanceof IField)
         {
-            $value = 'coalesce(' . $value->generator() . ')';
+            $value = $value->generator();
         }
         else
         {
-            $value = "'" . FString::dbString($value) . "'";
+            $value = FString::dbString($value);
         }
-        return "to_tsvector(" . $value . ")";
+        return "to_tsvector(coalesce({$value}, ''))";
     }
 
     public function dbType()
