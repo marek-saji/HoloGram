@@ -124,7 +124,7 @@ body.env-lte-test .needs-styling::before
 /**
  * modal windows
  */
-.modaled
+body.modal-enabled .modaled
 {
     display:                none;
 }
