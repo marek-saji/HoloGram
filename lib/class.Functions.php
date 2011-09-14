@@ -1330,7 +1330,7 @@ class Functions extends HgBase
                 case 'open' :
                     $fmt = '<%s %s>';
                     break;
-                case 'clos' :
+                case 'close' :
                     $fmt = '</%s>';
                     break;
                 default :
