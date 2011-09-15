@@ -106,10 +106,28 @@ hg['nyroModalInit'].f = function()
 
     // it's alive, aLIVE!
     $('.modal').live('click', function(e){
-        e.preventDefault();
-        $.nyroModalManual($.extend({}, $.fn.nyroModal.settings, {from: this}));
+        var hashHref,
+            $target
+        ;
+        if (window.innerHeight > hg.nyroModalInit.f.minHeight
+            && window.innerWidth > hg.nyroModalInit.f.minWidth)
+        {
+            e.preventDefault();
+            $.nyroModalManual($.extend({}, $.fn.nyroModal.settings, {from: this}));
+        }
+        else
+        {
+            hashHref = $(this).filter('[href^=#]').attr('href');
+            $target  = $(hashHref);
+            if ($target.length !== 0) {
+                e.preventDefault();
+                $target.fadeToggle();
+            }
+        }
     });
 
     return true;
 }
+hg['nyroModalInit'].f.minWidth  = 500;
+hg['nyroModalInit'].f.minHeight = 500;
 
