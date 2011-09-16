@@ -589,6 +589,8 @@ class DataBase
             pg_query('BEGIN;');
         $this->__trans_counter++;
         $this->_printInDebugPost(__FUNCTION__, array());
+
+        return $this;
    }
 
     public function failTrans()
@@ -596,6 +598,8 @@ class DataBase
         $this->_printInDebugPre(__FUNCTION__, array());
         $this->__trans_failed = true;
         $this->_printInDebugPost(__FUNCTION__, array());
+
+        return $this;
     }
 
     /**
@@ -620,6 +624,8 @@ class DataBase
                 pg_query('COMMIT;');
         }
         $this->_printInDebugPost(__FUNCTION__, array());
+
+        return $this;
     }
 
     public function getOne($query, $row=0, $field=0)
@@ -691,6 +697,8 @@ class DataBase
         $this->__debug += $i;
         if ($this->__debug)
             g()->debug->set(true);
+
+        return $this;
     }
 
     public function debugOff($i=1)
@@ -702,6 +710,8 @@ class DataBase
             $this->__debug = 0;
         if (!$this->__debug)
             g()->debug->set(false);
+
+        return $this;
     }
 
     protected function _printInDebugPre($func, $args)
