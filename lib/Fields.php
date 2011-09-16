@@ -406,6 +406,13 @@ abstract class Field implements IModelField
      */
     public function __construct($name, $notnull = false, $def_val = null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $notnull, $def_val) =
+                $name + array(null, false, null);
+        }
+
         $this->_name = $name;
         $this->_rules['notnull'] = $notnull;
         if($def_val!==null)
@@ -834,6 +841,13 @@ abstract class FStringBase extends Field
      */
     public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $notnull, $def_val, $min_length, $max_length) =
+                $name + array(null, false, null, null, null);
+        }
+
         parent::__construct($name, $notnull, $def_val);
         $this->_rules['min_length'] = $min_length;
         $this->_rules['max_length'] = $max_length;
@@ -974,6 +988,13 @@ class FEmail extends FString
 {
     public function __construct($name, $notnull = false, $def_val = null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $notnull, $def_val) =
+                $name + array(null, false, null);
+        }
+
         parent::__construct($name, $notnull, $def_val, 3, 320);
         $this->mess(array(
             'invalid' => 'Invalid e-mail address'
@@ -1021,6 +1042,13 @@ class FMD5String extends FString
 
     public function __construct($name, $notnull = false, $min_length = 32, $max_length = 32)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $notnull, $min_length, $max_length) =
+                $name + array(null, false, 32, 32);
+        }
+
         parent::__construct($name, $notnull, null, $min_length, $max_length);
     }
 }
@@ -1030,6 +1058,13 @@ class FPassword extends FMD5String
 
     public function __construct($name, $min_length = null, $max_length = null, $notnull = true)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $min_length, $max_length, $notnull) =
+                $name + array(null, null, null, true);
+        }
+
         parent::__construct($name, $notnull, $min_length, $max_length);
     }
 
@@ -1059,6 +1094,13 @@ class FURL extends FString
 
     public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null, $allowed_protocols=array('http','https','ftp','gopher'), $default_protocol='http', $check_dns_records=array('ANY'))
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $notnull, $def_val, $min_length, $max_length, $allowed_protocols, $default_protocol, $check_dns_records    ) =
+                $name + array(null, false, null, null, null, array('http','https','ftp','gopher'), 'http', array('ANY'));
+        }
+
         $this->_allowed_protocols = array_flip($allowed_protocols);
         $this->_default_protocol = $default_protocol;
         $this->_check_dns_records = $check_dns_records;
@@ -1127,6 +1169,13 @@ class FHTTP extends FURL
 {
     public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $notnull, $def_val, $min_length, $max_length) =
+                $name + array(null, false, null, null, null);
+        }
+
         return parent::__construct($name, $notnull, $def_val, $min_length, $max_length, array('http','https'), 'http');
     }
 }
@@ -1228,6 +1277,13 @@ class FInt extends Field
      */
     public function __construct($name, $precision = 4, $notnull = false, $def_val = null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $precision, $notnull, $def_val) =
+                $name + array(null, 4, false, null);
+        }
+
         parent::__construct($name, $notnull, $def_val);
         if(!in_array($precision, array(
             2,
@@ -1315,6 +1371,13 @@ class FEnum extends Field
 
     public function __construct($name, $type_name, $notnull=false, $default_value=null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $type_name, $notnull, $def_val) =
+                $name + array(null, null, false, null);
+        }
+
         $enums = & g()->conf['enum'];
 
         if (!array_key_exists($type_name, $enums))
@@ -1458,6 +1521,13 @@ class FFloat extends Field
      */
     public function __construct($name, $precision = 4, $notnull = false, $def_val = null, $min_val=null, $max_val=null, $max_decimals = null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $precision, $notnull, $def_val, $min_val, $max_val, $max_decimals) =
+                $name + array(null, 4, false, null, null, null, null);
+        }
+
         parent::__construct($name, $notnull, $def_val);
 
         if ($precision != 4 && $precision != 8)
@@ -1576,6 +1646,13 @@ class FDouble extends FFloat
      */
     public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = null, $min_val = null, $max_val = null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $precision, $notnull, $def_val, $min_val, $max_val, $max_decimals) =
+                $name + array(null, 8, false, null, null, null, null);
+        }
+
         parent::__construct($name, $precision, $notnull, $def_val, $min_val, $max_val);
         $this->_rules['decimal_places'] = $decimal_places;
         $this->mess(array('invalid' => 'Invalid floating point value'));
@@ -1635,6 +1712,13 @@ class FDate extends Field
 {
     public function __construct($name, $notnull = false, $def_val = null)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $precision, $notnull, $def_val) =
+                $name + array(null, false, null);
+        }
+
         parent::__construct($name, $notnull, $def_val);
         $this->mess(array('invalid_format' => 'Invalid date format'));
     }
@@ -1955,6 +2039,13 @@ class FId extends Field
      */
     public function __construct($name, $precision = 4, $not_null = true)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $precision, $notnull) =
+                $name + array(null, 4, null);
+        }
+
         parent::__construct($name, $not_null);
         if(!in_array($precision, array(
             2,
@@ -2088,6 +2179,13 @@ class FForeignId extends FInt
      */
     public function __construct($name, $notnull = false, $foreign_model = '', $precision = 4)
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $notnull, $foreign_model, $precision) =
+                $name + array(null, false, '', 4);
+        }
+
         parent::__construct($name, $precision, $notnull);
         if(!is_string($foreign_model))
             throw new HgException("Foreign model parameter has to be a string.");
@@ -2136,6 +2234,13 @@ class FFile extends FString
      */
     public function __construct($name, $notnull = false, array $conf=array())
     {
+        // allow passing arguments by array in first argument
+        if (is_array($name))
+        {
+            @list($name, $notnull, $conf) =
+                $name + array(null, false, array());
+        }
+
         $this->_conf = array_merge($this->_conf, $conf);
 
         parent::__construct($name, $notnull, null, 0, 32);
