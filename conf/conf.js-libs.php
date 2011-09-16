@@ -29,7 +29,7 @@ $conf['js-libs'] = array(
     'jquery' => array(
         'filename' => 'jquery-%s%s',
         'cdn_path' => '%sajax.googleapis.com/ajax/libs/jquery/%s/jquery%s.js',
-        'version' => '1.5.2',
+        'version' => '1.6.4',
     ),
 
     /**
