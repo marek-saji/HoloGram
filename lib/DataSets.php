@@ -337,7 +337,7 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     
     public function whiteListAll()
     {
-        $this->_whitelist = $this->getFields();
+        $this->_whitelist = $this->getFields(true);
         return $this;
     }
 
@@ -1117,14 +1117,14 @@ class Join extends DataSet
         $this->_joins[] = array('ds'=>$data_set, 'type'=>$join_type, 'on'=>$on);
     }
     
-    public function getFields()
+    public function getFields($only_writeable = false)
     {
-        $fields = array_values($this->_first->getFields());
+        $fields = array_values($this->_first->getFields($only_writeable));
         foreach($this->_joins as $join)
         {
             $fields = array_merge(
                 $fields,
-                array_values($join['ds']->getFields())
+                array_values($join['ds']->getFields($only_writeable))
             );
         }
         $f_array = array();
@@ -1442,18 +1442,27 @@ abstract class Model extends DataSet implements IModel
     {
         return $this->_primary_keys;
     }
-    
+
     /**
     * Retrieves fields definition
     */
-    public function getFields()
+    public function getFields($only_writeable = false)
     {
-        return($this->_fields);
+        $fields = $this->_fields;
+
+        if ($only_writeable === true)
+        {
+            $fields = array_filter($fields, function (& $field) {
+                return $field->isWriteable() !== false;
+            });
+        }
+
+        return $fields;
     }
-    
-    public function fieldsCount()
+
+    public function fieldsCount($only_writeable = false)
     {
-        return(count($this->_fields));
+        return count($this->getFields($only_writeable));
     }
 
 
@@ -1622,7 +1631,7 @@ abstract class Model extends DataSet implements IModel
 		if (empty($pg_db))
 		    return false;
         g('Functions')->changeKeys($pg_db,'fieldname');
-        $fields = $this->_fields;
+        $fields = $this->getFields(true);;
         $not_in_base['fields'] = array_diff_key($fields,$pg_db);
         $not_in_model['fields'] = array_diff_key($pg_db,$fields);
         $def_diff['fields'] = array_intersect_key($fields,$pg_db);
@@ -1755,7 +1764,7 @@ abstract class Model extends DataSet implements IModel
         $sql0 = '';
         $sql = "DROP TABLE IF EXISTS \"{$this->_table_name}\";\n";
         $sql .= "CREATE TABLE \"{$this->_table_name}\" (\n";
-        foreach($this->_fields as $f)
+        foreach ($this->getFields(true) as $f)
         {
             if ($pre = $f->columnDefinitionAdditionalQuery())
             {
@@ -1795,10 +1804,17 @@ abstract class Model extends DataSet implements IModel
         $error = array();
         foreach ($values as $name => $val)
         {
+            $field = $this->getField($name);
+
+            if ($field->isWriteable() !== true)
+            {
+                continue;
+            }
+
             if ($err = $this->validateField($name, $val))
                 $error[$name] = $err;
             else
-                $set[] = $this[$name]->generator() . "=" . $this[$name]->dbString($val);
+                $set[] = $field->generator() . "=" . $field->dbString($val);
         }
 
         if(!empty($error))
@@ -2018,14 +2034,15 @@ abstract class Model extends DataSet implements IModel
         elseif($action =='delete')
         {
             $sql .= "DELETE FROM \"{$this->_table_name}\" ";
-            $non_pk = array_diff_key($this->_fields, array_flip($this->_primary_keys)); 
+            $non_pk = array_diff_key($this->getFields(true), array_flip($this->_primary_keys)); 
             $data = array_diff_key($data,$non_pk); //ignore all data except the primary key components.
         }
         
         //process the data
         
         $values = '';
-        foreach($this->_fields as $name=>$field)
+        $fields = $this->getFields(true);
+        foreach ($fields as $name=>$field)
         {
             if (array_key_exists($name, $data))
             {

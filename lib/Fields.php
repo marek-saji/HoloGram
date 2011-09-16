@@ -693,6 +693,22 @@ abstract class Field implements IModelField
         }
     }
 
+
+    /**
+     * Determines whether data assigned to this field should
+     * be stored in the database.
+     *
+     * When this return false, there will be no column created for the table.
+     * @author m.augustynowicz
+     *
+     * @return bool
+     */
+    public function isWriteable()
+    {
+        return true;
+    }
+
+
     public function columnDefinition()
     {
         $sql = '"' . $this->getName() . '" ' . $this->dbType();
