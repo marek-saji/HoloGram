@@ -417,7 +417,13 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
             if($field === null)
                 $field_object = 'null';
             else
+            {
                 $field_object = is_object($field) ? $field : $this->getField($field);
+                if ($field_object->isWriteable() !== true)
+                {
+                    continue;
+                }
+            }
 
             if(!$field_object)
             {
