@@ -179,6 +179,15 @@ switch (true)
     case strpos($_SERVER['HTTP_USER_AGENT'],'Safari') :
     case strpos($_SERVER['HTTP_USER_AGENT'],'Presto') :
         break;
+    case strpos($_SERVER['HTTP_USER_AGENT'],'Trident') :
+        if (preg_match('/\bMSIE ([0-9]+)\b/', $_SERVER['HTTP_USER_AGENT'], $match))
+        {
+            if ($match[1] > 8)
+            {
+                break;
+            }
+
+        }
     default :
         /**
          * Firebug Lite: provide `console` object.
@@ -187,6 +196,7 @@ switch (true)
         $conf['js-libs']['firebug-lite'] = array(
             'version' => '1.2',
             'cdn_path' => '%sgetfirebug.com/releases/lite/%s/firebug-lite-compressed.js',
+            'debug' => true
         );
 }
 
