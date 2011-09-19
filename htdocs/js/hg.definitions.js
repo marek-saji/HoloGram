@@ -29,6 +29,7 @@ hg['ajaxDOMReady'] = {js:'../hg/js/hg.ajax.js'};
 
 // dialog boxes
 hg['nyroModalInit'] = {js:'../hg/js/hg.nyroModal.js'};
+hg['nyroModalFit']  = {js:'../hg/js/hg.nyroModal.js'};
 
 // flash visibility toggler
 hg['hideFlashes']   = {js:'../hg/js/hg.flashtoggler.js'};

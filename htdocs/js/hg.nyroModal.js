@@ -105,29 +105,41 @@ hg['nyroModalInit'].f = function()
     });
 
     // it's alive, aLIVE!
-    $('.modal').live('click', function(e){
-        var hashHref,
+    $('.modal', $('body')[0]).live('click', function(e, justPropagate){
+        var $this,
+            hashHref,
             $target
         ;
-        if (window.innerHeight > hg.nyroModalInit.f.minHeight
-            && window.innerWidth > hg.nyroModalInit.f.minWidth)
+        if (justPropagate) {
+            return;
+        }
+        if (hg('nyroModalFit')())
         {
             e.preventDefault();
             $.nyroModalManual($.extend({}, $.fn.nyroModal.settings, {from: this}));
         }
         else
         {
-            hashHref = $(this).filter('[href^=#]').attr('href');
+            $this = $(this);
+            hashHref = $this.filter('[href^=#]').attr('href');
             $target  = $(hashHref);
             if ($target.length !== 0) {
                 e.preventDefault();
-                $target.fadeToggle();
+                e.stopPropagation();
+                $target.fadeToggle(function () {
+                    $this.trigger('click', true);
+                });
             }
         }
     });
 
     return true;
-}
-hg['nyroModalInit'].f.minWidth  = 500;
-hg['nyroModalInit'].f.minHeight = 500;
+};
+
+hg.nyroModalFit.minWidth  = 500;
+hg.nyroModalFit.minHeight = 500;
+hg.nyroModalFit.f = function () {
+    return (window.innerHeight > hg.nyroModalFit.minHeight
+         && window.innerWidth  > hg.nyroModalFit.minWidth);
+};
 
