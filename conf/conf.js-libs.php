@@ -187,6 +187,7 @@ switch (true)
         $conf['js-libs']['firebug-lite'] = array(
             'version' => '1.2',
             'cdn_path' => '%sgetfirebug.com/releases/lite/%s/firebug-lite-compressed.js',
+            'debug' => true
         );
 }
 
