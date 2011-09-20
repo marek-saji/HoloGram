@@ -1392,6 +1392,39 @@ abstract class Model extends DataSet implements IModel
 
 
     /**
+     * In addition to fetching rows, convert some fields
+     * @author m.augustynowicz
+     *
+     * @param string $key if passed, rows will be re-keyed with this field's values
+     * @param bool $return actually return data
+     *
+     * @return array
+     */
+    public function exec($key = null, $return = true)
+    {
+        parent::exec($key, $return);
+
+        foreach ($this->_array as & $row)
+        {
+            foreach ($row as $field_name => & $field_value)
+            {
+                $field = $this->getField($field_name);
+                if ($field instanceof IModelField)
+                {
+                    $field_value = $field->parseDbValue($field_value);
+                }
+            }
+        }
+
+        if ($return)
+        {
+            if ($this->_limit==1 && !empty($this->_array))
+                return ($this->_array[0]);
+            return ($this->_array);
+        }
+    }
+
+    /**
      * Validate model field
      * @author m.augustynowicz
      *

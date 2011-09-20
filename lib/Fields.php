@@ -177,6 +177,15 @@ interface IModelField extends IField
      */
     static public function dbString($value);
 
+    /**
+     * Parse value fetched from data base
+     * @author m.augustynowicz
+     *
+     * @param string $value
+     *
+     * @return mixed
+     */
+    static public function parseDbValue($value);
 
     public function columnDefinition();
     public function columnDefinitionAdditionalQuery();
@@ -698,6 +707,20 @@ abstract class Field implements IModelField
         {
             return pg_escape_string($value);
         }
+    }
+
+
+    /**
+     * Parse value fetched from data base
+     * @author m.augustynowicz
+     *
+     * @param string $value
+     *
+     * @return mixed
+     */
+    static public function parseDbValue($value)
+    {
+        return $value;
     }
 
 
@@ -2019,6 +2042,28 @@ class FBool extends Field implements IBoolean
             return g('Functions')->anyToBool($value) ? 'true' : 'false';
         }
     }
+
+
+    /**
+     * Parse value fetched from data base
+     * @author m.augustynowicz
+     *
+     * @param string $value
+     *
+     * @return mixed
+     */
+    static public function parseDbValue($value)
+    {
+        if ($value === null)
+        {
+            return null;
+        }
+        else
+        {
+            return g('Functions')->anyToBool($value);
+        }
+    }
+
 
     public function dbType()
     {
