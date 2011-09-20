@@ -95,7 +95,8 @@ class PaginatorController extends Component
         $to = $from + $this->_perpage;
         return array(
             $from,
-            $to
+            $to,
+            $to - $from
         );
     }
 
