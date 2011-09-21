@@ -105,8 +105,8 @@ class View extends HgBase implements IView
                 case strpos($_SERVER['HTTP_USER_AGENT'],'Safari') :
                 case strpos($_SERVER['HTTP_USER_AGENT'],'Presto') :
                     break;
-                default :
-                    $this->addJs('http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js');
+                /*default :
+                    $this->addJs('http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js');*/
             }
         }
 
@@ -153,7 +153,7 @@ class View extends HgBase implements IView
         ob_start(NULL);
         echo g()->first_controller->present();
         $contents = ob_get_clean();
-        
+
         if (!isset($this->_metas['generator']))
             $this->setMeta('generator', 'Hologram');
 
@@ -195,12 +195,12 @@ class View extends HgBase implements IView
 
         $this->_renderBodyClose();
         $this->_renderHtmlClose();
-    }    
-    
+    }
+
     /**
-    * Zalacza podkontroler. Ta metoda powinna byc uzywana przez kontrolery do wstawiania 
+    * Zalacza podkontroler. Ta metoda powinna byc uzywana przez kontrolery do wstawiania
     * w okreslonym miejscu szablonu zawartosci podkontrolera.
-    */   
+    */
     public function inc($controller)
     {
         echo $controller->render();
@@ -210,7 +210,7 @@ class View extends HgBase implements IView
     * Dodaje znacznik link.
     * @param $name
     * @param def jest w postaci array ( $ident => $definition ), gdzie $definition jest tablica
-    *        asocjacyjna z kluczami (opcjonalnymi) 
+    *        asocjacyjna z kluczami (opcjonalnymi)
                 title, href, type, media, rel, rev, hreflang.
     */
     public function addLink($name='', $def)
@@ -223,10 +223,10 @@ class View extends HgBase implements IView
         );
         if ($name)
             $this->_links[$name] = $def;
-        else 
+        else
             $this->_links[] = $def;
     }
-    
+
     /**
     * Dodaje link do pliku css. Efektem przypomina szczegolne wywolanie addLink.
     */
@@ -237,26 +237,26 @@ class View extends HgBase implements IView
         $this->addLink(
             $key,
             array(
-                'type'=>'text/css', 
-                'media' => $media, 
-                'rel' =>"stylesheet", 
+                'type'=>'text/css',
+                'media' => $media,
+                'rel' =>"stylesheet",
                 'href' => $file
             )
         );
         return(true);
     }
-    
+
     /**
-    * Dodaje css wbudowany w html. 
+    * Dodaje css wbudowany w html.
     * @param array($key => $definition), gdzie $key jest selectorem CSS.
     */
     public function addInlineCss($css_code)
     {
         $this->_inl_csses[] = $css_code;
-    }    
-    
+    }
+
     /**
-    * Dodaje zewnetrzny skrypt. 
+    * Dodaje zewnetrzny skrypt.
     */
     public function addJs($file)
     {
@@ -264,23 +264,23 @@ class View extends HgBase implements IView
         $this->_serializeLink($file);
         $this->_jses[$key] = $file;
     }
-    
+
     /**
-    * Dodaje skrypt wbudowany w strone. 
+    * Dodaje skrypt wbudowany w strone.
     */
     public function addInlineJs($js_code)
     {
         $this->_inl_jses[] = $js_code;
     }
-    
+
     /**
     * Dodaje instrukcje wywolywane po zaladowaniu DOM'u
     */
     public function addOnLoad($js_code)
     {
         $this->_onloads[] = $js_code;
-    }    
-    
+    }
+
     public function addKeyword($word)
     {
         $keywords = $this->getMeta('keywords');
@@ -298,18 +298,18 @@ class View extends HgBase implements IView
     public function setTitle($title)
     {
         $this->_title = $title;
-    }    
-    
+    }
+
     public function getTitle()
     {
         return $this->_title;
     }
-    
+
     public function getMeta($name)
     {
         return @$this->_metas[$name];
     }
-    
+
     /**
      * Sets <meta> tag to be rendered in <head></head> section
      *
@@ -349,10 +349,10 @@ class View extends HgBase implements IView
             $this->_headers[$type] = $value;
         }
     }
-    
+
     /**
      * Add code between <head></head> signs
-     * IMPORTANT!!! - Do not use this function too much; e.g. if you want add JS please do it function addJs()     
+     * IMPORTANT!!! - Do not use this function too much; e.g. if you want add JS please do it function addJs()
      *
      * @param string $code - code to palce in head
      * @return void
@@ -414,7 +414,7 @@ class View extends HgBase implements IView
     /**
      * Adds HTML head's profile.
      * Used mainly for microformats' XMDPs.
-     * 
+     *
      * @param string $uri URI to profile document
      */
     public function addProfile($uri)
@@ -422,7 +422,7 @@ class View extends HgBase implements IView
         $this->_profiles[$uri] = $uri;
     }
 
-    
+
     /**
      * Generic tag code generator.
      *
@@ -465,7 +465,7 @@ class View extends HgBase implements IView
         $glue = FALSE===strstr($url,'?') ? '?' : '&amp;';
         $url .= $glue . base_convert($stamp,10,36);
     }
-    
+
 
     /**
      * Renders document's DOCTYPE
