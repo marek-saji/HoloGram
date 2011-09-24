@@ -1,0 +1,3 @@
+[submodule "htdocs/js/less"]
+	path = htdocs/js/less
+	url = https://github.com/cloudhead/less.js

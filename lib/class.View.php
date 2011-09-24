@@ -73,9 +73,9 @@ class View extends HgBase implements IView
         {
             // Leaner CSS
             // http://lesscss.org/
-            $lesscss_version = '1.0.41';
+            $lesscss_version = '1.1.4';
             $lesscss_file = $this->_renderer->file(
-                "less-{$lesscss_version}.min", 'js', false
+                "less/dist/less-{$lesscss_version}.min", 'js', false
             );
             // it has to be plased under <links />
             $this->addInHead("<script type='text/javascript' src='{$lesscss_file}'></script>");
