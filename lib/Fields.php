@@ -1593,7 +1593,7 @@ class FFloat extends Field
         $this->_rules['max_decimals'] = $max_decimals;
 
         $this->mess(array('invalid' => 'Invalid floating point value'));
-        $this->mess(array('min_val_excided' => 'Number is to small'));
+        $this->mess(array('min_val_excided' => 'Number is too small'));
         $this->mess(array('max_val_excided' => 'Number is too big'));
         $this->mess(array('max_decimals_excided'
                 => 'Too many digits after decimal point') );

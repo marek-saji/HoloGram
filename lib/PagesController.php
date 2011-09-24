@@ -9,8 +9,6 @@ class PagesController extends Component
     protected $_action = 'default';
     protected $_layout = 'main';
     protected $_params = array();
-    protected $_convert_from = 'ÀÁÂÃÄÅĀĂĄǍǺÆǼÇĆĈĊČĎĐÐĒĔĖĘĚÈÉÊËĜĞĠĢĤĦÌÍÎĨĪĬĮİÏǏĴĶĹĻĽĿŁÑŃŅŇÒÓÔÕÖŌŎŐǑǾØŒŔŖŘŚŜŞŠŢŤŦÙÚÛÜŨŪŬŮŰŲǓǕǗǙǛŴÝŶŸŹŻŽ';
-    protected $_convert_to = 'AAAAAAAAAAAAACCCCCDDDEEEEEEEEEGGGGHHIIIIIIIIIIJKLLLLLNNNNOOOOOOOOOOOORRRSSSSTTTUUUUUUUUUUUUUUUWYYYZZZ';
     protected $_views_layouts = array('View' => 'main', 'AjaxView' => 'main_ajax');
 
     public function present()

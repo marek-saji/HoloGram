@@ -70,7 +70,7 @@ if (reset($pages) != 1)
     if (current($pages) != 1+1)
     {
         unset($pages[key($pages)]);
-        $ppages['&hellip'] = null;
+        $ppages['&hellip;'] = null;
     }
 }
 if (end($pages) != $t->_total_pages)
