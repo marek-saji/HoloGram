@@ -125,9 +125,14 @@ class Forms extends HgBase
      *
      * @return void
      */
-    public function create($action='', array $additional_params=array())
+    public function create($action = null, array $additional_params=array())
     {
         $f = g('Functions');
+
+        if ($action === null)
+        {
+            $action = g()->req->getRequestUrl();
+        }
 
         if(!empty($additional_params['ident']))
             $this->__ident = $additional_params['ident'];
