@@ -3383,6 +3383,16 @@ abstract class Component extends Controller
         if (@$this->_forms_are_ok)
             return;
 
+        // add predefinied forms
+        $this->forms += array(
+            // use with tpl/confirm.php
+            'confirm' => array(
+                'ajax'   => false,
+                'model'  => false,
+                'inputs' => array(),
+            ),
+        );
+
         $fixed = array();
 
         foreach ($this->forms as $form_name => & $form_def)

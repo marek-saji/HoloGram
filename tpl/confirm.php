@@ -36,9 +36,7 @@ $form = g('Forms', array('confirm', $this));
 
     <div class="holoform">
         <?php
-        $form->create($this->url2c($this->url(),
-                                   $this->getLaunchedAction(),
-                                   $this->getParams() ));
+        $form->create();
         ?>
             <p>
                 <?=$question?>
