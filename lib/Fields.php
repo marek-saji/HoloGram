@@ -1298,7 +1298,7 @@ class FInt extends Field
      * @param $notnull a not null property
      * @param $def_val A default value of the field.
      */
-    public function __construct($name, $precision = 4, $notnull = false, $def_val = null)
+    public function __construct($name, $precision = 4, $notnull = false, $def_val = null, $min = null, $max = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
@@ -1315,6 +1315,19 @@ class FInt extends Field
         )))
             $precison = 4;
         $this->_rules['precision'] = $precision;
+
+
+        if ($min !== null)
+        {
+            $this->_rules['min'] = $min;
+        }
+        $this->mess(array('min_val_excided' => 'Value too small'));
+
+        if ($max !== null)
+        {
+            $this->_rules['max'] = $max;
+        }
+        $this->mess(array('max_val_excided' => 'Value too big'));
     }
 
     public function checkType($def)
@@ -1335,15 +1348,33 @@ class FInt extends Field
         // note that this will cast $value to string
         $value = preg_replace('/ /', '', $value);
 
-        if ('' !== $value)
+        if ('' === $value)
         {
-            if (!g('Functions')->isInt($value))
-                $err['invalid'] = true;
+            if ($this->notNull())
+            {
+                $err['notnull'] = true;
+            }
+        }
+        else if (g('Functions')->isInt($value))
+        {
+            if (@$this->_rules['min'] !== null)
+            {
+                if ($value < $this->_rules['min'])
+                {
+                    $err['min_val_excided'] = true;
+                }
+            }
+            if (@$this->_rules['max'] !== null)
+            {
+                if ($value > $this->_rules['max'])
+                {
+                    $err['max_val_excided'] = true;
+                }
+            }
         }
         else
         {
-            if ($this->notNull())
-                $err['notnull'] = true;
+            $err['invalid'] = true;
         }
 
         return ($this->_errors($err, $value));
