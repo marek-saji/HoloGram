@@ -32,6 +32,20 @@ $attrs['id'] = $id;
 $attrs['name'] = $ident.$name_prefix.'['.$input.']'.$name_suffix;
 //$attrs['value'] = $data;
 
+// convert data-{min,max}length rules to html5 attributes
+foreach (array('minlength', 'maxlength') as $rule)
+{
+    $data_attr = 'data-' . $rule;
+    if (array_key_exists($data_attr, $attrs))
+    {
+        if (!array_key_exists($rule, $attrs))
+        {
+            $attrs[$rule] =& $attrs[$data_attr];
+            unset($attrs[$data_attr]);
+        }
+    }
+}
+
 $data = html_entity_decode(@$data);
 $err_id = $attrs['id'] . '__err';
 if ((@$errors) && is_array($errors))

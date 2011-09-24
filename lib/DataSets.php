@@ -1660,7 +1660,7 @@ abstract class Model extends DataSet implements IModel
         $n_db_model = array();
         $db_model = array();
         $pg_db = g()->db->getAll(
-            "select fd.attname as fieldname, tp.typname as typename, fd.atttypmod as type_specific, fd.attnotnull as notnull, def.adsrc as defval
+            "select fd.attname as fieldname, tp.typname as typename, fd.atttypmod as type_specific, fd.attnotnull as required, def.adsrc as defval
             from pg_class tb
             left join pg_attribute fd on fd.attrelid=tb.oid
             left join pg_type tp on fd.atttypid =tp.oid

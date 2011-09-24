@@ -410,20 +410,20 @@ abstract class Field implements IModelField
     /**
      * Field constructor
      * @param $name Fields name.
-     * @param $notnull Null/not null property.
+     * @param $required Null/not null property.
      * @param $def_value Default value of the field.
      */
-    public function __construct($name, $notnull = false, $def_val = null)
+    public function __construct($name, $required = false, $def_val = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $notnull, $def_val) =
+            @list($name, $required, $def_val) =
                 $name + array(null, false, null);
         }
 
         $this->_name = $name;
-        $this->_rules['notnull'] = $notnull;
+        $this->_rules['required'] = $required;
         if($def_val!==null)
             $this->auto('DEFAULT');
         $this->_rules['defval'] = $def_val;
@@ -596,7 +596,7 @@ abstract class Field implements IModelField
         {
             return false; // use any non-null value given
         }
-        if (!$this->_rules['notnull'])
+        if (!$this->_rules['required'])
         {
             return false; // legacy, quirk. if field can be NULL, let it be NULL.
         }
@@ -659,15 +659,15 @@ abstract class Field implements IModelField
 
     /**
      * Sets or retrieves not null property
-     * @param $notnull a boolean true or false to set the not null property
-     * @return if $notnull is not given, or is not a boolean - current value of the property is returned, or NULL if the property wasn't set.
+     * @param $required a boolean true or false to set the not null property
+     * @return if $required is not given, or is not a boolean - current value of the property is returned, or NULL if the property wasn't set.
      */
-    public function notNull($notnull = NULL)
+    public function notNull($required = NULL)
     {
-        if(is_bool($notnull))
-            $this->_rules['notnull'] = $notnull;
+        if(is_bool($required))
+            $this->_rules['required'] = $required;
         else
-            return (isset($this->_rules['notnull']) ? $this->_rules['notnull'] : NULL);
+            return (isset($this->_rules['required']) ? $this->_rules['required'] : NULL);
     }
 
     /**
@@ -762,7 +762,7 @@ abstract class Field implements IModelField
         if(NULL === $value && $this->notNull())
         {
             if(!isset($this->_rules['auto']) && !isset($this->_rules['defval']))
-                return ('notnull');
+                return ('required');
         }
         return (false);
     }
@@ -777,7 +777,7 @@ abstract class Field implements IModelField
         $type = strtolower($type);
         $db_type = $def['typename'];
         $db_type = strtolower($db_type);
-        $db_type_with_size = sprintf('%s(%s)', $db_type, @$this->_rules['max_length']);
+        $db_type_with_size = sprintf('%s(%s)', $db_type, @$this->_rules['maxlength']);
 
         if ($type != $db_type)
         if ($type != $db_type_with_size)
@@ -788,10 +788,10 @@ abstract class Field implements IModelField
         // NOT NULL
 
         $v = 'f';
-        if(isset($this->_rules['notnull']))
-            $v = ($this->_rules['notnull'] === true ? 't' : 'f');
-        if($def['notnull'] != $v)
-            $res['notnull'] = $v;
+        if(isset($this->_rules['required']))
+            $v = ($this->_rules['required'] === true ? 't' : 'f');
+        if($def['required'] != $v)
+            $res['required'] = $v;
 
         // DEFAULT
 
@@ -859,25 +859,25 @@ abstract class FStringBase extends Field
     /**
      * Field constructor
      * @param $name Fields name.
-     * @param $notnull Null/not null property.
+     * @param $required Null/not null property.
      * @param $def_value Default value of the field.
      */
-    public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null)
+    public function __construct($name, $required = false, $def_val = null, $minlength = null, $maxlength = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $notnull, $def_val, $min_length, $max_length) =
+            @list($name, $required, $def_val, $minlength, $maxlength) =
                 $name + array(null, false, null, null, null);
         }
 
-        parent::__construct($name, $notnull, $def_val);
-        $this->_rules['min_length'] = $min_length;
-        $this->_rules['max_length'] = $max_length;
+        parent::__construct($name, $required, $def_val);
+        $this->_rules['minlength'] = $minlength;
+        $this->_rules['maxlength'] = $maxlength;
         $this->mess(array(
-            'max_length' => 'Value too long',
-            'min_length' => 'Value too short',
-            'notnull' => 'Field required'
+            'maxlength' => 'Value too long',
+            'minlength' => 'Value too short',
+            'required' => 'Field required'
         ));
     }
 
@@ -887,12 +887,12 @@ abstract class FStringBase extends Field
             $res = array();
         if($def['typename'] == 'text')
         {
-            if($def['type_specific'] != '-1' && !isset($this->_rules['max_length']))
+            if($def['type_specific'] != '-1' && !isset($this->_rules['maxlength']))
                 $res['typename'] = $this->dbType();
         }
         elseif($def['typename'] == 'varchar' || $def['typename'] == 'bpchar')
         {
-            if(!g('Functions')->isInt($def['type_specific']) || $def['type_specific'] - 4 < $this->_rules['min_length'] || $def['type_specific'] - 4 > $this->_rules['max_length'])
+            if(!g('Functions')->isInt($def['type_specific']) || $def['type_specific'] - 4 < $this->_rules['minlength'] || $def['type_specific'] - 4 > $this->_rules['maxlength'])
                 $res['typename'] = $this->dbType();
         }
         else
@@ -907,7 +907,7 @@ abstract class FStringBase extends Field
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else
@@ -915,12 +915,12 @@ abstract class FStringBase extends Field
             $value = str_replace("\r\n", "\n", $value);
             $length = mb_strlen($value, 'utf-8');
             //null is not the same as an empty string
-            //if(isset($this->_rules['notnull']) && $this->_rules['notnull'] && !$length)
+            //if(isset($this->_rules['required']) && $this->_rules['required'] && !$length)
             //  return true;
-            if(isset($this->_rules['min_length']) && $this->_rules['min_length'] > $length)
-                $err['min_length'] = true;
-            if(isset($this->_rules['max_length']) && $this->_rules['max_length'] < $length)
-                $err['max_length'] = true;
+            if(isset($this->_rules['minlength']) && $this->_rules['minlength'] > $length)
+                $err['minlength'] = true;
+            if(isset($this->_rules['maxlength']) && $this->_rules['maxlength'] < $length)
+                $err['maxlength'] = true;
         }
         return ($this->_errors($err, $value));
     }
@@ -939,12 +939,12 @@ abstract class FStringBase extends Field
 
     public function dbType()
     {
-        if (isset($this->_rules['max_length']))
+        if (isset($this->_rules['maxlength']))
         {
-            if ($this->_rules['max_length'] === @$this->_rules['min_length'])
-                return "BPCHAR({$this->_rules['max_length']})";
+            if ($this->_rules['maxlength'] === @$this->_rules['minlength'])
+                return "BPCHAR({$this->_rules['maxlength']})";
             else
-                return "VARCHAR({$this->_rules['max_length']})";
+                return "VARCHAR({$this->_rules['maxlength']})";
         }
         else
             return 'TEXT';
@@ -1009,16 +1009,16 @@ class FMultilineString extends FStringBase
  */
 class FEmail extends FString
 {
-    public function __construct($name, $notnull = false, $def_val = null)
+    public function __construct($name, $required = false, $def_val = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $notnull, $def_val) =
+            @list($name, $required, $def_val) =
                 $name + array(null, false, null);
         }
 
-        parent::__construct($name, $notnull, $def_val, 3, 320);
+        parent::__construct($name, $required, $def_val, 3, 320);
         $this->mess(array(
             'invalid' => 'Invalid e-mail address'
         ));
@@ -1026,10 +1026,10 @@ class FEmail extends FString
 
     public function rules($rules = NULL)
     {
-        if(isset($rules['max_length']) && $rules['max_length'] > 320)
-            $rules['max_length'] = 320;
-        if(isset($rules['min_length']) && $rules['min_length'] < 3)
-            $rules['min_length'] = 3;
+        if(isset($rules['maxlength']) && $rules['maxlength'] > 320)
+            $rules['maxlength'] = 320;
+        if(isset($rules['minlength']) && $rules['minlength'] < 3)
+            $rules['minlength'] = 3;
         return (parent::rules($rules));
     }
 
@@ -1040,7 +1040,7 @@ class FEmail extends FString
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else
@@ -1063,32 +1063,32 @@ class FEmail extends FString
 class FMD5String extends FString
 {
 
-    public function __construct($name, $notnull = false, $min_length = 32, $max_length = 32)
+    public function __construct($name, $required = false, $minlength = 32, $maxlength = 32)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $notnull, $min_length, $max_length) =
+            @list($name, $required, $minlength, $maxlength) =
                 $name + array(null, false, 32, 32);
         }
 
-        parent::__construct($name, $notnull, null, $min_length, $max_length);
+        parent::__construct($name, $required, null, $minlength, $maxlength);
     }
 }
 
 class FPassword extends FMD5String
 {
 
-    public function __construct($name, $min_length = null, $max_length = null, $notnull = true)
+    public function __construct($name, $minlength = null, $maxlength = null, $required = true)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $min_length, $max_length, $notnull) =
+            @list($name, $minlength, $maxlength, $required) =
                 $name + array(null, null, null, true);
         }
 
-        parent::__construct($name, $notnull, $min_length, $max_length);
+        parent::__construct($name, $required, $minlength, $maxlength);
     }
 
     static public function dbString($value)
@@ -1115,19 +1115,19 @@ class FURL extends FString
     protected $_default_protocol = '';
     protected $_check_dns_records = false;
 
-    public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null, $allowed_protocols=array('http','https','ftp','gopher'), $default_protocol='http', $check_dns_records=array('ANY'))
+    public function __construct($name, $required = false, $def_val = null, $minlength = null, $maxlength = null, $allowed_protocols=array('http','https','ftp','gopher'), $default_protocol='http', $check_dns_records=array('ANY'))
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $notnull, $def_val, $min_length, $max_length, $allowed_protocols, $default_protocol, $check_dns_records    ) =
+            @list($name, $required, $def_val, $minlength, $maxlength, $allowed_protocols, $default_protocol, $check_dns_records    ) =
                 $name + array(null, false, null, null, null, array('http','https','ftp','gopher'), 'http', array('ANY'));
         }
 
         $this->_allowed_protocols = array_flip($allowed_protocols);
         $this->_default_protocol = $default_protocol;
         $this->_check_dns_records = $check_dns_records;
-        parent::__construct($name, $notnull, $def_val, $min_length, $max_length);
+        parent::__construct($name, $required, $def_val, $minlength, $maxlength);
         $this->mess(array(
             'unsupported protocol' => 'Unsupported protocol',
             'syntax error' => 'Incorrect URL',
@@ -1190,16 +1190,16 @@ class FURL extends FString
  */
 class FHTTP extends FURL
 {
-    public function __construct($name, $notnull = false, $def_val = null, $min_length = null, $max_length = null)
+    public function __construct($name, $required = false, $def_val = null, $minlength = null, $maxlength = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $notnull, $def_val, $min_length, $max_length) =
+            @list($name, $required, $def_val, $minlength, $maxlength) =
                 $name + array(null, false, null, null, null);
         }
 
-        return parent::__construct($name, $notnull, $def_val, $min_length, $max_length, array('http','https'), 'http');
+        return parent::__construct($name, $required, $def_val, $minlength, $maxlength, array('http','https'), 'http');
     }
 }
 
@@ -1224,7 +1224,7 @@ class FLocationCoords extends Field
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
             return $this->_errors($err, $value);
         }
@@ -1295,19 +1295,19 @@ class FInt extends Field
      * Constructor.
      * @param $name field name
      * @param $precision byte-length of the field. Either 2, or 4, or 8. Any other value is treated as 4.
-     * @param $notnull a not null property
+     * @param $required a not null property
      * @param $def_val A default value of the field.
      */
-    public function __construct($name, $precision = 4, $notnull = false, $def_val = null, $min = null, $max = null)
+    public function __construct($name, $precision = 4, $required = false, $def_val = null, $min = null, $max = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $precision, $notnull, $def_val) =
+            @list($name, $precision, $required, $def_val) =
                 $name + array(null, 4, false, null);
         }
 
-        parent::__construct($name, $notnull, $def_val);
+        parent::__construct($name, $required, $def_val);
         if(!in_array($precision, array(
             2,
             4,
@@ -1352,7 +1352,7 @@ class FInt extends Field
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else if (g('Functions')->isInt($value))
@@ -1423,12 +1423,12 @@ class FEnum extends Field
     protected $_values = array();
 
 
-    public function __construct($name, $type_name, $notnull=false, $default_value=null)
+    public function __construct($name, $type_name, $required=false, $default_value=null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $type_name, $notnull, $def_val) =
+            @list($name, $type_name, $required, $def_val) =
                 $name + array(null, null, false, null);
         }
 
@@ -1439,7 +1439,7 @@ class FEnum extends Field
             throw new HgException('Tried to create '.__CLASS__.' with non-existing enum `'.$type_name.'\'. Create one in conf[enum].');
         }
 
-        parent::__construct($name, $notnull, $default_value);
+        parent::__construct($name, $required, $default_value);
 
         $this->_type_name = $type_name;
         $this->_values = & $enums[$type_name];
@@ -1567,29 +1567,29 @@ class FFloat extends Field
      * @param string $name field name
      * @param int $precision byte-length of the field.
      *        Either 2, or 4, or 8. Any other value is treated as 4.
-     * @param boolean $notnull a not null property
+     * @param boolean $required a not null property
      * @param null|float $def_val A default value of the field.
-     * @param null|float $min_val minimal value
-     * @param null|float $max_val maximal value
+     * @param null|float $min minimal value
+     * @param null|float $max maximal value
      * @param null|int $max_decimals maximum number of decimals after the point
      */
-    public function __construct($name, $precision = 4, $notnull = false, $def_val = null, $min_val=null, $max_val=null, $max_decimals = null)
+    public function __construct($name, $precision = 4, $required = false, $def_val = null, $min=null, $max=null, $max_decimals = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $precision, $notnull, $def_val, $min_val, $max_val, $max_decimals) =
+            @list($name, $precision, $required, $def_val, $min, $max, $max_decimals) =
                 $name + array(null, 4, false, null, null, null, null);
         }
 
-        parent::__construct($name, $notnull, $def_val);
+        parent::__construct($name, $required, $def_val);
 
         if ($precision != 4 && $precision != 8)
             $precison = 4;
         $this->_rules['precision'] = $precision;
 
-        $this->_rules['min_val'] = $min_val;
-        $this->_rules['max_val'] = $max_val;
+        $this->_rules['min'] = $min;
+        $this->_rules['max'] = $max;
         $this->_rules['max_decimals'] = $max_decimals;
 
         $this->mess(array('invalid' => 'Invalid floating point value'));
@@ -1619,7 +1619,7 @@ class FFloat extends Field
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else
@@ -1627,14 +1627,14 @@ class FFloat extends Field
             $value = g('Functions')->floatVal($value);
             if (false === $value)
                 $err['invalid'] = true;
-            if (null !== $this->_rules['min_val'])
+            if (null !== $this->_rules['min'])
             {
-                if ($value < $this->_rules['min_val'])
+                if ($value < $this->_rules['min'])
                     $err['min_val_excided'] = true;
             }
-            if (null !== $this->_rules['max_val'])
+            if (null !== $this->_rules['max'])
             {
-                if ($value > $this->_rules['max_val'])
+                if ($value > $this->_rules['max'])
                     $err['max_val_excided'] = true;
             }
             if (null !== $this->_rules['max_decimals'])
@@ -1692,22 +1692,22 @@ class FDouble extends FFloat
      * Constructor.
      * @param $name field name
      * @param $precision byte-length of the field. Either 2, or 4, or 8. Any other value is treated as 8.
-     * @param $notnull a not null property
+     * @param $required a not null property
      * @param $def_val A default value of the field.
      * @param int $decimal_places - number of digits after decimal separator (. or ,)
-     * @param float $min_val - minimum value of a field
-     * @param float $max_val - maximum value of a field
+     * @param float $min - minimum value of a field
+     * @param float $max - maximum value of a field
      */
-    public function __construct($name, $precision = 8, $notnull = false, $def_val = null, $decimal_places = null, $min_val = null, $max_val = null)
+    public function __construct($name, $precision = 8, $required = false, $def_val = null, $decimal_places = null, $min = null, $max = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $precision, $notnull, $def_val, $min_val, $max_val, $max_decimals) =
+            @list($name, $precision, $required, $def_val, $min, $max, $max_decimals) =
                 $name + array(null, 8, false, null, null, null, null);
         }
 
-        parent::__construct($name, $precision, $notnull, $def_val, $min_val, $max_val);
+        parent::__construct($name, $precision, $required, $def_val, $min, $max);
         $this->_rules['decimal_places'] = $decimal_places;
         $this->mess(array('invalid' => 'Invalid floating point value'));
         $this->mess(array('min_val_excided' => 'Number is too small'));
@@ -1723,7 +1723,7 @@ class FDouble extends FFloat
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else
@@ -1743,13 +1743,13 @@ class FDouble extends FFloat
                         $err['decimal_places_excided'] = true;
                     }
                 }
-                if (null !== $this->_rules['min_val']
-                        && $value < $this->_rules['min_val'])
+                if (null !== $this->_rules['min']
+                        && $value < $this->_rules['min'])
                 {
                     $err['min_val_excided'] = true;
                 }
-                else if (null !== $this->_rules['max_val']
-                        && $value > $this->_rules['max_val'])
+                else if (null !== $this->_rules['max']
+                        && $value > $this->_rules['max'])
                 {
                     $err['max_val_excided'] = true;
                 }
@@ -1764,16 +1764,16 @@ class FDouble extends FFloat
  */
 class FDate extends Field
 {
-    public function __construct($name, $notnull = false, $def_val = null)
+    public function __construct($name, $required = false, $def_val = null)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $precision, $notnull, $def_val) =
+            @list($name, $precision, $required, $def_val) =
                 $name + array(null, false, null);
         }
 
-        parent::__construct($name, $notnull, $def_val);
+        parent::__construct($name, $required, $def_val);
         $this->mess(array('invalid_format' => 'Invalid date format'));
     }
 
@@ -1800,7 +1800,7 @@ class FDate extends Field
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else if ('NOW()' !== strtoupper($value))
@@ -1880,8 +1880,8 @@ class FMonthYear extends FDate
                     $err['invalid'] = true;
             }
         }
-        elseif(!$this->autoValue($value) && $this->_rules['notnull'])
-            $err['notnull'] = true;
+        elseif(!$this->autoValue($value) && $this->_rules['required'])
+            $err['required'] = true;
         return ($this->_errors($err, $value));
     }
 }
@@ -1910,7 +1910,7 @@ class FTime extends Field
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else if ('NOW()' !== strtoupper($value))
@@ -1984,7 +1984,7 @@ class FTimestamp extends Field
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else if ('NOW()' !== strtoupper($value))
@@ -2051,7 +2051,7 @@ class FBool extends Field implements IBoolean
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else
@@ -2111,14 +2111,14 @@ class FId extends Field
     /**
      * Constructor.
      * $name Field name.
-     * $notnull The not null property.
+     * $required The not null property.
      */
     public function __construct($name, $precision = 4, $not_null = true)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $precision, $notnull) =
+            @list($name, $precision, $required) =
                 $name + array(null, 4, null);
         }
 
@@ -2136,8 +2136,8 @@ class FId extends Field
     public function checkType($def)
     {
         $res = array();
-        if($def['notnull'] != 't')
-            $res['notnull'] = 't';
+        if($def['required'] != 't')
+            $res['required'] = 't';
         if($def['defval'] != $this->defaultValue())
             $res['defval'] = $this->defaultValue();
         if($def['typename'] != 'int' && $def['typename'] != 'int' . $this->_rules['precision'])
@@ -2171,7 +2171,7 @@ class FId extends Field
         {
             if ($this->notNull())
             {
-                $err['notnull'] = true;
+                $err['required'] = true;
             }
         }
         else
@@ -2250,19 +2250,19 @@ class FForeignId extends FInt
     /**
      * Constructor.
      * @param $name
-     * @param $notnull
+     * @param $required
      * @param $foreign_model The NAME!! of the referenced model (not model object!)
      */
-    public function __construct($name, $notnull = false, $foreign_model = '', $precision = 4)
+    public function __construct($name, $required = false, $foreign_model = '', $precision = 4)
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $notnull, $foreign_model, $precision) =
+            @list($name, $required, $foreign_model, $precision) =
                 $name + array(null, false, '', 4);
         }
 
-        parent::__construct($name, $precision, $notnull);
+        parent::__construct($name, $precision, $required);
         if(!is_string($foreign_model))
             throw new HgException("Foreign model parameter has to be a string.");
         $this->foreignModel($foreign_model);
@@ -2305,21 +2305,21 @@ class FFile extends FString
     /**
      *
      * @param string $name
-     * @param boolean $notnull add "NOT NULL"?
+     * @param boolean $required add "NOT NULL"?
      * @param array $conf for supported values refer to UploadModel
      */
-    public function __construct($name, $notnull = false, array $conf=array())
+    public function __construct($name, $required = false, array $conf=array())
     {
         // allow passing arguments by array in first argument
         if (is_array($name))
         {
-            @list($name, $notnull, $conf) =
+            @list($name, $required, $conf) =
                 $name + array(null, false, array());
         }
 
         $this->_conf = array_merge($this->_conf, $conf);
 
-        parent::__construct($name, $notnull, null, 0, 32);
+        parent::__construct($name, $required, null, 0, 32);
     }
 
     /**
@@ -2446,7 +2446,7 @@ class FFile extends FString
                 if($value['error'] == UPLOAD_ERR_NO_FILE)
                 {
                     if($this->notNull())
-                        $err['notnull'] = true;
+                        $err['required'] = true;
                 }
                 else
                     $err['invalid'] = true;
@@ -2457,10 +2457,10 @@ class FFile extends FString
             // store max and min length as they are meant to be used as foregin key
 
             $prev_rules = array(
-                'min_length' => $this->_rules['min_length'],
-                'max_length' => $this->_rules['max_length']
+                'minlength' => $this->_rules['minlength'],
+                'maxlength' => $this->_rules['maxlength']
             );
-            $this->_rules['min_length'] = $this->_rules['max_length'] = null;
+            $this->_rules['minlength'] = $this->_rules['maxlength'] = null;
 
             $return = parent::invalid($value);
 

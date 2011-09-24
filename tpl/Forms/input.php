@@ -51,6 +51,16 @@ if (array_key_exists('disabled', $attrs))
     $attrs['class'] .= ' disabled';
 }
 
+// convert data-required rule to html5 required attributes
+if (array_key_exists('data-required', $attrs))
+{
+    if (!array_key_exists('required', $attrs))
+    {
+        $attrs['required'] = $f->anyToBool($attrs['data-required']);
+        unset($attrs['data-required']);
+    }
+}
+
 if (false !== $id)
     $attrs['id'] = $id;
 $id = @$attrs['id']; // keep in sync
@@ -58,14 +68,18 @@ $attrs['name'] = $ident.$name_prefix.'['.$input.']'.$name_suffix;
 
 $attrs['value'] = $data;
 if (false === $autocomplete)
+{
     $attrs['autocomplete'] = 'off';
+}
 
 echo $f->tag('input', $attrs);
 
 $js_event = $validate_js_event;
 $err_attrs = $t->inc('Forms/errors', compact('id', 'ajax', 'err_handling', 'js_event', 'errors'));
 if (is_array($err_attrs))
+{
     $attrs = array_merge($err_attrs, $attrs);
+}
 
 return $attrs;
 

@@ -1,6 +1,9 @@
 <?php
-$____local_variables['attrs']['type'] = 'text';
+/**
+ * (params passed as local variables)
+ * @see Forms/number.php
+ */
 @$____local_variables['class'] .= ' double';
 
-return $t->inc('Forms/FFloat', $____local_variables);
-?>
+return $t->inc('Forms/number', $____local_variables);
+

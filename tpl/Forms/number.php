@@ -1,16 +1,19 @@
 <?php
-@$____local_variables['class'] .= ' text';
-
+/**
+ * (params passed as local variables)
+ * @see Forms/input.php
+ */
 $attrs =& $____local_variables['attrs'];
-if (!isset($attrs['type']))
+
+if (!array_key_exists('type', $attrs))
 {
-    $attrs['type'] = 'text';
+    $attrs['type'] = 'number';
 }
 
-if ($attrs['type'] === 'text')
+if ($attrs['type'] === 'number')
 {
-    // convert data-{min,max}length rules to html5 attributes
-    foreach (array('minlength', 'maxlength') as $rule)
+    // convert data-{min,max} rules to html5 attributes
+    foreach (array('min', 'max') as $rule)
     {
         $data_attr = 'data-' . $rule;
         if (array_key_exists($data_attr, $attrs))
@@ -24,6 +27,5 @@ if ($attrs['type'] === 'text')
     }
 }
 
-$____local_variables['data'] = html_entity_decode(@$____local_variables['data']);
 return $t->inc('Forms/input', $____local_variables);
 

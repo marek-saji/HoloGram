@@ -237,7 +237,7 @@ class DataSetController extends PagesController
                                 else
                                     $sql .= "    ALTER COLUMN \"{$name}\" DROP DEFAULT,\n";
                                 break;
-                            case 'notnull':
+                            case 'required':
                                 //if ($val)
                                 //    $sql .= "    UPDATE ".$this->_ds->getTableName()." SET $name = DEFAULT WHERE $name IS NULL\n/*option*/";
                                 $sql .= "    ALTER COLUMN \"{$name}\" ".(g('Functions')->anyToBool($val) ? 'SET' : 'DROP')." NOT NULL,\n";

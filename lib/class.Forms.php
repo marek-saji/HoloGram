@@ -401,10 +401,14 @@ class Forms extends HgBase
         $models = & $input_def['models'];
 
         static $html5data_rules = array(
-            'min_length' => -1,   // take lower value
-            'max_length' => +1,   // take higher value
-            'notnull'    => +1,   // take higher value (true>false)
-            'defval'     => true, // combine all values
+                                 // what to do when input is associated with
+                                 // multiple fields:
+            'minlength' => -1,   // take lower value
+            'maxlength' => +1,   // take higher value
+            'min'       => -1,   // take lower value
+            'max'       => +1,   // take higher value
+            'required'  => +1,   // take higher value (true>false)
+            'defval'    => true, // combine all values
         );
         $input_def['data-attrs'] = array();
 
@@ -462,7 +466,9 @@ class Forms extends HgBase
             }
             unset($model);
             foreach ($input_def['data-attrs'] as &$attr)
+            {
                 $attr = json_encode($attr);
+            }
         }
 
         $tpl = & $input_def['tpl'];
