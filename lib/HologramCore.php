@@ -2110,9 +2110,10 @@ abstract class Controller extends HgBase implements IController
      * @param array $params action's params
      * @param array $attr additional <a />'s attributes
      *        (not all are accepted -- view _l2sth() for details)
+     *
      * @return string html code
      */
-    public function l2a($contents,$act='', array $params=array(), array $attrs=array())
+    public function l2a($contents, $act = '', array $params = array(), array $attrs = array())
     {
         $attrs['href'] = $this->url2a($act, $params);
 
@@ -2137,14 +2138,16 @@ abstract class Controller extends HgBase implements IController
      *
      * @return string html code
      */
-    public function l2c($contents, $ctrl=null, $act='', array $params=array(), array $attrs=array())
+    public function l2c($contents, $ctrl = null, $act = '', array $params = array(), array $attrs = array())
     {
         $argv = func_get_args();
         $contents = array_shift($argv);
         if (!@is_array($argv[0]))
+        {
             $argv = array($argv);
+        }
 
-        if (!array_key_exists(3,$argv[0]))
+        if (!array_key_exists(3, $argv[0]))
             $attrs = array();
         else
         {
@@ -2162,7 +2165,6 @@ abstract class Controller extends HgBase implements IController
 
     /**
      * Acts exacly like l2a, but uses url2aInside to generate URL
-     *
      * @author m.augustynowicz
      *
      * @param string $contents text of link
@@ -2170,9 +2172,10 @@ abstract class Controller extends HgBase implements IController
      * @param array $params action's params
      * @param array $attr additional <a />'s attributes
      *        (not all are accepted -- view _l2sth() for details)
+     *
      * @return string html code
      */
-    public function l2aInside($contents,$act='', array $params=array(), array $attrs=array())
+    public function l2aInside($contents, $act = '', array $params = array(), array $attrs = array())
     {
         $attrs['href'] = $this->url2aInside($act, $params);
 
@@ -2197,10 +2200,14 @@ abstract class Controller extends HgBase implements IController
         $argv = func_get_args();
         $contents = array_shift($argv);
         if (!@is_array($argv[0]))
+        {
             $argv = array($argv);
+        }
 
-        if (!array_key_exists(3,$argv[0]))
+        if (!array_key_exists(3, $argv[0]))
+        {
             $attrs = array();
+        }
         else
         {
             $attrs = $argv[0][3];
@@ -2219,6 +2226,7 @@ abstract class Controller extends HgBase implements IController
      * @param string $contents content of <a /> tag
      * @param array $attrs additional attributes to <a /> tag.
      *        special values: 'anchor' is what will get added after '#' to URL
+     *
      * @return string html code with <a /> tag
      */
     protected function _l2sth($contents, array $attrs=array())
@@ -2249,10 +2257,11 @@ abstract class Controller extends HgBase implements IController
      * @param string $act action's name
      * @param array $params action's parameters
      * @param boolean $with_host should produced URL contain host name?
+     *
      * @return string
      */
-	public function url2a($act='', array $params=array(), $with_host=false)
-	{
+    public function url2a($act = '', array $params = array(), $with_host = false)
+    {
         // null means current controller
         return $this->url2c(null, $act, $params, $with_host);
     }
@@ -2274,20 +2283,160 @@ abstract class Controller extends HgBase implements IController
      * @param string $act action name, use '' for default one
      * @param array $params action's parameters
      * @param boolean $with_host should produced URL contain host name?
+     *
      * @return string URL
      */
-    public function url2c($ctrl, $act='', $params=array(),$with_host=false)
+    public function url2c($ctrl, $act = '', $params = array(), $with_host = false)
     {
-        if (!is_array($ctrl))
-            // one controller given
-            $controllers = array(func_get_args());
-        else
-            // set of controllers
-            $controllers = func_get_args();
+        $url = $this->__buildArrayUrlFromArrayOfCtrls(func_get_args());
+
+        $this->__buildStringUrlFromArray($url);
+
+        g()->req->enhanceURL($url);
+        return g()->req->getBaseUri($with_host).$url;
+    }
+
+
+    /**
+     * Acts like url2a, but uses url2cInside instead
+     *
+     * @author m.augustynowicz
+     *
+     * @param string $act action's name
+     * @param array $params action's parameters
+     *
+     * @return string
+     */
+    public function url2aInside($act = '', array $params = array())
+    {
+        // null means current controller
+        return $this->url2cInside(null, $act, $params);
+    }
+
+    /**
+     * Build a URL.
+     * Function uses current request tree, modifies it using given parameters and
+     * builds new URL based on it.
+     *
+     * You can build link to multiple controllers giving them in arrays
+     * $this->url2cInside(array('UserProfile','showUsersItems',array('id'=>190,'p'=>3)),
+     *                    array('Filters','',array('cat'=>3)) );
+     * @author m.wierzba
+     * @author m.augustynowicz
+     *
+     * @param string|IController $ctrl path to controller or the controller itself
+     * @param string $act action name
+     * @param array $params action's parameters
+     *
+     * @return string URL
+     */
+    public function url2cInside($ctrl, $act = '', array $params = array(), $with_host = false)
+    {
+        $arg_url = $this->__buildArrayUrlFromArrayOfCtrls(func_get_args());
+        $url     = $this->__buildArrayUrlFromRequestArray();
+        g('Functions')->arrayMergeRecursive($url, $arg_url);
+
+        $this->__buildStringUrlFromArray($url);
+
+        g()->req->enhanceURL($url);
+
+        return g()->req->getBaseUri($with_host) . $url;
+    }
+
+
+    /**
+     * Convert array used by Request class to array used by __buildStringUrlFromArray()
+     * @author m.augustynowicz
+     *
+     * @param array|null $node if none passed, will use current request tree
+     *
+     * @return array
+     */
+    private function __buildArrayUrlFromRequestArray(array $node = null)
+    {
+        if ($node === null)
+        {
+            $node = g()->req->getWhole();
+        }
+
+
+        $arr = array();
+        $act = '';
+
+        if (isset($node['children']))
+        {
+            foreach ($node['children'] as $name => $child)
+            {
+                if (strtolower($name[0]) === $name[0])
+                {
+                    if (isset($child['children']))
+                    {
+                        $node['children'] += $child['children'];
+                    }
+                    if (isset($child['params']))
+                    {
+                        $node['params'] += $child['params'];
+                    }
+                    unset($node['children'][$name]);
+                    $act = $name;
+                }
+            }
+
+            foreach ($node['children'] as $name => $child)
+            {
+                $arr[$name] = $this->__buildArrayUrlFromRequestArray($child);
+            }
+        }
+
+        if (isset($node['params']))
+        {
+            if ($act)
+            {
+                $act = "/{$act}";
+            }
+
+            $enc_params = g()->req->encodeVal($node['params']);
+            if ($enc_params)
+            {
+                $enc_params = ":{$enc_params}";
+            }
+
+            if ($act || $enc_params)
+            {
+                $arr[null] = "{$act}{$enc_params}";
+            }
+        }
+
+        return $arr;
+    }
+
+
+    /**
+     * Convert array used as params for url2c()-alike methods to
+     * form used internally (e.g. by __buildStringUrlFromArray())
+     * @author m.augustynowicz
+     *
+     * @param array $controllers array with arguments given to url2c()
+     *
+     * @return array
+     */
+    private function __buildArrayUrlFromArrayOfCtrls(array $controllers)
+    {
+        if (!is_array($controllers[0]))
+        {
+            // only one controller given
+            $controllers = array($controllers);
+        }
+
 
         $url = array();
         foreach ($controllers as $c)
         {
+            if (!is_array($c))
+            {
+                continue;
+            }
+
             @list($ctrl, $act, $params, $with_host) = $c;
 
             // validate types of parameters
@@ -2329,103 +2478,9 @@ abstract class Controller extends HgBase implements IController
             }
             $r_url[null] = $c_meta;
         }
-        $this->_buildStringURLFromArray($url);
+        unset($r_url);
 
-        g()->req->enhanceURL($url);
-        return g()->req->getBaseUri($with_host).$url;
-    }
-
-
-    /**
-     * Acts like url2a, but uses url2cInside instead
-     *
-     * @author m.augustynowicz
-     *
-     * @param string $act action's name
-     * @param array $params action's parameters
-     * @return string
-     */
-	public function url2aInside($act='', array $params=array())
-	{
-        // null means current controller
-        return $this->url2cInside(null, $act, $params);
-    }
-
-    /**
-     * Build a URL.
-     * Function uses current request tree, modifies it using given parameters and
-     * builds new URL based on it.
-     *
-     * You can build link to multiple controllers giving them in arrays
-     * $this->url2cInside(array('UserProfile','showUsersItems',array('id'=>190,'p'=>3)),
-     *                    array('Filters','',array('cat'=>3)) );
-     * @author m.wierzba
-     * @author m.augustynowicz
-     *
-     * @param string|IController $ctrl path to controller or the controller itself
-     * @param string $act action name
-     * @param array $params action's parameters
-     *
-     * @return string URL
-     */
-    public function url2cInside($ctrl, $act='', array $params=array())
-    {
-        $new_tree = array('children'=>array());
-
-        if (is_array($ctrl))
-            $controllers = func_get_args();
-        else
-            $controllers = array(func_get_args());
-
-        foreach ($controllers as $c)
-        {
-            $rtree = & $new_tree;
-
-            /**
-             * WARNING: same variable names as function params!
-             */
-            @list($ctrl, $act, $params) = $c;
-            if ($act == 'default')
-                $act = '';
-
-            if (!$ctrl)
-                $ctrl = $this->url();
-            elseif (is_object($ctrl))
-            {
-                if ($ctrl instanceof IController)
-                    $ctrl = $ctrl->url();
-                else
-                    throw new HgException('url2cInside got non-controller object as argument');
-            }
-
-            $words = array_filter(explode('/', trim($ctrl,'/')));
-
-            foreach($words as &$word)
-            {
-                $command = urldecode($word);
-                $rtree = & $rtree['children'][$command];
-            }
-
-            if(!empty($act))
-            {
-                $action = urldecode($act);
-                $rtree = & $rtree['children'][$action];
-            }
-
-            if (!isset($rtree['params']))
-                $rtree['params'] = array();
-
-            if(!empty($params))
-                $rtree['params'] = array_merge_recursive($rtree['params'],$params);
-        }
-
-        $current_tree = g()->req->getWhole();
-
-        g('Functions')->arrayMergeRecursive($current_tree,$new_tree);
-
-        $url = g()->req->getTreeBasedUrl($current_tree);
-        g()->req->enhanceURL($url);
-        return g()->req->getBaseUri().$url;
+        return $url;
     }
 
 
@@ -2438,7 +2493,7 @@ abstract class Controller extends HgBase implements IController
      *
      * @return void method works on reference to $url
      */
-    protected function _buildStringURLFromArray(array &$url, $curr_path='')
+    private function __buildStringUrlFromArray(array &$url, $curr_path='')
     {
         foreach ($url as $name => & $node)
         {
@@ -2446,7 +2501,7 @@ abstract class Controller extends HgBase implements IController
             unset($node[null]);
 
             $node_path = $curr_path . $name . '/';
-            $this->_buildStringURLFromArray($node, $node_path);
+            $this->__buildStringUrlFromArray($node, $node_path);
             if ($node)
                 $node = '/' . $node;
 
