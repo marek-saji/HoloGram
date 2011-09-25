@@ -946,6 +946,9 @@ class Request extends HgBase
     {
         $tree = array('children'=>array());
         $paths = array_filter(explode(';', $path));
+        $link_split = g()->conf['link_split'];
+        $link_split_len = strlen($link_split);
+
         foreach ($paths as & $p)
         {
             $rtree = & $tree;
@@ -955,24 +958,32 @@ class Request extends HgBase
             {
                 $command = urldecode($word);
                 $params = '';
-            
-                if (FALSE !== ($pos = strpos($word,g()->conf['link_split']))) // pod Win nie moze byc ':'
+
+                $link_split_pos = strpos($word, $link_split);
+                if ($link_split_pos !== false)
                 {
-                    $command = substr($word,0,$pos);
-                    $params = substr($word,$pos+1);
+                    $command = substr($word, 0, $link_split_pos);
+                    $params  = substr($word, $link_split_pos + $link_split_len);
                 }
-                $rtree = & $rtree['children'][$command];
                 //$xtree = & $rtree['children'][$command];
                 //unset($rtree['children'][$command]);    //move this branch to the 
                 //$rtree['children'][$command] = $xtree;
-                
-                if (!isset($rtree['params']))
-                    $rtree['params'] = array();
-                
-                $rtree['params'] = array_merge(
-                        $rtree['params'],
-                        $this->decodeParams($params)
-                    );
+
+                $command_params =& $rtree['children'][$command]['params'];
+                if ($command_params === null)
+                {
+                    $command_params = array();
+                }
+
+                $command_params = array_merge(
+                    $command_params,
+                    $this->decodeParams($params)
+                );
+
+                if (strtolower($command[0]) !== $command[0])
+                {
+                    $rtree =& $rtree['children'][$command];
+                }
             }
         }
         $this->_tree = $tree;
