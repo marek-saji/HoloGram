@@ -1526,9 +1526,13 @@ abstract class Controller extends HgBase implements IController
             throw new HgException("Bad args in ".get_class($this)." constructor.");
         }
 
-        if(strpos('/',$name)!==false)
+        if (strpos('/',$name) !== false)
+        {
             throw new HgException("You cannot create subcontrollers! Bad args in ".get_class($this)." constructor.");
+        }
 
+        // controller names have upper caseed first letter
+        $name = ucfirst($name);
 
         if ($parent)
         {
@@ -2623,6 +2627,7 @@ abstract class TrunkController extends Controller
 
         if (is_string($controller))
         {
+            $controller = ucfirst($controller);
             if ($controller === $this->__child_name)
                 return $controller;
             else
@@ -2639,6 +2644,7 @@ abstract class TrunkController extends Controller
 
     public function getChild($name)
     {
+        $name = ucfirst($name);
         if ($this->isChild($name))
             return $this->__child;
         else
@@ -2691,6 +2697,7 @@ abstract class TrunkController extends Controller
      */
     public function getPermaCtrl($name)
     {
+        $name = ucfirst($name);
         return $this->__child->getPermaCtrl($name);
     }
 
@@ -3271,6 +3278,7 @@ abstract class Component extends Controller
 
         if (is_string($controller))
         {
+            $controller = ucfirst($controller);
             if (array_key_exists($controller, $this->__components))
                 return $controller;
             else
@@ -3308,6 +3316,7 @@ abstract class Component extends Controller
     */
     public function getChild($name)
     {
+        $name = ucfirst($name);
         if ($this->isChild($name))
             return ($this->__components[$name]);
         return(NULL);
@@ -3348,6 +3357,7 @@ abstract class Component extends Controller
      */
     public function getPermaCtrl($name)
     {
+        $name = ucfirst($name);
         return g()->first_controller->getPermaCtrl($name);
     }
 
