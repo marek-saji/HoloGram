@@ -287,6 +287,19 @@ abstract class DataSet extends HgBaseIterator implements IDataSet
     }
 
 
+    /**
+     * Get single scalar from single row
+     *
+     * Calls getRow() and returns first value.
+     * @author m.augustynowicz
+     */
+    public function getScalar($filter = null)
+    {
+        $row = $this->getRow($filter);
+        return reset($row);
+    }
+
+
     public function alias($alias='')
     {
         if ($alias)
