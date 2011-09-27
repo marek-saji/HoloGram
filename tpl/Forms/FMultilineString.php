@@ -12,6 +12,7 @@
  *        arrayish value, use at your own risk)
  * @param string $name_suffix e.g. "[42][]" (note that name has to have
  *        arrayish value, use at your own risk)
+ * @param string $validate_js_event js event to bind js validation to
  */
 extract(array_merge(
         array(
@@ -21,6 +22,7 @@ extract(array_merge(
             'class'       => '', // overrides attrs[class] !
             'name_prefix' => '',
             'name_suffix' => '',
+            'validate_js_event' => 'blur',
         ),
         (array) $____local_variables
     ));
@@ -47,17 +49,15 @@ foreach (array('minlength', 'maxlength') as $rule)
 }
 
 $data = html_entity_decode(@$data);
-$err_id = $attrs['id'] . '__err';
-if ((@$errors) && is_array($errors))
-    $errors = implode(', ', $errors);
 
 echo $f->tag('textarea', $attrs, $data);
-?>
 
-<div class="field_error" id="<?=$err_id?>" style="display:<?=$errors?'block':'none'?>"><?=$errors?></div>
-<?
-if($ajax)
-    $v->addOnLoad('$(\'#'.$attrs['id'].'\').blur(function(){return hg("input_validate")(this);})');
+$js_event = $validate_js_event;
+$err_attrs = $t->inc('Forms/errors', compact('id', 'ajax', 'err_handling', 'js_event', 'errors'));
+if (is_array($err_attrs))
+{
+    $attrs = array_merge($err_attrs, $attrs);
+}
 
 return $attrs;
 
