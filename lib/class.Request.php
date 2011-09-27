@@ -198,12 +198,26 @@ class Request extends HgBase
     {
         if (!$text_url)
         {
-            $text_url = (@$_SERVER['HTTPS'] ? 'https://' : 'http://' ).
-                         $_SERVER['HTTP_HOST'] .
-                         $_SERVER['REQUEST_URI']; // request_uri starts with slash
+            if (@$_SERVER['HTTPS'])
+            {
+                $text_url = 'https://';
+            }
+            else
+            {
+                $text_url = 'http://';
+            }
 
-            $this->_is_ajax = @'xmlhttprequest' === strtolower(@$_SERVER['HTTP_X_REQUESTED_WITH']);
-            $this->_is_cli = 'cli' === PHP_SAPI;
+            $text_url .= $_SERVER['HTTP_HOST'];
+
+            $uri = getenv('HG_DUMMY_URI');
+            if (empty($uri))
+            {
+                $uri = $_SERVER['REQUEST_URI'];
+            }
+            $text_url .= '/' . ltrim($uri, '/');
+
+            $this->_is_ajax = ('xmlhttprequest' === strtolower(@$_SERVER['HTTP_X_REQUESTED_WITH']));
+            $this->_is_cli  = ('cli' === PHP_SAPI);
 
             if (!$base_uri)
             {
