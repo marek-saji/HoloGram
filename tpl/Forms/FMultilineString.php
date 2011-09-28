@@ -48,7 +48,6 @@ foreach (array('minlength', 'maxlength') as $rule)
     }
 }
 
-$data = html_entity_decode(@$data);
 
 echo $f->tag('textarea', $attrs, $data);
 
