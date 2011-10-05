@@ -1668,9 +1668,30 @@ abstract class Controller extends HgBase implements IController
             $a[$k] = $v;
     }
 
-    public function getAssigned($varname)
+
+    /**
+     * Get assigned value
+     * @author m.augustynowicz
+     *
+     * @param string|null $varname variable name,
+     *        if null specified, gets array with all variables
+     *
+     * @return mixed
+     */
+    public function getAssigned($varname = null)
     {
-        return isset($this->__variables[$varname]) ? $this->__variables[$varname] : null;
+        if ($varname === null)
+        {
+            return $this->__variables;
+        }
+        else if (array_key_exists($varname, $this->__variables))
+        {
+            return $this->__variables[$varname];
+        }
+        else
+        {
+            return null;
+        }
     }
 
     /**
