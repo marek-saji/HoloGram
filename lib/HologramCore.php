@@ -74,6 +74,24 @@ function o($obj)
 }
 
 
+/**
+ * @rapper to allow chain usage of arrays
+ *
+ * example:
+ *
+ *     $bar = arr($foo->getList(), 0); // $foo->getList()[0]
+ *
+ * @param array $arr
+ * @param mixed $key
+ *
+ * @return mixed
+ */
+function arr(array $arr, $key)
+{
+    return $arr[$key];
+}
+
+
 // lcfirst() has been added in php-5.3
 if (!function_exists('lcfirst'))
 {
