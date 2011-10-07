@@ -1297,7 +1297,7 @@ interface IModel extends IDataSet
 *
 * Possible callbacks in classes extending this class:
 *
-* * validate{FieldName}(& $value)
+* * _validate{FieldName}(& $value)
 *
 *   Used in Model::validateField().
 *

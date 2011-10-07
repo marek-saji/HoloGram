@@ -1435,6 +1435,7 @@ class HgBase
                         list($key) = $argv_key;
                     else
                         $key = join("\t", $argv_key);
+                    $key = (string) $key;
                     if (isset($trans[$key]))
                     {
                         $msg = $trans[$key];
