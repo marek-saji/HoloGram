@@ -34,6 +34,8 @@ $t->inc('Forms/hidden', array_merge(
 
 $attrs = & $____local_variables['attrs'];
 $attrs['type'] = 'checkbox';
+$attrs['data-required'] = false; // requred would mean that checbox
+                            // has to be selected!
 if ($f->anyToBool($____local_variables['data']))
     $attrs['checked'] = 'checked';
 $____local_variables['data'] = 1;
