@@ -3106,7 +3106,7 @@ abstract class Component extends Controller
         if (g()->debug->allowed())
         {
             $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
-            printf('<div class="debug-output-block %s extends-%3$s preparing ctrl"><h3>preparing %s <small>extends %s</small></h3>',
+            printf('<div class="debug-output-block %s extends-%3$s preparing ctrl"><h3>preparing %s <small class="extends">extends %s</small></h3>',
                    $displaying_ctrl_class, $this->path(), get_parent_class($this) );
         }
 
@@ -3248,7 +3248,7 @@ abstract class Component extends Controller
         if (g()->debug->allowed())
         {
             $displaying_ctrl_class = $this->isDisplayingCtrl() ? 'is-displaying-ctrl' : '';
-            printf('<div class="debug-output-block %s extends-%3$s launching ctrl"><h3>launching things in %s <small>extends %s</small></h3>',
+            printf('<div class="debug-output-block %s extends-%3$s launching ctrl"><h3>launching things in %s <small class="extends">extends %s</small></h3>',
                    $displaying_ctrl_class, $this->path(), get_parent_class($this) );
         }
 
