@@ -1325,28 +1325,56 @@ class Functions extends HgBase
      *        "open", "close" or "both"
      * @return string
      */
-    public function tag($name, array $attr=array(), $value=null, $type='both')
+    public function tag($name, $attr=array(), $value=null, $type='both')
     {
-        if (func_num_args() <= 2)
+        if (is_array($attr))
         {
-            $fmt = '<%s %s />';
+            $attrs    = $this->xmlAttr($attr);
+            $no_value = (func_num_args() <= 2);
         }
         else
         {
-            switch (substr(strtolower($type), 0, 4))
-            {
-                case 'open' :
-                    $fmt = '<%s %s>';
-                    break;
-                case 'close' :
-                    $fmt = '</%s>';
-                    break;
-                default :
-                    $fmt = '<%s %s>%s</%1$s>';
-            }
+            $type  = $value;
+            $value = $attr;
+            $attrs = '';
+            $no_value = (func_num_args() <= 1);
         }
 
-        return sprintf($fmt, $name, $this->xmlAttr($attr), $value);
+
+        switch (substr(strtolower($type), 0, 4))
+        {
+            case 'open' :
+                if ($no_value)
+                {
+                    $fmt = '<%s ';
+                }
+                else
+                {
+                    $fmt = '<%s %s>';
+                }
+                break;
+            case 'close' :
+                if ($no_value)
+                {
+                    $fmt = '/>';
+                }
+                else
+                {
+                    $fmt = '</%s>';
+                }
+                break;
+            default :
+                if ($no_value)
+                {
+                    $fmt = '<%s %s />';
+                }
+                else
+                {
+                    $fmt = '<%s %s>%s</%1$s>';
+                }
+        }
+
+        return sprintf($fmt, $name, $attrs, $value);
     }
 
 
