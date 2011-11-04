@@ -160,7 +160,7 @@ $conf['js-libs'] = array(
      * @url http://code.google.com/p/html5shiv/
      */
     'html5shiv' => array(
-        'version' => 'r15',
+        'version' => 'r23',
         'filename' => 'html5-%s',
         'cdn_path' => '%shtml5shiv.googlecode.com/svn-history/%s/trunk/html5.js',
         'ie' => 'lt IE 9',
