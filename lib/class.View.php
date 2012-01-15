@@ -440,14 +440,14 @@ class View extends HgBase implements IView
 
     public function setDescription($desc)
     {
-        $this->setMeta('description', $desc);
-        $this->setMeta('og:description', $desc, 'property');
+        $this->setMeta('description', strip_tags($desc));
+        $this->setMeta('og:description', strip_tags($desc), 'property');
     }
 
     public function setTitle($title)
     {
         $this->_title = $title;
-        $this->setMeta('og:title', $title, 'property');
+        $this->setMeta('og:title', strip_tags($title), 'property');
     }
 
 
