@@ -603,7 +603,7 @@ JS;
 
         echo '<pre style="border: silver solid thin">';
 
-        printf("<a href=\"http://google.com/images?q=evil+monkey\">evil monkeys</a> used: ~%d\n", $this->_evil_monkeys_count);
+        printf("<a href=\"https://www.google.com/search?tbm=isch&amp;q=evil+monkey\">evil monkeys</a> used: ~%d\n", $this->_evil_monkeys_count);
 
         if (!empty($this->_error_counts))
         {
