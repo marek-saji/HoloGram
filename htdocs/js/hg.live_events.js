@@ -1,9 +1,18 @@
 /**
+ * HoloGram live events
+ * ====================
+ */
+
+ hg.init = {};
+
+/**
  * Help values (displayed when form input is empty)
+ * ------------------------------------------------
  * @author m.augustynowicz
  *
- * USAGE:
- * <textarea class="helpval" title="Describe it here"></textarea>
+ * #### USAGE
+ *
+ *     <textarea class="helpval" title="Describe it here"></textarea>
  */
 $(function(){
     try
@@ -19,23 +28,39 @@ $(function(){
 
 
 /**
- * hg-specific nyromodal stuff
+ * nyroModal
+ * ---------
  * @author m.augustynowicz
  *
- * USAGE:
- * <a href="hg link" class="modal">foo</a>
- * // will open modal window, but also execute javascript, add stuff
- * // to head, change page title etc.
- * // NOTE: things added to <head /> stay there after closing modal window
- * //       (except value of title)
+ * #### USAGE
+ *
+ *     <a href="hg link" class="modal">foo</a>
+ *
+ * Will open modal window, but also execute javascript, add stuff
+ * to head, change page title etc.
+ *
+ * Things added to `<head />` stay there after closing modal window
+ * (except value of title)
  */
 $(function(){
     try
     {
-        if ($.nyroModalManual)
-            hg("nyroModalInit")();
+        if (hg('nyroModalFit')())
+        {
+            if ($.nyroModalManual)
+            {
+                hg("nyroModalInit")();
+                $('body').addClass('modal-enabled');
+            }
+            else
+            {
+                throw("nyroModalManual not found");
+            }
+        }
         else
-            throw("nyroModalManual not found");
+        {
+            console.log('Screen smaller than 500x500, not enabling modal windows');
+        }
     }
     catch (e)
     {
@@ -46,29 +71,34 @@ $(function(){
 
 
 /**
- * Displaying calendar pickers in date fields
+ * jQuery UI datepicker
+ * --------------------
  * @author m.augustynowicz
  *
- * USAGE:
- * <input type="text" class="date" />
- * for customizing:
- * hg_datepickers['.foo'] = {
- *   dateFormat : 'dd-mm-yy',
- *   cleanLabel : 'remove',
- *   showClean : true,
- *   onClean : function(){alert("I'm clean!")},
- *   cleanLabel : 'remove'
- * };
+ * #### USAGE
  *
- * user settings beats default_hg_opts,
- * default_hg_opts beats regional settings
+ *     <input type="text" class="date" />
+ *
+ * customization:
+ *
+ *     hg_datepickers['.foo'] = {
+ *       dateFormat : 'dd-mm-yy',
+ *       cleanLabel : 'remove',
+ *       showClean : true,
+ *       onClean : function(){alert("I'm clean!")},
+ *       cleanLabel : 'remove'
+ *     };
+ *
+ * these settings beats `default_hg_opts`,
+ * `default_hg_opts` beats `$.datepicker.regional[lang]`
  */
-function bindCalendar()
-{
+$(function(){
     try
     {
-        if(typeof $.datepicker == 'undefined')
+        if (typeof $.datepicker == 'undefined')
+        {
             return;
+        }
         var default_hg_opts = {
             dateFormat: 'yy-mm-dd',
             showOn: 'button',
@@ -77,32 +107,31 @@ function bindCalendar()
             onClean: function(){}
         };
         var lang = $('html').attr('lang');
-        $.datepicker.regional['en'] = $.datepicker.regional['en-GB'];
         var default_opts = $.extend(
             {},
             $.datepicker.regional[lang],
             default_hg_opts
         );
-        
-        $('input.date').each(function()
-        {
+
+        $('input.date').each(function(){
             var me = $(this);
             var opts = $.extend({}, default_opts); // clone
-
-            if(typeof hg_datepickers != 'undefined')
-                $.each(hg_datepickers, function(selector)
-                {
-                    if(me.is(selector))
+            if (typeof hg_datepickers != 'undefined')
+            {
+                $.each(hg_datepickers, function(selector) {
+                    if (me.is(selector))
+                    {
                         $.extend(opts, this);
+                    }
                 });
+            }
 
             me.datepicker(opts);
 
-            if(opts.showClean)
+            if (opts.showClean)
             {
-                me.after('<a class="input-date-cleaner" title="' + opts.cleanLabel + '" href="javascript:void(0)">' + opts.cleanLabel + '</a>');
-                me.next().click(function()
-                {
+                me.after('<a class="input-date-cleaner" title="'+opts.cleanLabel+'" href="javascript:void(0)">'+opts.cleanLabel+'</a>');
+                me.next().click(function(){
                     opts.onClean.apply(this);
                     var input = $(this).prev();
                     input.val('');
@@ -114,99 +143,33 @@ function bindCalendar()
     {
         console.error('failed to initialize datepickers:', e);
     }
-}
-
-function bindMonthYearSelector()
-{
-    try
-    {
-        if(typeof $.datepicker == 'undefined')
-            return;
-        var default_hg_opts = {
-            showOn: 'button',
-            showClean: false,
-            cleanLabel: 'clean',
-            onClean: function(){},
-            changeMonth: true,
-            changeYear: true,
-            showButtonPanel: false,
-            dateFormat: 'yy-mm',
-            onClose: function(dateText, inst)
-            {
-                var month = $("#ui-datepicker-div .ui-datepicker-month :selected").val();
-                var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
-                $(this).datepicker('setDate', new Date(year, month, 1));
-            },
-            calendarClass: ''
-        };
-        var lang = $('html').attr('lang');
-        $.datepicker.regional['en'] = $.datepicker.regional['en-GB'];
-        var default_opts = $.extend(
-            {},
-            $.datepicker.regional[lang],
-            default_hg_opts
-        );
-        
-        $('input.month_year').each(function()
-        {
-            var me = $(this);
-            var opts = $.extend({}, default_opts); // clone
-
-            if(typeof hg_datepickers != 'undefined')
-                $.each(hg_datepickers, function(selector)
-                {
-                    if(me.is(selector))
-                        $.extend(opts, this);
-                });
-
-            me.datepicker(opts);
-
-            if(opts.showClean)
-            {
-                me.after('<a class="input-date-cleaner" title="' + opts.cleanLabel + '" href="javascript:void(0)">' + opts.cleanLabel + '</a>');
-                me.next().click(function()
-                {
-                    opts.onClean.apply(this);
-                    var input = $(this).prev();
-                    input.val('');
-                });
-            }
-        }); // each input.date
-    }
-    catch (e)
-    {
-        console.error('failed to initialize datepickers:', e);
-    }
-}
-
-$(function()
-{
-    bindCalendar();
-    bindMonthYearSelector();
 }); // onload, datepicker
 
 
+
 /**
- * Tabbed interface.
- *
- * Not tested on nested tabs
+ * Tabbed interface
+ * ----------------
  * @author m.augustynowicz
  *
- * USAGE:
- * <div class="tabbed">
- *   <ol class="tabs">
- *     <li><a href="#foo">foo</a>
- *   </ol>
- *   <div class="contents">
- *      <div class="tab" id="foo">
- *          FOO!
- *      </div>
- *   </div>
- * </div>
+ * Not tested on nested tabs
  *
- * selected li tab gets class active
+ * #### USAGE
  *
- * (using visibility:hidden, because of xinha)
+ *     <div class="tabbed">
+ *       <ol class="tabs">
+ *         <li><a href="#foo">foo</a>
+ *       </ol>
+ *       <div class="contents">
+ *          <div class="tab" id="foo">
+ *              FOO!
+ *          </div>
+ *       </div>
+ *     </div>
+ *
+ * selected `li` tab gets class active
+ *
+ * (using `visibility:hidden`, because `display:none` breaks xinha)
  */
 (function(){
     try
@@ -237,7 +200,9 @@ $(function()
                 var context = $(this);
                 var tabs = context.find('.tabs:first');
                 if (!tabs.children().is('.active'))
+                {
                     tabs.children(':first').addClass('active');
+                }
                 tabs.children('.active').each(function(){
                     // ok. I don't know why, but calling toggleTab here
                     // did not work /:
@@ -259,16 +224,16 @@ $(function()
 
 /**
  * Cloneable fields
+ * ----------------
  * @author m.augustynowicz
  *
- * EXAMPLE:
- * <code>
- * <ol class="clonable" hg__clone_label="+">
- *  <li>clone me!</li>
- *  <li>some row</li>
- *  <!-- cloned row will be placed here -->
- * </ol>
- * </code>
+ * #### USAGE
+ *
+ *     <ol class="clonable" hg__clone_label="+">
+ *         <li>clone me!</li>
+ *         <li>some row</li>
+ *         <!-- cloned row will be placed here -->
+ *     </ol>
  */
 $(function(){
     try
@@ -282,18 +247,20 @@ $(function(){
                 {
                     var context = $(this).prev();
                     /**
-                     * changed 27.03.2010. by b.matuszewski
-                     * - removing 'value' from all inputs in <li></li>
-                     * - seting 'name' so that new field will be accessible in controller
-                     *   throuh $this->data['form_name']['field_name']['cloned'][some int id]
+                     * ### changed 2010-03-27 by b.matuszewski
+                     *
+                     * - removing `value` from all inputs in `<li></li>`
+                     * - seting `name` so that new field will be accessible in controller
+                     *   throuh `$this->data['form_name']['field_name']['cloned'][some int id]`
                      * - giving "unique" id for a new field
                      *
                      * old version
-                     * context.children(':first').clone().appendTo(context);
+                     *
+                     *     context.children(':first').clone().appendTo(context);
                      */
 
-                    //i take :last insted of :first couse im enhencing "id" with ending '_'
-                    //and want to provide unique one
+                    // I take `:last` insted of `:first` couse im enhencing "id" with ending '_'
+                    // and want to provide unique one
                     var tmpObj = context.children(':last').clone();
                     tmpObj.find('ul.data_record :input').each(function()
                     {
@@ -302,7 +269,9 @@ $(function(){
                         $(this).attr("id",$(this).attr("id")+"_");
                     });
                     tmpObj.appendTo(context);
-                    /** changes end here */
+                    /**
+                     * changes end here
+                     */
                 }
                 return false;
             }).insertAfter(me);
@@ -319,27 +288,31 @@ $(function(){
 
 /**
  * Collapsable
+ * -----------
  * @author m.augustynowicz
  *
- * USAGE:
- * <section id="foo" class="collapsable"
- *          hg_collapsable_expand_label="więcej"
- *          hg_collapsable_collapse_label="mniej"
- *          hg_collapsable_expand_title="kliknij, aby zobaczyć całość"
- *          hg_collapsable_collapse_title="kliknij, aby ukryć"
- *          hg_collapsable_height="3"
- * >
- *     Lorem ipsum..
- * </section>
- * becomes:
- * <div class="collapsable_wrapper">
+ * #### USAGE
+ *
  *     <section id="foo" class="collapsable"
- *              style="height: {rzy linijki}"
+ *              hg_collapsable_expand_label="więcej"
+ *              hg_collapsable_collapse_label="mniej"
+ *              hg_collapsable_expand_title="kliknij, aby zobaczyć całość"
+ *              hg_collapsable_collapse_title="kliknij, aby ukryć"
+ *              hg_collapsable_height="3"
  *     >
  *         Lorem ipsum..
  *     </section>
- *     <a>more</a>
- * </div>
+ *
+ * becomes:
+ *
+ *     <div class="collapsable_wrapper">
+ *         <section id="foo" class="collapsable"
+ *                  style="height: {rzy linijki}"
+ *         >
+ *             Lorem ipsum..
+ *         </section>
+ *         <a>more</a>
+ *     </div>
  */
 $(function(){
     try
@@ -376,7 +349,9 @@ $(function(){
 
 
             if (me.height() <= height)
+            {
                 return; // we happy with the things they are already.
+            }
 
             me.css({
                 'overflow' : 'hidden',
@@ -384,7 +359,7 @@ $(function(){
             });
 
             var wrapper = me.wrap($('<div />', {
-                'class' : 'collapsable_wrapper',
+                'class' : 'collapsable_wrapper'
             })).parent();
 
             var expander = $('<a />', {
@@ -450,11 +425,13 @@ $(function(){
 
 /**
  * Autoexpandable textareas
+ * ------------------------
  * @author m.augustynowicz
- * USAGE:
- * <code>
- * <textarea class="autoexpandable"></textarea>
- * </code>
+ *
+ * #### USAGE
+ *
+ *     <textarea class="autoexpandable"></textarea>
+ *
  * will use current size as minimum
  */
 $(function(){
@@ -463,7 +440,9 @@ $(function(){
         $('textarea.autoexpandable').live('keydown', function(e){
             var me = $(this);
             if (me.data('hg.autoexpandable.timeout'))
+            {
                 return;
+            }
             me.data('hg.autoexpandable.timeout', window.setTimeout(function(){
                 me.removeData('hg.autoexpandable.timeout');
                 if (!me.data('hg.autoexpandable.min-height'))
@@ -486,11 +465,235 @@ $(function(){
                 me.height(0);
                 me.height(me[0].scrollHeight + padding*2);
             }, 200));
-        }).keydown().css('overflow-y', 'hidden');
+        }).keydown();
     }
     catch(e)
     {
         console.error('failed to initialize autoexpandable textareas', e);
     }
+});
+
+
+/**
+ * Emulate `:focus`
+ * ----------------
+ * @author m.augustynowicz
+ */
+$(':input')
+    .live('focusin focusout', function(e){
+        var focusin = 'focusin'==e.type;
+
+        if (focusin)
+        {
+            $('.recently-focused').removeClass('recently-focused');
+        }
+
+        $(this)
+            .closest('.field')
+                .andSelf()
+                    .addClass('recently-focused')
+                    .toggleClass('focus', focusin)
+        ;
+    })
+;
+
+
+/**
+ * ### Move "recently focus" to form field of a clicked message
+ * @author m.augustynowicz
+ */
+$('.holoform .field_error')
+    .live('click', function(e){
+        $('.field.recently-focused')
+            .removeClass('recently-focused');
+
+        $(this)
+            .closest('.field')
+                .addClass('recently-focused');
+    })
+;
+
+
+
+/**
+ * Inputs just to be copied to a clipboard
+ * ---------------------------------------
+ * @author m.augustynowicz
+ */
+hg.init.copyToClipboard = function () {
+    if (typeof ZeroClipboard != 'object')
+    {
+        return false;
+    }
+
+    for (var i in ZeroClipboard.clients)
+    {
+        if (ZeroClipboard.clients.hasOwnProperty(i))
+        {
+            ZeroClipboard.clients[i].reposition();
+        }
+    }
+
+    $('embed[id^=ZeroClipboardMovie_]').parent().remove();
+    $('.copier').remove();
+
+    $(':input.copyable[id][readonly]')
+        .each(function(){
+            var $input   = $(this),
+                copierId = $input.attr('id') + '-copier',
+                clip     = new ZeroClipboard.Client(),
+                options  = {
+                    'text'      : 'copy',
+                    'title'     : 'click to copy to system clipboard',
+                    'afterText' : 'copied!'
+                }
+            ;
+
+            $.extend(options, $input.data('copyable'));
+
+            var $copier = $('<span />', {
+                    'id'    : copierId,
+                    'text'  : options.text,
+                    'class' : 'copier',
+                    'data'  : {'source' : $input}
+                })
+                .insertAfter($input)
+            ;
+
+            clip.setHandCursor(true);
+            clip.addEventListener('onMouseDown', function(client){
+                clip.setText($($(client.domElement).data('source')).val());
+            });
+            clip.addEventListener('onComplete', function(client, text){
+                $(client.domElement).text(options.afterText);
+                client.reposition();
+            });
+            clip.glue(copierId);
+
+            if (options.title)
+            {
+                $copier
+                    .add($('#ZeroClipboardMovie_' + clip.id))
+                        .attr('title', options.title)
+                ;
+            }
+        })
+    ;
+
+    return true;
+};
+
+hg.init.copyToClipboard();
+
+
+
+/**
+ * Smoothly scroll to anchor links
+ * -------------------------------
+ * @author m.augustynowicz
+ */
+$('a[href^="#"]')
+    .live('click.smoothAnchorLink', function(e){
+        var hash = $(this).attr('href'),
+            $target = $(hash).eq(0)
+        ;
+        if ($target.length)
+        {
+            $('html, body') // some browsers like html, some body
+                .animate(
+                    {
+                        scrollTop : $target.offset().top
+                    },
+                    'swing',
+                    function(){
+                        window.location.hash = hash;
+                    }
+                )
+            ;
+            e.preventDefault();
+        }
+    })
+;
+
+
+
+/**
+ * Scroll to first error
+ * ---------------------
+ *  @author m.augustynowicz
+ */
+$(function () {
+    var $error = $('.error, .field_error:not(:empty)').eq(0);
+    if ($error.length !== 0) {
+        var err_top = $error.offset().top,
+            html = $('html')[0]
+        ;
+        if (html.scrollTop > err_top || err_top - html.scrollTop > window.innerHeight) {
+            html.scrollTop = err_top;
+        }
+    }
+});
+
+
+/**
+ * Autocomplete fields
+ * -------------------
+ * @author m.augustynowicz
+ */
+$(window).load(function () {
+    $('.autocomplete').each(function () {
+        var $this       = $(this),
+            $dataSource = $this.data('impersonating') || $this,
+            data        = $dataSource.data('hgAutocomplete') || {}
+        ;
+
+        if (!data.url) {
+            return;
+        }
+
+        if ($this.is(':not(:input)')) {
+            $this = $this.find(':input');
+        }
+
+        if ($this.length === 0) {
+            return;
+        }
+        else if ($this.length > 1) {
+            $this = $this.eq(0);
+        }
+
+        var cache = {'': []};
+
+        $this.autocomplete({
+            source : function (current, callback) {
+                var input = current.term || '';
+
+                if (typeof cache[input] !== 'undefined') {
+                    callback(cache[input]);
+                    return;
+                }
+
+                $.ajax({
+                    type    : 'POST',
+                    data    : { input : input },
+                    url     : data.url,
+                    success : function (json) {
+                        cache[input] = json.suggestions;
+                        callback(cache[input]);
+                    }
+                });
+            }
+        });
+    });
+});
+
+
+/**
+ * Focus clicked elements
+ * ----------------------
+ * Chrome tries to fool us, but we are smarter than this.
+ */
+$(':input').live('click', function () {
+    $(this).filter(':not(:focus)').focus();
 });
 
