@@ -35,3 +35,6 @@ hg['nyroModalFit']  = {js:'../hg/js/hg.nyroModal.js'};
 hg['hideFlashes']   = {js:'../hg/js/hg.flashtoggler.js'};
 hg['unhideFlashes'] = {js:'../hg/js/hg.flashtoggler.js'};
 
+// yesscript, counter-element for <noscript>
+hg['yesscript'] = {js:'../hg/js/hg.yesscript.js'};
+
