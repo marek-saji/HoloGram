@@ -1,23 +1,36 @@
 .paginator
 {
-    margin-left: 4em;
-    list-style: none;
-    clear: both;
-    overflow: hidden;
+    list-style : none;
+    clear      : both;
+    overflow   : hidden;
+    text-align : center;
 }
 
-.paginator > .page,
-.paginator > .page > *
+.paginator ul
 {
-    display: block;
-    min-width: 2em;
-    height: 1.8em;
-    margin: 0;
-    padding: 0;
-    line-height: 1.8em;
-    float: left;
-    margin-left: .5em;
-    text-align: center;
+    display : inline;
+    display : inline-block;
+    margin  : 0;
+    padding : 0;
+}
+
+.paginator .page,
+.paginator .page > *
+{
+    display     : inline;
+    display     : inline-block;
+    min-width   : 2em;
+    height      : 1.8em;
+    margin      : 0;
+    padding     : 0;
+    line-height : 1.8em;
+    margin-left : .5em;
+    text-align  : center;
+}
+
+.paginator .page.text .symbol
+{
+    font-size: 1.6em;
 }
 
 .paginator .active
@@ -25,31 +38,16 @@
     font-weight: bold;
 }
 
-.paginator > .num.active.page > *
+.paginator .num.active.page > *
 {
-    /* background-color: ; */
-    -moz-border-radius: .4em;
-    -webkit-border-radius: .4em;
-    -khtml-border-radius: .4em;
-    border-radius: .4em;
+    -moz-border-radius    : .4em;
+    -webkit-border-radius : .4em;
+    -khtml-border-radius  : .4em;
+    border-radius         : .4em;
 }
 
 .paginator a
 {
-    text-decoration: none;
-}
-
-.paginator a:link
-{
-    /* color: ; */
-}
-.paginator a:visited
-{
-    /* color: ; */
-}
-.paginator a:focus,
-.paginator a:active
-{
-    /* color: ; */
+    text-decoration : none;
 }
 
