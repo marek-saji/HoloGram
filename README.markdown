@@ -20,11 +20,11 @@ Setting up a new app
 
 2. Clone HoloGram into `src/hg/`
 
-       git clone https://github.com/HolonGlobe/HoloGram.git src/hg/
+        git clone https://github.com/HolonGlobe/HoloGram.git src/hg/
 
 3. Copy application scheme into `src/app/`
 
-       cp -rv src/hg/app-scheme/app src/
+        cp -rv src/hg/app-scheme/app src/
 
 4. Follow instructions from `src/app/README.markdown`
 
