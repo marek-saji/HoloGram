@@ -2898,11 +2898,11 @@ class FoBinary extends FCustomBoolean implements IEvalField, IBoolean
     /**
      * Constructor.
      * @param $left Left operand
-     * @param $operator string with an operator, either of '<','>','=','>=','<=','<>','like','ilike'
+     * @param $operator string with an operator, either of '<','>','=','>=','<=','<>','like','ilike', 'is null', 'is not null'
      * @param $right Right operand.
      * @param $type type of the operands if both $left and $right are provied as strings.
      */
-    public function __construct($left, $operator, $right, $type = false)
+    public function __construct($left, $operator, $right = '', $type = false)
     {
         $operator = strtoupper($operator);
         if(!in_array($operator, array(
@@ -2915,9 +2915,13 @@ class FoBinary extends FCustomBoolean implements IEvalField, IBoolean
             '!=',
             '@@',
             'LIKE',
-            'ILIKE'
+            'ILIKE',
+            'IS NULL',
+            'IS NOT NULL'
         )))
             throw new HgException("Unsupported operator $operator");
+        if ('IS NULL' === $operator || 'IS NOT NULL' === $operator)
+            $right = '';
         if($left instanceof IField)
             $type = $left->type();
         elseif($right instanceof IField)
