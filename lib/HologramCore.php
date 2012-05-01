@@ -2066,8 +2066,11 @@ abstract class Controller extends HgBase implements IController
         }
         else
         {
-            $this->_setTemplate($action);
             $this->_launched_action_return = $this->$method($params);
+            if ( ! $this->_template )
+            {
+                $this->_setTemplate($action);
+            }
         }
 
         // close debug output block
