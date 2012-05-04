@@ -2293,6 +2293,11 @@ abstract class Controller extends HgBase implements IController
             unset($attrs['anchor']);
         }
 
+        if (empty($contents))
+        {
+            $contents = $attrs['href'];
+        }
+
         return g('Functions')->tag('a', $attrs, $contents);
     }
 
