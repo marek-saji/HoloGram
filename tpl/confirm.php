@@ -32,7 +32,7 @@ $no  = $this->trans($no);
 $form = g('Forms', array('confirm', $this));
 ?>
 
-<section class="confirmation">
+<section class="confirmation" id="content">
 
     <div class="holoform">
         <?php
