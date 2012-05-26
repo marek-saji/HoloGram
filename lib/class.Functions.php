@@ -1341,7 +1341,7 @@ class Functions extends HgBase
         }
 
 
-        switch (substr(strtolower($type), 0, 4))
+        switch (strtolower($type))
         {
             case 'open' :
                 if ($no_value)
