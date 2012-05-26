@@ -7,10 +7,14 @@
 
 $v->addCss($t->file('infos','css'));
 
-$classy_infos = & g()->infos;
+$classy_infos = g()->infos;
+g()->infos = array();
 
 if (!g()->debug->allowed())
+{
     unset($classy_infos['debug']);
+    unset($classy_infos['forms']);
+}
 else
 {
     if (!@empty($classy_infos['forms']))
@@ -39,6 +43,4 @@ foreach ($classy_infos as $class => $infos)
     printf('</ol>');
 }
 print '</aside>';
-
-$classy_infos = array();
 
