@@ -1091,6 +1091,11 @@ class FPassword extends FMD5String
         parent::__construct($name, $required, $minlength, $maxlength);
     }
 
+    static public function hash($value)
+    {
+        return md5($value);
+    }
+
     static public function dbString($value)
     {
         if (null === $value || '' === $value)
@@ -1100,7 +1105,7 @@ class FPassword extends FMD5String
         else
         {
             // it's query-safe
-            return "'" . md5($value) . "'";
+            return "'" . self::hash($value) . "'";
         }
     }
 }
