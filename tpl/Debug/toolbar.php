@@ -92,7 +92,7 @@ $v->addCss($this->file('debug','css'));
                 <ul>
                     <?php foreach ($conf['shortcuts'] as $label => $url) : ?>
                         <?php if (is_string($url)) : ?>
-                            <li><a href="<?=$url?>"><?=$label?></a></li>
+                            <li><a target=_blank href="<?=$url?>"><?=$label?></a></li>
                         <?php else : ?>
                             <li><?=$this->l2c($label, $url)?></li>
                         <?php endif; ?>
